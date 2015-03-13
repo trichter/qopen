@@ -1,0 +1,7 @@
+include README.rst
+include LICENSE
+include CHANGELOG
+include qopen/example/conf.json
+include qopen/example/*.py
+include qopen/example/*.xml
+include qopen/example/*.mseed

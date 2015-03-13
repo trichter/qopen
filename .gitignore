@@ -1,0 +1,6 @@
+*.pyc
+*~
+build
+dist
+qopen.egg-info
+docs/_build

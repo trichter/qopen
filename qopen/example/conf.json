@@ -1,0 +1,295 @@
+### Configuration file for qopen package in json format
+# Comments are indicated with "#" and ignored while parsing
+
+{
+    
+### Options for input and output ###
+
+# Filename of events file (QuakeML format)
+"events": "example_events.xml",
+
+# Filename of inventory of stations (StationXML format)
+"inventory": "example_inventory.xml",
+
+# Data can be 
+#   1. a glob expression of files. All files are read at once. If you have
+#      a huge dataset think about setting up a local webservice and use 2.
+#     (Setting up a seishub service is not difficult.)
+#   2. one of "arclink", "seishub" or "fdsn" for getting the data from
+#      a webservice. Option "client_options" is available.
+#   3. "plugin" for a heterogeneus dataset. You have the freedom to get your
+#       data from different locations. In this case the option "plugin" is
+#       availlable
+"data": "example_data.mseed",
+
+# Options for the webservices which are passed to Client.__init__.
+# See the documentation of the clients in ObsPy for availlable options.
+"client_options": {"user": "name@insitution.com"},                    
+
+# Where to find the plugin in the form "module : func"
+# 'module' has to be importable (located in current path or PYTHON_PATH
+# environment variable). 
+# 'func' has to be the function which delivers the data, e.g. for a
+# FSDN client:
+#     # in module.py
+#     from obspy.fsdn import Client
+#     client = Client()
+#     def func(**kwargs):
+#         kwargs.pop('event')  # event kwarg is not needed by client
+#         return client.get_waveforms(**kwargs)
+# Kwargs passed to func are: network, station, location, channel,
+# starttime, endtime and event
+"plugin": "module : func",
+
+# Request window of data in s relative to origin time
+"request_window": [-10, 210],
+
+# Directory for optional waveform caching from webservice or plugin.
+# This works only if the waveforms are requested with the exact same
+# parameters (start and end time) i.e. if options
+# events and request_window are left untouched
+"cache_waveforms": null,
+
+# Output results as json on stdout or in a file
+# possible options: null, "stdout", filename
+"output": "results.json",
+
+# Indent of json output, possible values: null, 0, 2, 4, ...
+"indent": 2,
+
+# Possibility to define your own logging configuration. This dictionary
+# will be passed to logging.config.dictConfig.
+# null will log to a file and stdout depending on 'logfile', 'loglevel'
+# and '-v' flag
+"logging": null,
+
+# Log file or null. Output to stdout can be configured with the -v flag
+"logfile": "example.log",
+
+# The higher the log level the more verbose is the logging to the file (1-3)
+"loglevel": 3,
+
+# Use multiple processes for calculating the results 
+# for different frequencies parallel.
+# joblib must be installed for this feature
+"parallel": true,
+
+# Number of cores: 1, 2, ..., -1 (all cores), -2 (all cores except 1), ...
+"njobs": -1,
+
+
+### Options for inversion ###
+
+# If true: all events are inverted together for one b and g0
+# If false: events are inverted independently for b and g0
+"invert_events_simultaniously": false,
+
+# If previous option is false, the results are determined as a mean
+# of the inversions for individual events. If 'weighted_mean' is true,
+# the mean is determined as a weighted mean, where the weights correspond
+# to the reciprocal of the error of the inversion
+"mean": "robust",
+
+# Mean shear wave velocity in m/s for calculating the Green's function.
+# Has also impact on the calculation of the source displacement spectrum
+# ωM: ωM ∝ v0^(5/2)
+# Furthermore, necessary for calculating Qsc from g0 and li from b
+# This parameter can also be calculated from picks. If you want to
+# use this feature set "v0" : null and "use_picks": true. 
+"v0" : 3400,
+
+# Mean density in kg/m**3.
+# Important for calculating the correct observed energy and therefore
+# scales the spectral source energy W: W ∝ rho0 and the
+# source displacement spectrum ωM ∝ rho0
+"rho0": 2700,
+
+# Geometric mean of station amplification factors for energy,
+# can be assumed as 1.
+# Important for calculating the correct modelled energy and therefore
+# scales W: W ∝ 1/R0, ωM ∝ 1/R0^(1/2)
+"R0": 1,
+
+# Optimization options for the scattering coefficient.
+# Values are passed to scipy.optimize.minimize_scalar.
+# 'method' can be one of 'golden', 'brent', 'bounded'
+# 'tol' defines the tolerance for finding the optimal solution
+"optimize": {"method": "golden", "tol": 1e-6},
+
+# Bounds for optimization. Optimal parameters near the bounds will be
+# treated as unphysical and corresponding results will be discarded
+# 'g0_bounds' bounds for (transport) mean free path
+# 'b_bounds' bounds for intrinsic attenuation
+"g0_bounds": [1e-8, 1e-4],
+"b_bounds": [1e-3, 10],
+
+# Remove instrument response. One of null, "sensitivity", "full".
+# Instrument response has to be availlable in the inventory.
+# This option is important for the calculation of W and ωM
+"remove_response": "sensitivity",
+
+# When calculating the distance, correct for the elevation of the station.
+# Usefull if depth of events catalog is relative to 0m
+"correct_for_elevation": false, 
+
+# Filter options passed to obspy.core.Stream.filter for filtering the
+# different frequency bands (see obspy.core.Stream.filter).
+"filter": {"corners": 2, "zerophase": true},
+
+# Define frequency bands: step - difference between neighbouring
+# central frequencies in octave (x octave corresponds to a factor of
+# 2**x between the frequencies)
+# width - difference between higher and lower corner frequency in octave 
+# max - maximal central frequency,
+# min - minimal possible central frequency.
+"freqs": {"step": 1, "width": 1, "max": 6, "min": 0.3},
+
+# Use picks given in events file to determine the P- and S-onset.
+# Picks can also be used to calculate v0. 
+"use_picks": false,
+
+# Otherwise these velocities are used together with the distance between
+# preffered origin and station to determine the onsets
+"vp": 6000,
+"vs": 3400,
+
+
+# Determine the S-onset again. This does not make much sense for events with
+# picks.
+# Possible values: null, "maximum" (take maximum in given window as new
+# S-onset)
+# Example:
+# "adjust_sonset": "maximum",
+# "adjust_sonset_options": {"window": ["S-10s", "S+10s"]},
+"adjust_sonset": null,
+
+# Remove noise level from data
+"remove_noise": true,
+
+# Deinition of different time windows
+# - List of time windows to determine the noise level relative to P-onset
+#   (the minimum of the noise levels determined in the individual time
+#   windows is used)
+# - Time window for calculation of the direct energy.
+#   The energy is integrated in this time window
+# - Time window defining the coda
+# Time windows are a list of two values (start and end time).
+# The start time and end time can be a string, e.g.: 
+# - 'P-10s', 'S+10s', 'OT+10s' (seconds relative to onset or origin time),
+# - '1.2Stt', '0.8Ptt' (travel time relative to onset travel time) or
+# - '3SNR' (only for end time of codawindow, time after start time when
+#          the energy hits this level relative to the noise level)
+# The start time and end time can also be a list, in this case the largest start time and the smallest end time is chosen.
+"noise_windows": [["OT-10s", "OT-5s"], ["OT-5s", "OT+0s"]],
+"bulk_window": ["S-2s", "S+20s"],
+"coda_window": ["S+20s", ["S+150s", "3SNR"]], # Coda window ends 150s after S-onset or if SNR of 3 is reached.
+
+# The weight of the bulk window (list of value and unit)
+# unit is one of:
+# - codawindow (the same weight has the whole coda window)
+# - bulkwindow (the same weight as the length of the bulk window
+#                 relative to the coda window)
+# - samples (the same weight as one sample in the coda window)
+"weight" : [1, "bulkwindow"],
+
+
+# Skip station if one of these conditions is fullfilled.
+# Possible conditions:
+# - "coda_window" shorter than x seconds
+# - "distance" between station and event larger than x km
+# - "maximum" of envelope is not in given window
+# - "num_pairs" 
+# Example:
+# "skip": {"coda_window": 5,
+#          "distance": 500,
+#          "maximum": ["0.5Stt", "S+10s"],
+#          "num_pairs": 2},
+"skip": null,
+
+
+# Smooth the coda over 'smooth' seconds (null for no smoothing)
+"smooth": 1,
+
+# The window used for smoothing. Can be one of 
+# "flat", "hanning", "hamming", "bartlett" or "blackman".
+# "flat" corresponds to the moving average, for the rest see
+# http://docs.scipy.org/doc/numpy/reference/routines.window.html
+"smooth_window": "bartlett",
+
+# Calculate the seismic moment from the source displacement spectrum
+# as a mean of the values for frequencies smaller than 'fc',
+# null for no calculation of the seismic moment
+# More sophisticated methods (e.g. fitting omega square source model)
+# are not yet availlable.
+# Masuda and Suzuki (1982) Objective estimation of source parameters and local Q values by ...
+
+#"seismic_moment_method": "mean",
+#"seismic_moment_options": {"fc": 1.5},
+"seismic_moment_method": "robust_fit",
+"seismic_moment_options": {"fc": null, "a": 2, "b": 2, "fc_lim": [0.1, 10],
+                           "num_points": 4},
+
+# Optionally, a user defined module with alternative Green's function for scattering.
+# The module has to define a function 'Gsmooth' and if 'bulk_window' is set
+# a function 'intG' with the following arguments:
+# Gsmooth(r, t, c, l, smooth, smooth_window):
+#     return smoothed Green's function
+# intG(r, t, c, l):
+#    return integral over Green's function from r/c to t
+# See qopen.rt for the provided isotropic, acoustic RT Green's function.
+#"G_module": "qopen.rt",
+
+### Plot options ###
+
+# Plot observed energies
+# xlim_min: time limits for linear plot (relative to origin time)
+# xlim_log: time limits for log plot (relative to origin time)
+# fname: filename gets populated by eventid and freq_band
+"plot_energies": true,
+"plot_energies_options": {"fname": "plots/energies_%s.png",
+                          "xlim_lin": [0, 210], "xlim_log": [10, 210]},
+
+# Plot optimization routine
+# num: Number of fit plots
+# fname: filename gets populated by eventid and freq_band
+"plot_optimization": true,
+"plot_optimization_options": {"num": 7,
+                              "fname": "plots/optimization_%s.png"},
+
+# Plot fits for optimization result
+# fname: filename gets populated by eventid and freq_band
+"plot_fits": true,
+"plot_fits_options": {"fname": "plots/fits_%s.png"},
+
+# Plot scattering parameters and magnitude estimation for one event
+# fname: filename gets populated by eventid
+"plot_eventresult": true,
+"plot_eventresult_options": {"fname": "plots/eventresult_%s.png"},
+
+# Plot site corrections for one event
+# fname: filename gets populated by eventid
+"plot_eventsites": true,
+"plot_eventsites_options": {"fname": "plots/eventsites_%s.png"},
+
+# Plot mean attenuation and scattering properties
+# fname: filename
+"plot_results": true,
+"plot_results_options": {"fname": "plots/results.pdf", "llim": [1e0, 1e3], "Qlim": [1e-5, 1e-1]},
+
+# Plot mean site amplification factors
+# fname: filename
+"plot_sites": true,
+"plot_sites_options": {"fname": "plots/sites.pdf"},
+
+# Plot source displacement spectra
+# fname: filename
+"plot_sds": true,
+"plot_sds_options": {"fname": "plots/sds.pdf"},
+
+# Plot comparison between magnitude determined by this script and magnitude
+# from event file
+# fname: filename
+"plot_mags": true,
+"plot_mags_options": {"fname": "plots/mags.pdf"}
+
+}
