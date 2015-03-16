@@ -3,10 +3,14 @@ python:
   - "2.7"
 virtualenv:
   system_site_packages: true
+
 before_install:
-  - bash <(wget -q -O- neuro.debian.net/_files/neurodebian-travis.sh)
-  - sudo apt-get install -qq python-dev python-setuptools python-numpy python-scipy python-matplotlib python-lxml python-sqlalchemy python-suds gfortran
-  - sudo apt-get install -qq python-statsmodels python-joblib
+  - sudo apt-get install -qq python-dev python-setuptools python-numpy python-matplotlib python-lxml python-sqlalchemy python-suds gfortran  
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"  
+  - conda update --yes conda
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION scipy statsmodels joblib
   - pip install future
   # XXX: At the moment qopen is working only with obspy master
   - pip install --allow-external obspy --allow-insecure obspy obspy==dev

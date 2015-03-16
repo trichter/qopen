@@ -29,7 +29,7 @@ PLOT = False
 class TestCase(unittest.TestCase):
 
     def test_entry_point(self):
-        script = load_entry_point('rf', 'console_scripts', 'rf')
+        script = load_entry_point('qopen', 'console_scripts', 'qopen')
         with quiet():
             try:
                 script(['-h'])
