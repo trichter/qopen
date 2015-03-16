@@ -43,7 +43,7 @@ class TestCase(unittest.TestCase):
             script(['--create-config', '--tutorial'])
             script()
             # check if pictures were created
-            self.assertEqual(len(list(glob('plots/*.png'))), 70)
+            self.assertEqual(len(list(glob('plots/*.png'))), 85)
             self.assertEqual(len(glob('plots/*.pdf')), 4)
 
     def test_results_of_tutorial(self):
