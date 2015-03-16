@@ -5,12 +5,13 @@ virtualenv:
   system_site_packages: true
 
 before_install:
-  - sudo apt-get install -qq python-dev python-setuptools python-numpy python-matplotlib python-lxml python-sqlalchemy python-suds gfortran  
+  - sudo apt-get install -qq python-dev python-setuptools python-numpy python-matplotlib python-lxml python-sqlalchemy python-suds gfortran 
+  - sudo apt-get install -qq python-joblib
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"  
   - conda update --yes conda
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION scipy statsmodels joblib
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION scipy statsmodels
   - pip install future
   # XXX: At the moment qopen is working only with obspy master
   - pip install --allow-external obspy --allow-insecure obspy obspy==dev
