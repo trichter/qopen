@@ -1,12 +1,14 @@
 language: python
 python:
   - "2.7"
+env:
+  -
+  - JOBLIB=true  
 virtualenv:
   system_site_packages: true
-
 before_install:
-  - sudo apt-get install -qq python-dev python-setuptools python-numpy python-matplotlib python-lxml python-sqlalchemy python-suds gfortran 
-  - sudo apt-get install -qq python-joblib
+  - sudo apt-get install -qq python-dev python-setuptools python-numpy python-matplotlib python-lxml python-sqlalchemy python-suds gfortran
+  - if [[ $JOBLIB == true ]]; then sudo apt-get install -qq python-joblib; fi
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"  
