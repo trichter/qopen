@@ -25,7 +25,7 @@ setup(name='qopen',
       license='MIT',
       packages=find_packages(),
       install_requires=[
-          'obspy >= 0.10.1', 'numpy', 'scipy>=0.11', 'statsmodels', 'joblib'],
+          'obspy', 'numpy', 'scipy>=0.11', 'statsmodels', 'joblib'],
       entry_points=ENTRY_POINTS,
       include_package_data=True,
       zip_safe=False
