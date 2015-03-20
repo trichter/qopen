@@ -21,7 +21,7 @@ Installation
 
 Dependencies of qopen are:
 
-* ObsPy version 0.10 or dev version
+* ObsPy>=0.10.1
 * NumPy and SciPy>=0.11 (itself dependencies of ObsPy)
 * statsmodels
 * joblib (optional for multi-core support)
@@ -37,23 +37,19 @@ Test the installation with the script ::
 Usage
 -----
 
-The code is run by the installed command line script `qopen`. For a first start, try to run the tutorial. The tutorial files are created in the current directory with ::
+The code is run by the installed command line script `qopen`. For a start, try to run the tutorial. The tutorial files are created in the current directory with ::
 
     qopen --tutorial
 
-This command creates an example configuration file in JSON format and the corresponding data files. Have look at the configuration file, its options and comments. Now you can run the script by simply typing ::
+This command creates an example configuration file in JSON format and the corresponding data files. Have look at the configuration file, its options and comments. Now you can perform the inversion by simply running ::
 
     qopen
 
-which will calculate the results and create different plots. To create a new project you just need to create a new configuration file and change it to your requirements.
+which will calculate the results and create different plots. For a new project just create a new configuration file and change it to your requirements.
 
 How it works
 ------------
 
-Here is an upload of my poster presented at EGU 2015
+The method will be described in an upcoming publication. In the meantime you can read our `DGG 2015 poster`__.
 
-.. image:: https://raw.githubusercontent.com/trichter/misc/master/publications/EGU2015-5359.png
-   :width: 50 %
-   :alt: Qopen
-   :align: center
-   :target: https://raw.githubusercontent.com/trichter/misc/master/publications/EGU2015-5359.pdf
+.. __: http://www.eulenf.de/publications/richter2015_DGG_attenuation_at_geothermal_sites.pdf
