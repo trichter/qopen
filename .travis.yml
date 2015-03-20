@@ -16,8 +16,7 @@ before_install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION scipy statsmodels
   - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib lxml sqlalchemy
   - pip install future
-  # XXX: At the moment qopen is working only with obspy master
-  - pip install --allow-external obspy --allow-insecure obspy obspy==dev
+  - pip install obspy
   - pip freeze
 
 install:
