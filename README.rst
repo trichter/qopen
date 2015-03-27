@@ -14,12 +14,23 @@ Separation of intrinsic and scattering **Q** by envel\ **ope** inversio\ **n**
     branch=master
    :target: https://travis-ci.org/trichter/qopen
 
-Qopen is a script in seismology that determines scattering and intrinsic attenuation parameters by inversion of seismogram envelopes.
+Qopen is a script in seismology that determines shear wave scattering and intrinsic attenuation parameters by inversion of seismogram envelopes.
 
-Installation
+How it works
 ------------
 
-Dependencies of qopen are:
+The method will be described in an upcoming publication. Please read our `DGG 2015 poster`__ in the meantime.
+
+.. __: http://eulenfde.appspot.com/publications/richter2015_DGG_attenuation_at_geothermal_sites.pdf
+
+
+How to use it
+-------------
+
+Installation
+............
+
+Dependencies of Qopen are:
 
 * ObsPy>=0.10
 * NumPy and SciPy>=0.11 (itself dependencies of ObsPy)
@@ -30,26 +41,29 @@ It's probably best to install ObsPy first and then let pip take care of the rest
 
     pip install https://github.com/trichter/qopen/archive/master.zip
 
-Test the installation with the script ::
+Qopen provides the two scripts `qopen` and `qopen-runtests`.
+The installation can be tested with the second script::
 
     qopen-runtests
 
-Usage
------
+Tutorial
+........
 
-The code is run by the installed command line script `qopen`. For a start, try to run the tutorial. The tutorial files are created in the current directory with ::
+The code is run by the installed command line script `qopen`. A tutorial can be created with the appropriate flag::
 
     qopen --tutorial
 
-This command creates an example configuration file in JSON format and the corresponding data files. Have look at the configuration file, its options and comments. Now you can perform the inversion by simply running ::
+This command copies an example configuration file in JSON format and the corresponding data files into the current directory. The configuration file is heavily commented and should be rather self-explanatory. Now you can perform the inversion by simply running ::
 
     qopen
 
-which will calculate the results and create different plots. For a new project just create a new configuration file and change it to your requirements.
+which will calculate the results and create different plots.
 
-How it works
-------------
+Use your own data
+.................
 
-The method will be described in an upcoming publication. In the meantime you can read our `DGG 2015 poster`__.
+To use the script with your own data you need 1. an inventory (StationXML or other ObsPy readable format) of your stations, 2. the earthquake catalog (QuakeML or other ObsPy readable format) preferable with P and S picks and 3. the waveforms. Waveforms may exist in data files of various formats or can be fetched from a webservice. A custom solution for waveform retrieval is also possible (e.g. mixing of data files and web requests). An example configuration file can be created with ::
 
-.. __: http://eulenfde.appspot.com/publications/richter2015_DGG_attenuation_at_geothermal_sites.pdf
+    qopen --create-config
+
+This file has to be adopted to your needs (time window selection, etc.). The inversion is started by simply running `qopen` again.
