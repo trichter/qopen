@@ -21,7 +21,7 @@ How it works
 
 The method will be described in an upcoming publication. Please read our `DGG 2015 poster`__ in the meantime.
 
-.. __: http://eulenfde.appspot.com/publications/richter2015_DGG_attenuation_at_geothermal_sites.pdf
+.. __: http://www.eulenf.de/publications/richter2015_DGG_attenuation_at_geothermal_sites.pdf
 
 
 How to use it
