@@ -4,24 +4,26 @@ python:
 env:
   -
   - JOBLIB=true  
-virtualenv:
-  system_site_packages: true
 before_install:
-  - sudo apt-get install -qq python-dev python-setuptools python-numpy python-matplotlib python-lxml python-sqlalchemy python-suds gfortran
-  - if [[ $JOBLIB == true ]]; then sudo apt-get install -qq python-joblib; fi
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - sudo apt-get update
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"  
-  - conda update --yes conda
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION scipy statsmodels
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib lxml sqlalchemy
-  - pip install future
-  - pip install obspy
-  - pip freeze
-
+  - hash -r
+  - conda config --set always_yes yes
+  - conda update -q conda
+  - conda info -a
+  - conda config --add channels obspy
+  - conda install python=$TRAVIS_PYTHON_VERSION nose statsmodels obspy
+  - if [[ $JOBLIB == true ]]; then conda install joblib; fi  
 install:
   - pip install .
 script:
+  - mkdir empty; cd empty
   - qopen-runtests
 after_success:
 notifications:
