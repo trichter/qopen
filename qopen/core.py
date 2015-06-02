@@ -50,6 +50,8 @@ try:
 except ImportError:
     joblib = None
 
+IS_PY3 = sys.version_info.major == 3
+
 log = logging.getLogger('qopen')
 log.addHandler(logging.NullHandler())
 
@@ -1621,7 +1623,6 @@ def configure_logging(loggingc, verbose=0, loglevel=3, logfile=None):
     logging.config.dictConfig(loggingc)
     logging.captureWarnings(loggingc.get('capture_warnings', False))
 
-
 def run(conf=None, create_config=None, tutorial=False, eventid=None,
         get_waveforms=None, prefix=None, plot=None, fix_params=None,
         correct_sens=None, correct_sens_station=None, correct_sens_value=1.,
@@ -1771,7 +1772,8 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
         path = os.path.dirname(output)
         if path != '' and not os.path.isdir(path):
             os.makedirs(path)
-        with open(output, 'w') as f:
+        fmode = 'w' + 'b' * (not IS_PY3) # dirty hack for now
+        with open(output, fmode) as f:
             json.dump(result, f, indent=indent)
     time_end = time.time()
     log.debug('used time: %.1fs', time_end - time_start)
