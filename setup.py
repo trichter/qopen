@@ -15,6 +15,8 @@ ENTRY_POINTS = {
                         'qopen = qopen.core:run_cmdline',
                         'qopen-rt = qopen.rt:main']}
 
+DEPS = 'future obspy>=0.10 numpy scipy>=0.11 statsmodels joblib'.split()
+
 setup(name='qopen',
       version=VERSION,
       description=DESCRIPTION,
@@ -24,8 +26,7 @@ setup(name='qopen',
       author_email='tom.eulenfeld@gmail.com',
       license='MIT',
       packages=find_packages(),
-      install_requires=[
-          'obspy>=0.10', 'numpy', 'scipy>=0.11', 'statsmodels', 'joblib'],
+      install_requires=DEPS,
       entry_points=ENTRY_POINTS,
       include_package_data=True,
       zip_safe=False

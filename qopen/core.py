@@ -427,7 +427,7 @@ def collect_results(results):
     """
     Collect g0, b, error, R, W, eventids and v0 from results of multiple events
     """
-    if 'g0' not in results['events'].items()[0][1]:
+    if 'g0' not in list(results['events'].items())[0][1]:
         g0 = [results['g0']]
         b = [results['b']]
         error = [results['error']]
@@ -1771,7 +1771,7 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
         path = os.path.dirname(output)
         if path != '' and not os.path.isdir(path):
             os.makedirs(path)
-        with open(output, 'wb') as f:
+        with open(output, 'w') as f:
             json.dump(result, f, indent=indent)
     time_end = time.time()
     log.debug('used time: %.1fs', time_end - time_start)

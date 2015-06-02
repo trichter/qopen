@@ -48,6 +48,9 @@ class TestCase(unittest.TestCase):
 
     def test_results_of_tutorial(self):
         """Test against publication of Sens-Schoenfelder and Wegler (2006)"""
+        import sys
+        print(sys.version)
+        print(sys.version_info)
         plot = PLOT
         freq = [0.1875, 0.375, 0.75, 1.5, 3.0, 6.0, 12.0, 24.0]  # page 1365
         g0 = [2e-6, 2e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1.5e-6, 2e-6]  # fig 4
