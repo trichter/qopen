@@ -8,6 +8,7 @@ Separation of intrinsic and scattering **Q** by envel\ **ope** inversio\ **n**
 | **Author**: Tom Eulenfeld
 | **License**: MIT
 | **Project page**: https://github.com/trichter/qopen
+| **Pypi page**: https://pypi.python.org/pypi/qopen
 | **Test status**: |buildstatus|
 
 .. |buildstatus| image:: https://api.travis-ci.org/trichter/qopen.png?
