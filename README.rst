@@ -38,9 +38,9 @@ Dependencies of Qopen are:
 * statsmodels
 * joblib (optional for multi-core support)
 
-It's probably best to install ObsPy first and then let pip take care of the rest. Qopen is not yet released. Install the latest development version and its dependencies with ::
+It's probably best to install ObsPy first and then let pip take care of the rest. Install Qopen and its dependencies with ::
 
-    pip install https://github.com/trichter/qopen/archive/master.zip
+    pip install qopen
 
 Qopen provides the two scripts `qopen` and `qopen-runtests`.
 The installation can be tested with the second script::
