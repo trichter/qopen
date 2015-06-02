@@ -5,7 +5,7 @@
 
 Separation of intrinsic and scattering **Q** by envel\ **ope** inversio\ **n**
 
-| **Author**: Tom Richter
+| **Author**: Tom Eulenfeld
 | **License**: MIT
 | **Project page**: https://github.com/trichter/qopen
 | **Test status**: |buildstatus|
