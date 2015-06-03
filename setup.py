@@ -15,7 +15,8 @@ ENTRY_POINTS = {
                         'qopen = qopen.core:run_cmdline',
                         'qopen-rt = qopen.rt:main']}
 
-DEPS = 'future obspy>=0.10 numpy scipy>=0.11 statsmodels joblib'.split()
+DEPS = ['future', 'numpy>=1.7', 'matplotlib>=1.3', 'scipy>=0.11',
+        'obspy>=0.10', 'statsmodels', 'joblib']
 
 setup(name='qopen',
       version=VERSION,

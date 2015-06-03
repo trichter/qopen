@@ -34,9 +34,9 @@ Installation
 Dependencies of Qopen are:
 
 * ObsPy>=0.10
-* NumPy and SciPy>=0.11 (itself dependencies of ObsPy)
+* future, NumPy>=1.7, SciPy>=0.11 and matplotlib>=1.3 (itself dependencies of ObsPy)
 * statsmodels
-* joblib (optional for multi-core support)
+* joblib (for multi-core support)
 
 It's probably best to install ObsPy first and then let pip take care of the rest. Install Qopen and its dependencies with ::
 
