@@ -63,7 +63,7 @@ def freqlim(freq):
     return freq[0] ** 1.5 / freq[1] ** 0.5, freq[-1] ** 1.5 / freq[-2] ** 0.5
 
 
-def savefig(fig, title=None, fname=None, dpi=None):
+def _savefig(fig, title=None, fname=None, dpi=None):
     if title:
         extra = (fig.suptitle(title),)
     else:
@@ -77,14 +77,14 @@ def savefig(fig, title=None, fname=None, dpi=None):
         plt.close(fig)
 
 
-def set_gridlabels(ax, i, n, N, xlabel='frequency (Hz)', ylabel=None):
-    if i % n != 0 and ylabel:
+def _set_gridlabels(ax, i, nx, ny, N, xlabel='frequency (Hz)', ylabel=None):
+    if i % nx != 0 and ylabel:
         plt.setp(ax.get_yticklabels(), visible=False)
-    elif i // n == (n - 1) // 2 and ylabel:
+    elif i // nx == (ny - 1) // 2 and ylabel:
         ax.set_ylabel(ylabel)
-    if i < N - n and xlabel:
+    if i < N - nx and xlabel:
         plt.setp(ax.get_xticklabels(), visible=False)
-    elif i % n == (n - 1) // 2 and i >= N - n - 1 and xlabel:
+    elif i % nx == (nx - 1) // 2 and i >= N - ny - 1 and xlabel:
         ax.set_xlabel(xlabel)
 
 
@@ -147,7 +147,7 @@ def plot_energies(energies,
     ax3.yaxis.set_minor_locator(mpl.ticker.NullLocator())
     plt.setp(ax2.get_xticklabels(), visible=True)
     plt.setp(ax3.get_xticklabels(), visible=True)
-    savefig(fig, **kwargs)
+    _savefig(fig, **kwargs)
 
 
 def plot_lstsq(rec, ax=None, fname=None, base=np.e):
@@ -177,12 +177,12 @@ def plot_lstsq(rec, ax=None, fname=None, base=np.e):
     ax.plot(t, (np.log(W[0]) - b * t) / np.log(base), color='k')
     ax.set_xlim(right=tmax)
     if fig and fname:
-        savefig(fig, fname=fname)
+        _savefig(fig, fname=fname)
 
 
 def plot_optimization(record, record_g0, num=7, fname=None, title=None,
-                      **kwargs):
-    fig = plt.figure()
+                      figsize=None, **kwargs):
+    fig = plt.figure(figsize=figsize)
     if num > 1:
         n = (num + 1) // 2
         gs = gridspec.GridSpec(n, n)
@@ -249,7 +249,7 @@ def plot_optimization(record, record_g0, num=7, fname=None, title=None,
     # yl = (r'error $\mathrm{rms}\left(\ln\frac{E_{\mathrm{obs}, ij}}'
     #      r'{E_{\mathrm{mod}, ij}}\right)$')
     ax.set_ylabel(r'misfit $\epsilon$')
-    savefig(fig, fname=fname, **kwargs)
+    _savefig(fig, fname=fname, **kwargs)
 
 
 def _get_times(tr):
@@ -259,11 +259,11 @@ def _get_times(tr):
 
 def plot_fits(energies, g0, b, W, R, v0, info, smooth=None,
               smooth_window='bartlett',
-              xlim=None, fname=None, title=None, **kwargs):
+              xlim=None, fname=None, title=None, figsize=None, **kwargs):
     tcoda, tbulk, Ecoda, Ebulk, Gcoda, Gbulk = info
     N = len(energies)
     n = int(np.ceil(np.sqrt(N)))
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(n, n)
     share = None
     if b is None:
@@ -316,7 +316,7 @@ def plot_fits(energies, g0, b, W, R, v0, info, smooth=None,
         l = l + '\nr=%dkm' % (r / 1000)
         ax.annotate(l, (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top', size='x-small')
-        set_gridlabels(ax, i, n, N, xlabel='time (s)',
+        _set_gridlabels(ax, i, n, n, N, xlabel='time (s)',
                        ylabel=r'E (Jm$^{-3}$Hz$^{-1}$)')
         tmaxs.append(t[-1])
         ymaxs.append(max(np.max(Emod), np.max(energy.data)))
@@ -338,7 +338,7 @@ def plot_fits(energies, g0, b, W, R, v0, info, smooth=None,
     ax.yaxis.set_minor_locator(mpl.ticker.NullLocator())
     ax.set_xlim(xlim or (0, max(tmaxs)))
     ax.set_ylim((0.1 * min(ymins), 1.5 * max(ymaxs)))
-    savefig(fig, fname=fname, title=title, **kwargs)
+    _savefig(fig, fname=fname, title=title, **kwargs)
 
 
 def plot_sds(freq, omM, M0=None, fc=None, ax=None, fname=None,
@@ -380,12 +380,13 @@ def plot_sds(freq, omM, M0=None, fc=None, ax=None, fname=None,
                     'offset points', ha='right', va='top', size='x-small')
 
     if fig and fname:
-        savefig(fig, fname=fname)
+        _savefig(fig, fname=fname)
 
 
 def plot_eventresult(result, v0=None, fname=None, title=None,
                      quantities=QUANTITIES_EVENT,
-                     seismic_moment_method=None, seismic_moment_options={}):
+                     seismic_moment_method=None, seismic_moment_options={},
+                     figsize=None):
     v0 = v0 or result.get('v0') or result.get('config', {}).get('v0')
     freq = np.array(result['freq'])
     res = copy(result)
@@ -393,7 +394,7 @@ def plot_eventresult(result, v0=None, fname=None, title=None,
     res.update((list(_values_view))[0])
     N = len(quantities)
     n = int(np.ceil(np.sqrt(N)))
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(n, n)
     share = None
     for i, q in enumerate(quantities):
@@ -408,19 +409,19 @@ def plot_eventresult(result, v0=None, fname=None, title=None,
             ax.loglog(freq, vals, 'o-k')
         ax.annotate(QLABELS[q], (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top')
-        set_gridlabels(ax, i, n, N)
+        _set_gridlabels(ax, i, n, n, N)
         if share is None:
             share = ax
     ax.set_xlim(freq[0], freq[-1])
-    savefig(fig, fname=fname, title=title)
+    _savefig(fig, fname=fname, title=title)
 
 
-def plot_eventsites(result, fname=None, title=None):
+def plot_eventsites(result, fname=None, title=None, figsize=None):
     freq = np.array(result['freq'])
     R = result['R']
     N = len(R)
     n = int(np.ceil(np.sqrt(N)))
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(n, n)
     share = None
     allR = []
@@ -433,7 +434,7 @@ def plot_eventsites(result, fname=None, title=None):
         l = station
         ax.annotate(l, (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top', size='small')
-        set_gridlabels(ax, i, n, N, ylabel='site correction')
+        _set_gridlabels(ax, i, n, n, N, ylabel='site correction')
         if share is None:
             share = ax
     allR = np.array(allR, dtype=np.float)
@@ -441,16 +442,16 @@ def plot_eventsites(result, fname=None, title=None):
     if np.min(allR) != np.max(allR):
         ax.set_ylim(np.min(allR), np.max(allR))
     ax.set_xlim(freq[0], freq[-1])
-    savefig(fig, fname=fname, title=title)
+    _savefig(fig, fname=fname, title=title)
 
 
 def plot_results(result, v0=None, fname=None, title=None,
                  quantities=QUANTITIES, mean=None,
-                 llim=None, Qlim=None):
+                 llim=None, Qlim=None, figsize=None):
     freq = np.array(result['freq'])
     N = len(quantities)
     n = int(np.ceil(np.sqrt(N)))
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(n, n)
     share = None
     g0, b, error, R, _, _, v02 = collect_results(result)
@@ -475,7 +476,7 @@ def plot_results(result, v0=None, fname=None, title=None,
                         mfc='k', mec='k', color='m', ecolor='m')
         ax.annotate(QLABELS[q], (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top')
-        set_gridlabels(ax, i, n, N, ylabel=None)
+        _set_gridlabels(ax, i, n, n, N, ylabel=None)
         if share is None:
             share = ax
         if q in ('Qsc', 'Qi') and Qlim:
@@ -483,60 +484,76 @@ def plot_results(result, v0=None, fname=None, title=None,
         if q in ('lsc', 'li') and llim:
             ax.set_ylim(llim)
     ax.set_xlim(freqlim(freq))
-    savefig(fig, fname=fname, title=title)
+    _savefig(fig, fname=fname, title=title)
 
 
 
-def plot_sites(result, fname=None, title=None, ylim=(1e-2, 1e2), mean=None):
+def plot_sites(result, fname=None, title=None, ylim=(1e-2, 1e2), mean=None,
+               nx=None, figsize=None):
     freq = np.array(result['freq'])
     g0, b, error, R, _, _, _ = collect_results(result)
     weights = 1 / np.array(error) if mean == 'weighted' else None
     robust = mean == 'robust'
     max_nobs = np.max([np.sum(~np.isnan(r), axis=0) for r in R.values()])
-    N = len(R) + (max_nobs > 1)
-    n = int(np.ceil(np.sqrt(N)))
-    fig = plt.figure()
-    gs = gridspec.GridSpec(n, n)
+    N = max_nobs > 1
+    for station in sorted(R):
+        if not np.all(np.isnan(R[station])):
+            N = N + 1
+    #N = len(R) + (max_nobs > 1)
+    #for i
+    fig = plt.figure(figsize=figsize)
+    nx, ny, gs = _get_grid(N, nx=nx)
     cmap = plt.get_cmap('hot_r', max_nobs)
     norm = mpl.colors.Normalize(vmin=0.5, vmax=max_nobs + 0.5)
     share = None
-    for i, station in enumerate(sorted(R)):
-        ax = plt.subplot(gs[i // n, i % n], sharex=share, sharey=share)
+    i = 0
+    for station in sorted(R):
+        if np.all(np.isnan(R[station])):
+            continue
+        ax = plt.subplot(gs[i // nx, i % nx], sharex=share, sharey=share)
         means, err1, err2 = gerr(R[station], axis=0, weights=weights,
                                  robust=robust)
         nobs = 1. * np.sum(~np.isnan(R[station]), axis=0)
         errs = (err1, err2)
         freqs = np.repeat(freq[np.newaxis, :], R[station].shape[0], axis=0)
-        if not np.all(np.isnan(R[station])):
-            if max_nobs == 1:
-                kwargs = {'c': 'k'}
-            else:
-                kwargs = {'c': nobs, 'norm': norm, 'cmap': cmap}
-            ax.loglog(freqs, R[station], 'o', ms=MS, color='gray', mec='gray')
-            ax.errorbar(freq, means, yerr=errs, marker=None,
-                        color='m', ecolor='m')
-            sc = ax.scatter(freq, means, s=4 * MS ** 2,
-                            marker='o', zorder=10,
-                            linewidth=0.5,
-                            **kwargs)
+        #if not np.all(np.isnan(R[station])):
+        if max_nobs == 1:
+            kwargs = {'c': 'k'}
+        else:
+            kwargs = {'c': nobs, 'norm': norm, 'cmap': cmap}
+        ax.loglog(freqs, R[station], 'o', ms=MS, color='gray', mec='gray')
+        ax.errorbar(freq, means, yerr=errs, marker=None,
+                    color='m', ecolor='m')
+        sc = ax.scatter(freq, means, s=4 * MS ** 2,
+                        marker='o', zorder=10,
+                        linewidth=0.5,
+                        **kwargs)
         ax.annotate(station, (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top', size='x-small')
-        set_gridlabels(ax, i, n, N, ylabel='amplification factor')
+        _set_gridlabels(ax, i, nx, ny, N, ylabel='amplification factor')
         if share is None:
             share = ax
+        i += 1
     ax.set_xlim(freqlim(freq))
     if ylim:
         ax.set_ylim(ylim)
     if max_nobs != 1:
-        ax = plt.subplot(gs[(N - 1) // n, (N - 1) % n])
+        ax = plt.subplot(gs[(N - 1) // nx, (N - 1) % nx])
         ax.set_axis_off()
         fig.colorbar(sc, ax=ax, shrink=0.9, format='%d', label='nobs',
                      ticks=np.arange(0, max_nobs + 1, max(1, max_nobs // 5)))
-    savefig(fig, fname=fname, title=title)
+    _savefig(fig, fname=fname, title=title)
 
+def _get_grid(N, nx=None):
+    if nx is None:
+        nx = ny = int(np.ceil(np.sqrt(N)))
+    else:
+        ny = 1 + (N-1) // nx
+    gs = gridspec.GridSpec(ny, nx)
+    return nx, ny, gs
 
 def plot_all_sds(result, seismic_moment_method=None, seismic_moment_options={},
-                 fname=None, title=None, ylim=None):
+                 fname=None, title=None, ylim=None, nx=None, figsize=None):
     freq = np.array(result['freq'])
     conf = result.get('config', {})
     seismic_moment_method = conf.get('seismic_moment_method')
@@ -544,9 +561,10 @@ def plot_all_sds(result, seismic_moment_method=None, seismic_moment_options={},
     #fc = seismic_moment_options.pop('fc', None)
     result = result['events']
     N = len(result)
-    n = int(np.ceil(np.sqrt(N)))
-    fig = plt.figure()
-    gs = gridspec.GridSpec(n, n)
+    #n = int(np.ceil(np.sqrt(N)))
+    fig = plt.figure(figsize=figsize)
+    #gs = gridspec.GridSpec(n, n)
+    nx, ny, gs = _get_grid(N, nx=nx)
     share = None
     for i, evid in enumerate(sorted(result)):
         temp = seismic_moment(freq, result[evid]['omM'],
@@ -561,25 +579,25 @@ def plot_all_sds(result, seismic_moment_method=None, seismic_moment_options={},
             if seismic_moment_options.get('fc', None) is None:
                 result[evid]['fc'] = fc
             result[evid]['Mw'] = Mw
-        ax = plt.subplot(gs[i // n, i % n], sharex=share, sharey=share)
+        ax = plt.subplot(gs[i // nx, i % nx], sharex=share, sharey=share)
         plot_sds(freq, result[evid]['omM'], M0=M0, fc=fc,
                  seismic_moment_method=seismic_moment_method,
                  seismic_moment_options=seismic_moment_options,
-                 ax=ax, annotate=N < 37)
+                 ax=ax, annotate=nx < 7)
         ax.annotate(evid, (0, 0), (5, 5), 'axes fraction',
                     'offset points', ha='left', va='bottom', size='x-small')
-        set_gridlabels(ax, i, n, N, ylabel=r'$\omega$M (Nm)')
+        _set_gridlabels(ax, i, nx, ny, N, ylabel=r'$\omega$M (Nm)')
         if share is None:
             share = ax
     ax.autoscale()
     ax.set_xlim(ax.set_xlim(freqlim(freq)))
     if ylim:
         ax.set_ylim(ylim)
-    savefig(fig, fname=fname, title=title)
+    _savefig(fig, fname=fname, title=title)
 
 
-def plot_mags(result, fname=None, title=None):
-    fig = plt.figure()
+def plot_mags(result, fname=None, title=None, figsize=None):
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
     temp = [(r['Mcat'], r['Mw']) for r in result['events'].values()
             if r.get('Mcat') is not None and r.get('Mw') is not None]
@@ -588,13 +606,14 @@ def plot_mags(result, fname=None, title=None):
     Mcat, Mw = zip(*temp)
     ax.plot(Mcat, Mw, 'ok', ms=MS)
     m = np.linspace(np.min(Mcat), np.max(Mcat), 100)
-    if len(Mw) > 3:
-        _, b2 = linear_fit(Mw, Mcat, m=1)
-        ax.plot(m, m + b2, '-m', label='M %+.2f' % (b2,))
     if len(Mw) > 2:
         a, b = linear_fit(Mw, Mcat)
-        ax.plot(m, a * m + b, '--m', label='%.2fM %+.2f' % (a, b))
+        ax.plot(m, a * m + b, '-m', label='%.2fM %+.2f' % (a, b))
+    if len(Mw) > 3:
+        _, b2 = linear_fit(Mw, Mcat, m=1)
+        ax.plot(m, m + b2, '--m', label='M %+.2f' % (b2,))
+    if len(Mw) > 2:
         ax.legend(loc='lower right')
     ax.set_xlabel('M from catalog')
     ax.set_ylabel('Mw from inversion')
-    savefig(fig, fname=fname, title=title)
+    _savefig(fig, fname=fname, title=title)
