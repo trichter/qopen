@@ -1,4 +1,4 @@
-# Author: Tom Richter
+# Author: Tom Eulenfeld
 """
 Radiative Transfer: Approximative interpolation solution of Paasschens (1997)
 

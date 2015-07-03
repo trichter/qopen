@@ -1,5 +1,5 @@
 # coding=utf-8
-# Author: Tom Richter
+# Author: Tom Eulenfeld
 """
 Qopen
 =====

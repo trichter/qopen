@@ -1,5 +1,5 @@
 # coding=utf-8
-# Author: Tom Richter
+# Author: Tom Eulenfeld
 
 # The following lines are for Py2/Py3 support with the future module.
 from __future__ import (absolute_import, division,

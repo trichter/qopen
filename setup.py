@@ -1,5 +1,3 @@
-# Author: Tom Richter
-
 from setuptools import find_packages, setup
 
 VERSION = '1.0'
