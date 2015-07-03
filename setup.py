@@ -8,7 +8,7 @@ with open('README.rst') as f:
 if not 'dev' in VERSION:  # get image for correct version from travis-ci
     README = README.replace('branch=master', 'branch=v%s' % VERSION)
 DESCRIPTION = 'Separation of intrinsic and scattering Q by envelope inversion'
-LONG_DESCRIPTION = '\n'.join(README.split('\n')[7:17])
+LONG_DESCRIPTION = '\n'.join(README.split('\n')[7:13])
 
 ENTRY_POINTS = {
     'console_scripts': ['qopen-runtests = qopen.tests:run',
