@@ -724,7 +724,6 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         # Optionally remove noise
         if remove_noise:
             energy.data = energy.data - noise_level
-            energy.data[energy.data < 0] = noise_level / 100
             energy.data[energy.data < noise_level / 100] = noise_level / 100
         # Optionally adjust S-onset
         if adjust_sonset == "maximum":
