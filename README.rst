@@ -67,4 +67,4 @@ To use the script with your own data you need 1. an inventory (StationXML or oth
 
     qopen --create-config
 
-This file has to be adopted to your needs (time window selection, etc.). The inversion is started by simply running `qopen` again.
+This file has to be adapted to your needs (time window selection, etc.). The inversion is started by simply running `qopen` again.
