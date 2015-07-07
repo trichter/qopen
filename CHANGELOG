@@ -1,2 +1,5 @@
+dev:
+  * bug fix: bulk wave was not correctly handled if beginning of coda window was before S-onset
+  * imaging: add possibility to configure grid layout (nx, ny)  
 v1.0:
   * initial release
