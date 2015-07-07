@@ -76,6 +76,50 @@ def G_red(r, t, eps='dt'):
     return np.hstack((o1, o2))
 
 
+def G_new(r, t, c, g0, eps=None, include_bulk=True):
+    """Full Green's function with bulk term (optional)"""
+    t_isarray = isinstance(t, np.ndarray)
+    r_isarray = isinstance(r, np.ndarray)
+    if t_isarray and r_isarray:
+        raise ValueError('Only one of t or r are allowed to be numpy arrays')
+    elif eps is not None and (t_isarray or r_isarray):
+        raise ValueError('eps must be None if t or r is an array')
+    elif t_isarray:
+        eps = float(t[1] - t[0])
+        eps_nodim = eps * c * g0
+    elif r_isarray:
+        eps = float(r[1] - r[0])
+        eps_nodim = eps * g0
+    else:
+        if eps is None:
+            eps = 0
+        eps_nodim = eps * c * g0
+    G_redfunc = Gr_red if r_isarray else G_red
+    G_ = G_redfunc(r * g0, t * c * g0, eps=eps_nodim) * g0 ** 3
+    if r_isarray and include_bulk:
+        msg = 'include_bulk=True is not implemented for G as a function of r'
+        raise NotImplementedError(msg)
+    elif t_isarray:
+        i = np.count_nonzero(t - r / c <= eps)
+        G_[:i] = 0
+        #j = len(G_) - np.count_nonzero(G_)
+        #if i != j:
+        #    print(i, j, len(G_))
+        #assert i == j
+
+        if include_bulk and 0 < i < len(G_) and eps > 0:
+            #tend = t[i - 1] + 0.5 * eps
+            b = Gb(r / c, c, g0, var='t') if include_bulk else 0
+            #intG_, err = intG(r, tend, c, g0)
+            G_[i - 1] = b / float(t[1] - t[0])
+
+#        if include_bulk and 0 < i < len(G_) and eps > 0:
+#            tend = t[i - 1] + 0.5 * eps
+#            intG_, err = intG(r, tend, c, g0)
+#            G_[i - 1] = G_[i] + intG_ / eps
+    # include surface correction
+    return FS * G_
+
 def G(r, t, c, g0, eps='dt', include_bulk=True):
     """Full Green's function with bulk term (optional)"""
     t_isarray = isinstance(t, np.ndarray)
@@ -95,8 +139,6 @@ def G(r, t, c, g0, eps='dt', include_bulk=True):
             raise NotImplementedError(msg)
     elif t_isarray:
         G_ = G_red(r * g0, t * c * g0, eps=eps * c * g0) * g0 ** 3
-        if not t_isarray:
-            return FS * G_
         i = np.count_nonzero(t - r / c <= eps)
         G_[:i] = 0
         #j = len(G_) - np.count_nonzero(G_)
@@ -107,7 +149,7 @@ def G(r, t, c, g0, eps='dt', include_bulk=True):
         if include_bulk and 0 < i < len(G_) and eps > 0:
             tend = t[i - 1] + 0.5 * eps
             intG_, err = intG(r, tend, c, g0)
-            G_[i - 1] = G_[i] + intG_ / eps
+            G_[i - 1] = intG_ / eps / FS
     else:
         G_ = G_red(r * g0, t * c * g0, eps=eps * c * g0) * g0 ** 3
     # include surface correction
@@ -126,14 +168,17 @@ def intGcoda_red(r, t, eps=1e-5, N=1):
 
 
 
-def intG(r, t, c, g0, eps=1e-4, N=1, include_bulk=True):
+def intG(r, t, c, g0, eps=None, N=1, include_bulk=True):
     """Time-Integral of full Green's function from t0=r/c to t"""
     if t < r / c:
         return 0, 0
+    if eps is None:
+        eps = 1e-4 * g0 * c
     intGr, err = intGcoda_red(r * g0, t * c * g0, eps=eps, N=N)
     b = Gb(r / c, c, g0, var='t') if include_bulk else 0
     # include surface correction
     return FS * (intGr * g0 ** 2 / c + b), err * g0 ** 2 / c
+
 
 def Gsmooth(r, t, c, g0, smooth=None, smooth_window='bartlett'):
     """Smoothed full Green's function"""
@@ -149,70 +194,6 @@ def Gsmooth(r, t, c, g0, smooth=None, smooth_window='bartlett'):
         G_ = G(r, t_, c, g0)
         G_ = smooth_func(G_, samples, method=None, window=smooth_window)
     return G_
-
-#def rt_3D_b(t, c, l, var='t'):
-#    """Bulk term of RT solution"""
-#    if var == 'r':
-#        fac = 1  # * delta(r - c * t)
-#    else:
-#        fac = 1 / c  # * delta(t - r / c)
-#    return fac * np.exp(-c * t / l) / (4 * np.pi * c ** 2 * t ** 2)
-#
-#
-#def G2(x):
-#    return np.sqrt(1 + 2.026 / x)
-#
-#
-#def rt_3D_approx(r, t, c, l, dt=None, bulk=True):
-#    """Approximative solution of RT with bulk term"""
-#    if isinstance(t, (int, float)):
-#        t = np.array([t])
-#        if dt is None:
-#            dt = 0.005
-#    elif dt is None:
-#        dt = max(0.5 * (t[1] - t[0]), 0.001)
-#    out1 = np.zeros(np.count_nonzero(c * t - r <= dt))
-#    t = t[c * t - r > dt]
-#    arg0 = r ** 2 / c ** 2 / t ** 2
-#    arg1 = c * t / l
-#    # Heaviside(c * t - r) *
-#    out2 = ((1 - arg0) ** (1 / 8) / (4 * np.pi * l * c * t / 3) ** (3 / 2) *
-#            np.exp(arg1 * ((1 - arg0) ** (3 / 4) - 1)) *
-#            G2(arg1 * (1 - arg0) ** (3 / 4)))
-#    if bulk and len(out1) > 0 and len(out2) > 0:
-#        cor, err = integrate_t_rt_3D_approx(r, r / c + dt, c, l)
-#        out2[0] = out2[0] + cor / (t[1] - t[0])
-#
-#    return np.hstack((out1, out2))
-#
-#
-#def rt_3D_approx_smooth(r, t, c, l, smooth=None, smooth_window='bartlett'):
-#    if smooth is None:
-#        G = rt_3D_approx(r, t, c, l)
-#    else:
-#        dt = t[1] - t[0]
-#        samples = int(round(smooth / dt))
-#        N1 = (samples - 1) // 2
-#        N2 = samples // 2
-#        t_ = np.hstack((t[0] - N1 * dt + np.arange(N1) * dt, t,
-#                        t[-1] + dt + np.arange(N2) * dt))
-#        G = rt_3D_approx(r, t_, c, l)
-#        G = smooth_func(G, samples, method=None, window=smooth_window)
-#    return G
-#
-#
-#def integrate_t_rt_3D_approx(r, t, c, l, N=1):
-#    """Time intergal of approximative solution from r/c+0.001 to t"""
-#    if t <= r / c:
-#        return 0
-#    res = [np.array((rt_3D_b(r / c, c, l, var='t'), 0))]
-#    f = lambda t1: rt_3D_approx(r, t1, c, l, dt=0, bulk=False)
-#    t = r / c + np.logspace(-3, np.log10(t - r / c), N + 1)
-#    for i in range(N):
-#        res0 = scipy.integrate.quad(f, t[i], t[i + 1], limit=300)
-#        res.append(np.array(res0))
-#    res = np.sum(res, axis=0)
-#    return res[0], res[1]
 
 
 def plot_t(c, g0, r, t=None, N=100, log=False):
