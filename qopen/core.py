@@ -41,7 +41,7 @@ import scipy.signal
 from statsmodels.regression.linear_model import OLS, WLS
 from statsmodels.robust.robust_linear_model import RLM
 
-from qopen.util import (cache, gmean, smooth as smooth_func,
+from qopen.util import (cache, gmean, smooth as smooth_, smooth_func,
                         LOGGING_DEFAULT_CONFIG)
 
 try:
@@ -629,6 +629,7 @@ def _check_times(tr, tw, tol=0.5):
 def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
               R0=1, noise_windows=None, bulk_window=None, weight=None,
               optimize={}, g0_bounds=(1e-8, 1e-3), b_bounds=(1e-5, 10),
+              num_points_integration=1000,
               smooth=None, smooth_window='bartlett',
               remove_noise=False, skip=None,
               adjust_sonset=None, adjust_sonset_options={},
@@ -788,8 +789,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         if smooth:
             if plot_fits:
                 energy.stats.orig_data = energy.data
-            energy.data = smooth_func(energy.data, int(round(sr * smooth)),
-                                      window=smooth_window, method='zeros')
+            energy.data = smooth_(energy.data, int(round(sr * smooth)),
+                                  window=smooth_window, method='zeros')
         # Calculate coda windows in UTC
         codaw[pair] = tw2utc(coda_window, energy)
         if bulk_window:
@@ -902,9 +903,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     recorded_g0 = set()
     max_record = plot_optimization_options.get('num', 7)
     nonlocal_ = {'warn': True}
-    Gsmooth = load_func(G_module, 'Gsmooth')
-    if bulk_window:
-        intG = load_func(G_module, 'intG')
+    G_func = load_func(G_module, 'G')
 
     def lstsq(g0, opt=False, b_fix=None):
         """Error for optimization of g0"""
@@ -915,13 +914,14 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         for i, pair in enumerate(event_station_pairs):
             assert len(Ecoda[i]) > 0
             r = distances[pair]
-            Gc = Gsmooth(r, tcoda[i], v0, g0, smooth,
-                         smooth_window=smooth_window)
+            G_of_t = lambda t: G_func(r, t, v0, g0)
+            Gc = smooth_func(G_of_t, tcoda[i], smooth, window=smooth_window)
             Gcoda.append(Gc)
             if bulk_window:
                 t1, t2 = tbulk_window[pair]
-                Gb, _Gbulkerr = intG(r, t2, v0, g0, N=3)
-                Gbulk.append(Gb / (t2 - t1))
+                tsup = np.linspace(t1, t2, num_points_integration)
+                Gb = np.mean(G_func(r, tsup, v0, g0))
+                Gbulk.append(Gb)
         E = np.hstack(Ecoda + Ebulk)
         G = np.hstack(Gcoda + Gbulk)
         B = np.log(E) - np.log(G)
@@ -1040,7 +1040,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             fname = pkwargs.pop('fname', 'fits_%s.png')
             fname, title = fname_and_title(fname)
             from qopen.imaging import plot_fits
-            plot_fits(energies, g0, b, W, R, v0, info,
+            plot_fits(energies, g0, b, W, R, v0, info, G_func,
                       smooth=smooth, smooth_window=smooth_window,
                       title=title, fname=fname, **pkwargs)
             log.debug('create fits plot at %s', fname)

@@ -230,12 +230,9 @@
                            "num_points": 4},
 
 # Optionally, a user defined module with alternative Green's function for scattering.
-# The module has to define a function 'Gsmooth' and if 'bulk_window' is set
-# a function 'intG' with the following arguments:
-# Gsmooth(r, t, c, l, smooth, smooth_window):
-#     return smoothed Green's function
-# intG(r, t, c, l):
-#    return integral over Green's function from r/c to t
+# The module has to define a function 'G' with the following arguments:
+# G(r, t, c, g0):
+#     return  Green's function
 # See qopen.rt for the provided isotropic, acoustic RT Green's function.
 #"G_module": "qopen.rt",
 

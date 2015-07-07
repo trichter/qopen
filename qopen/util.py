@@ -131,8 +131,22 @@ def gerr(data, axis=None, weights=None, unbiased=True, robust=False):
     err2 = np.exp(mean + err) - np.exp(mean)
     return np.exp(mean), err1, err2
 
+def smooth_func(f, t, window_len=None, window='flat'):
+    """Smooth a function f at time samples t"""
+    if window_len is None:
+        f_ = f(t)
+    else:
+        dt = t[1] - t[0]
+        samples = int(round(window_len / dt))
+        N1 = (samples - 1) // 2
+        N2 = samples // 2
+        t_ = np.hstack((t[0] - N1 * dt + np.arange(N1) * dt, t,
+                        t[-1] + dt + np.arange(N2) * dt))
+        f_ = f(t_)
+        f_ = smooth(f_, samples, method=None, window=window)
+    return f_
 
-def smooth(x, window_len, window='flat', method='zeros'):
+def smooth(x, window_len=None, window='flat', method='zeros'):
     """Smooth the data using a window with requested size.
 
     This method is based on the convolution of a scaled window with the signal.
@@ -152,7 +166,8 @@ def smooth(x, window_len, window='flat', method='zeros'):
     See also:
     www.scipy.org/Cookbook/SignalSmooth
     """
-
+    if window_len is None:
+        return x
     if x.ndim != 1:
         raise ValueError("smooth only accepts 1 dimension arrays.")
     if x.size < window_len:

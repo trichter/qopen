@@ -96,8 +96,12 @@ class TestCase(unittest.TestCase):
 #        print('M0 test vs paper')
 #        print(np.array(M0_qopen))
 #        print(M0)
+#        plot_comparison(result['freq'], freq, result['g0'], g0, result['b'], b)
 
         np.testing.assert_equal(result['freq'], freq)
+#        print(np.log10(result['g0'] / g0))
+#        print(np.log10(result['b'] / b))
+#        print(np.log10(M0_qopen / M0))
         np.testing.assert_array_less(np.abs(np.log10(result['g0'] / g0)), 0.5)
         np.testing.assert_array_less(np.abs(np.log10(result['b'] / b)), 0.5)
         np.testing.assert_array_less(np.abs(np.log10(M0_qopen / M0)), 0.5)

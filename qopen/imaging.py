@@ -19,8 +19,7 @@ import os
 
 from qopen.core import (get_pair, collect_results, linear_fit,
                           seismic_moment, source_spectrum, moment_magnitude)
-from qopen.util import gerr
-from qopen.rt import Gsmooth
+from qopen.util import gerr, smooth_func
 
 MS = mpl.rcParams['lines.markersize'] // 2
 
@@ -257,8 +256,8 @@ def _get_times(tr):
     return np.arange(len(tr)) * tr.stats.delta + t0
 
 
-def plot_fits(energies, g0, b, W, R, v0, info, smooth=None,
-              smooth_window='bartlett',
+def plot_fits(energies, g0, b, W, R, v0, info, G_func,
+              smooth=None, smooth_window='bartlett',
               xlim=None, fname=None, title=None, figsize=None, **kwargs):
     tcoda, tbulk, Ecoda, Ebulk, Gcoda, Gbulk = info
     N = len(energies)
@@ -292,11 +291,8 @@ def plot_fits(energies, g0, b, W, R, v0, info, smooth=None,
         if smooth:
             plot(t, energy.stats.orig_data, color='0.7')
         plot(t, energy.data, color=c1l)
-        # if smooth:
-        #    Emod = get_Emod(rt_3D_approx(r, t, v0, 1 / g0), t)
-        #    plot(t, Emod, color='k')
-        G_ = Gsmooth(r, t, v0, g0, smooth=smooth,
-                     smooth_window=smooth_window)
+        G_of_t = lambda tt: G_func(r, tt, v0, g0)
+        G_ = smooth_func(G_of_t, t, smooth, window=smooth_window)
         Emod = get_Emod(G_, t)
         index = np.argwhere(Emod<1e-30)[-1]
         Emod[index] = 1e-30

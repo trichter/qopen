@@ -14,8 +14,7 @@ from future.builtins import (  # analysis:ignore
 import numpy as np
 import unittest
 
-from qopen.rt import FS, G, Gb, Gcoda_red, intG, G_red, G_new
-from qopen.rt import intGcoda_red
+from qopen.rt import FS, G, Gb, Gcoda_red
 
 class TestCase(unittest.TestCase):
 
@@ -36,10 +35,11 @@ class TestCase(unittest.TestCase):
         g0 = 1e-5
         for t in (1, 10, 100):
             r = np.linspace(0, 1.5 * c * t, 1000)
-            G_ = G(r, t, c, g0, eps='dr', include_bulk=False) / FS
+            G_ = G(r, t, c, g0, include_bulk=False) / FS
             Gb_ = 4 * np.pi * c ** 2 * t ** 2 * Gb(t, c, g0, var='r')
             G_int = 4 * np.pi * np.sum(r ** 2 * G_) * (r[1] - r[0]) + Gb_
             # 2% error are OK for Paaschens solution
+            #print(abs(G_int - 1))
             self.assertLess(abs(G_int - 1), 0.02)
 
     def test_reduced_Sato(self):
@@ -51,26 +51,6 @@ class TestCase(unittest.TestCase):
         # right side of figure
         self.assertLess(abs(Gcoda_red(1, 1.92) - 0.04), 0.004)
         self.assertLess(abs(Gcoda_red(2, 7.68) - 0.004), 0.0004)
-
-
-    def test_intG(self):
-        r = 0.5
-        t1, t2 = 0.3, 2
-        G1 = np.mean(G_red(r, np.linspace(t1, t2, 10000)))
-        G2 = intGcoda_red(r, t2)[0] / (t2-t1)
-        np.testing.assert_almost_equal(G1, G2, 3)
-
-        r = 1
-        v0 = 1
-        t1 = 0.8
-        t2 = 1.8
-        g0 = 1e-4
-        G1 = intG(r, t2, v0, g0, N=3, include_bulk=True, eps=1e-4*v0*g0)
-        G2 = np.mean(G(r, np.linspace(t1, t2, 1000), v0, g0, include_bulk=True))
-        G3 = np.mean(G_new(r, np.linspace(t1, t2, 1000), v0, g0, include_bulk=True))
-
-        #from IPython import embed
-        #embed()
 
 
 if __name__ == '__main__':
