@@ -373,6 +373,8 @@ def time2utc(time, trace, after=None):
          "???Stt" travel time relative to S-onset travel time
          "???SNR" time after which SNR falls below this value
                   (after time given in after)
+         "time>???SNR" time after which SNR falls below this value
+                  (after time given in front of expression)
     :param trace: Trace object with stats entries
     :param after: UTC object for SNR case.
     """
@@ -380,14 +382,11 @@ def time2utc(time, trace, after=None):
     p = trace.stats.ponset
     s = trace.stats.sonset
     time = time.lower()
-    if time.endswith('stt') or time.endswith('ptt'):
-        rel = p if time[-3] == 'p' else s
-        t = ot + float(time[:-3]) * (rel - ot)
-    elif ((time.startswith('s') or time.startswith('p') or
-           time.startswith('ot')) and time.endswith('s')):
-        rel = p if time.startswith('p') else s if time.startswith('s') else ot
-        t = rel + float(time[2:-1] if time.startswith('ot') else time[1:-1])
-    elif time.endswith('snr'):
+    if time.endswith('snr'):
+        if '>' in time:
+            time1, time = time.split('>')
+            if time1 != '':
+                after = time2utc(time1, trace)
         assert after is not None
         tr = trace.slice(starttime=after)
         snr = float(time[:-3])
@@ -397,6 +396,13 @@ def time2utc(time, trace, after=None):
         except IndexError:
             index = len(tr.data) - 1
         t = tr.stats.starttime + index * tr.stats.delta
+    elif time.endswith('stt') or time.endswith('ptt'):
+        rel = p if time[-3] == 'p' else s
+        t = ot + float(time[:-3]) * (rel - ot)
+    elif ((time.startswith('s') or time.startswith('p') or
+           time.startswith('ot')) and time.endswith('s')):
+        rel = p if time.startswith('p') else s if time.startswith('s') else ot
+        t = rel + float(time[2:-1] if time.startswith('ot') else time[1:-1])
     else:
         raise ValueError('Unexpected value for time window')
     return t

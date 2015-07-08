@@ -176,9 +176,11 @@
 # Time windows are a list of two values (start and end time).
 # The start time and end time can be a string, e.g.: 
 # - 'P-10s', 'S+10s', 'OT+10s' (seconds relative to onset or origin time),
-# - '1.2Stt', '0.8Ptt' (travel time relative to onset travel time) or
+# - '1.2Stt', '0.8Ptt' (travel time relative to onset travel time),
 # - '3SNR' (only for end time of codawindow, time after start time when
-#          the energy hits this level relative to the noise level)
+#          the energy hits this level relative to the noise level) or
+# - 'time>3SNR' (same as previous, but time after which the noise level
+#                is checked is explicitely given, e.g. "S+10s>3SNR")
 # The start time and end time can also be a list, in this case the largest start time and the smallest end time is chosen.
 "noise_windows": [["OT-10s", "OT-5s"], ["OT-5s", "OT+0s"]],
 "bulk_window": ["S-2s", "S+20s"],
