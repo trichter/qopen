@@ -113,7 +113,7 @@ def filter_width(sr, freq=None, freqmin=None, freqmax=None, corners=2,
 
     The result corresponds to the filter width, which equals approximately
     the difference of the corner frequencies. The filtered waveform should
-    be divided by the result to preserve the energy density.
+    be divided by the square root of the result to preserve the energy density.
 
     :param sr: sampling rate
     :param freq: corner frequencies of low- or highpass filter
@@ -688,7 +688,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         stream.detrend('linear')
         stream.filter(**filter_)
         for tr in stream:
-            tr.data /= filter_width(sr, **filter_)
+            tr.data /= np.sqrt(filter_width(sr, **filter_))
         try:
             energies.append(observed_energy(stream, rho0))
         except CustomError as ex:

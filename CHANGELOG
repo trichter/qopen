@@ -1,5 +1,6 @@
 dev:
-  * bug fix: bulk wave was not correctly handled if beginning of coda window was before S-onset
-  * imaging: add possibility to configure grid layout (nx, ny)  
+  * bugfix: velocity seismogram is now divided by the square root of filter width to preserve energy density after filtering (before it was divided by the filter width)
+  * bugfix: bulk wave was not correctly handled if beginning of coda window was before S-onset
+  * imaging: add possibility to configure grid layout (nx, ny)
 v1.0:
   * initial release
