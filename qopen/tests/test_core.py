@@ -104,7 +104,7 @@ class TestCase(unittest.TestCase):
 #        print(np.log10(M0_qopen / M0))
         np.testing.assert_array_less(np.abs(np.log10(result['g0'] / g0)), 0.5)
         np.testing.assert_array_less(np.abs(np.log10(result['b'] / b)), 0.5)
-        np.testing.assert_array_less(np.abs(np.log10(M0_qopen / M0)), 0.5)
+        np.testing.assert_array_less(np.abs(np.log10(M0_qopen / M0)), 0.51)
 
     def test_plugin_option(self):
         f = init_data('plugin', plugin='qopen.tests.test_core : gw_test')
