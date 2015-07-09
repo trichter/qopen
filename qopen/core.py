@@ -1394,6 +1394,10 @@ def invert(events, inventory, get_waveforms,
     log.debug(msg, json.dumps(result))
     # Optionally plot stuff
     if len(events) == 1:
+        if plot_eventresult:
+            kw = {'seismic_moment_method': seismic_moment_method,
+                  'seismic_moment_options': seismic_moment_options}
+            plot_eventresult_options.update(kw)
         try:
             plot_(result, eventid=get_eventid(event),
                   # v0=kwargs.get('v0'),
@@ -1529,7 +1533,7 @@ def plot_(result, eventid=None, v0=None,
             fname = fname % (eventid,)
             title = 'event %s' % (eventid,)
             from qopen.imaging import plot_eventresult
-            plot_eventresult(result, title=title, fname=fname)
+            plot_eventresult(result, title=title, fname=fname, **pkwargs)
             log.debug('create eventresult plot at %s', fname)
         if plot_eventsites:
             pkwargs = copy(plot_eventsites_options)
@@ -1703,31 +1707,32 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
           'loglevel': args.pop('loglevel', 3),
           'logfile': args.pop('logfile', None)}
     configure_logging(**kw)
-    try:
-        # Read events
-        events = args.pop('events')
-        if not isinstance(events, (list, obspy.core.event.Catalog)):
-            events = obspy.readEvents(events)
-            log.info('read %d events', len(events))
-        # Read inventory
-        inventory = args.pop('inventory')
-        if not isinstance(inventory, obspy.station.Inventory):
-            inventory = obspy.read_inventory(inventory)
-            channels = inventory.get_contents()['channels']
-            stations = list(set(get_station(ch) for ch in channels))
-            log.info('read inventory with %d stations', len(stations))
-        # Initialize get_waveforms
-        keys = ['client_options', 'plugin', 'cache_waveforms']
-        tkwargs = {k: args.pop(k, None) for k in keys}
-        if get_waveforms is None:
-            data = args.pop('data')
-            get_waveforms = init_data(data, **tkwargs)
-            log.info('init data from %s', data)
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except:
-        log.exception('cannot read events/stations or initalize data')
-        return
+    if not correct_sens:
+        try:
+            # Read events
+            events = args.pop('events')
+            if not isinstance(events, (list, obspy.core.event.Catalog)):
+                events = obspy.readEvents(events)
+                log.info('read %d events', len(events))
+            # Read inventory
+            inventory = args.pop('inventory')
+            if not isinstance(inventory, obspy.station.Inventory):
+                inventory = obspy.read_inventory(inventory)
+                channels = inventory.get_contents()['channels']
+                stations = list(set(get_station(ch) for ch in channels))
+                log.info('read inventory with %d stations', len(stations))
+            # Initialize get_waveforms
+            keys = ['client_options', 'plugin', 'cache_waveforms']
+            tkwargs = {k: args.pop(k, None) for k in keys}
+            if get_waveforms is None:
+                data = args.pop('data')
+                get_waveforms = init_data(data, **tkwargs)
+                log.info('init data from %s', data)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            log.exception('cannot read events/stations or initalize data')
+            return
     # Optionally select event
     if eventid:
         elist = [ev for ev in events if get_eventid(ev) == eventid]
@@ -1739,9 +1744,10 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
         events = obspy.core.event.Catalog(elist)
     # Start main routine with remaining args
     log.debug('start qopen routine with parameters %s', json.dumps(args))
-    args['inventory'] = inventory
-    args['get_waveforms'] = get_waveforms
-    args['events'] = events
+    if not correct_sens:
+        args['inventory'] = inventory
+        args['get_waveforms'] = get_waveforms
+        args['events'] = events
     output = args.pop('output', None)
     indent = args.pop('indent', None)
     if prefix:
