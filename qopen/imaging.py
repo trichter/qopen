@@ -548,12 +548,15 @@ def _get_grid(N, nx=None):
     gs = gridspec.GridSpec(ny, nx)
     return nx, ny, gs
 
-def plot_all_sds(result, seismic_moment_method=None, seismic_moment_options={},
+def plot_all_sds(result, seismic_moment_method=None,
+                 seismic_moment_options=None,
                  fname=None, title=None, ylim=None, nx=None, figsize=None):
     freq = np.array(result['freq'])
     conf = result.get('config', {})
-    seismic_moment_method = conf.get('seismic_moment_method')
-    seismic_moment_options = copy(conf.get('seismic_moment_options', {}))
+    if seismic_moment_method is None:
+        seismic_moment_method = conf.get('seismic_moment_method')
+    if seismic_moment_options is None:
+        seismic_moment_options = copy(conf.get('seismic_moment_options', {}))
     #fc = seismic_moment_options.pop('fc', None)
     result = result['events']
     N = len(result)
