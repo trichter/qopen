@@ -112,8 +112,8 @@ def filter_width(sr, freq=None, freqmin=None, freqmax=None, corners=2,
     """Integrate over the squared filter response of a Butterworth filter
 
     The result corresponds to the filter width, which equals approximately
-    the difference of the corner frequencies. The filtered waveform should
-    be divided by the square root of the result to preserve the energy density.
+    the difference of the corner frequencies. The energy density should
+    be divided by the result to get the correct the energy spectral density.
 
     :param sr: sampling rate
     :param freq: corner frequencies of low- or highpass filter
@@ -134,7 +134,7 @@ def filter_width(sr, freq=None, freqmin=None, freqmax=None, corners=2,
     df = (w[1] - w[0]) / 2 / np.pi * sr
     ret = df * np.sum(np.abs(h) ** (2 * (zerophase + 1)))
     msg = ('%s filter (%s, %d corners, zerophase=%s, sr=%.1fHz) '
-           'has a squared filter response of %.2gHz')
+           'has a width of %.2gHz')
     log.info(msg, type, ftext, corners, zerophase, sr, ret)
     return ret
 
@@ -163,20 +163,20 @@ def get_freqs(max=None, min=None, step=None, width=None, cfreqs=None,
     return fbands
 
 
-def energy1c(data, rho):
+def energy1c(data, rho, df):
     """Energy density of one channel
 
     :param data: velocity data (m/s)
     :param rho: density (kg/m**3)"""
-    return rho * (data ** 2 + (scipy.fftpack.hilbert(data)) ** 2) / 4
+    return rho * (data ** 2 + (scipy.fftpack.hilbert(data)) ** 2) / 4 / df
 
 
-def observed_energy(stream, rho, tolerance=1):
+def observed_energy(stream, rho, df, tolerance=1):
     """Return trace with total energy density of three component stream
 
     :param stream: stream of a 3 component seismogram
     :param rho: energy density (kg/m**3)"""
-    data = [energy1c(tr.data, rho) for tr in stream]
+    data = [energy1c(tr.data, rho, df) for tr in stream]
     Ns = [len(d) for d in data]
     if max(Ns) - min(Ns) > tolerance:
         msg = ('traces for one stream have different lengths %s. Tolerance '
@@ -687,10 +687,9 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         filter_.update(fu)
         stream.detrend('linear')
         stream.filter(**filter_)
-        for tr in stream:
-            tr.data /= np.sqrt(filter_width(sr, **filter_))
+        df = filter_width(sr, **filter_)
         try:
-            energies.append(observed_energy(stream, rho0))
+            energies.append(observed_energy(stream, rho0, df))
         except CustomError as ex:
             msg = '%s %s: cannot calculate ernergy (%s)'
             log.warning(msg, pair[0], pair[1], str(ex))
