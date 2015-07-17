@@ -278,7 +278,7 @@ def seismic_moment(freq, omM, method='mean', fc=None, a=2, b=1, fc_lim=None,
 
 def moment_magnitude(M0):
     """Moment magnitude Mw from seismic moment M0"""
-    return 2 / 3 * np.log10(M0) - 6
+    return 2 / 3 * np.log10(M0) - 6.07
 
 
 def get_station(seedid):
