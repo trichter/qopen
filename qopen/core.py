@@ -631,12 +631,17 @@ def insert_source_properties(freq, evresult, seismic_moment_method,
 def _check_times(tr, tw, tol=0.5):
     return tr.stats.starttime > tw[0] + tol or tr.stats.endtime < tw[1] - tol
 
+def Gsmooth(G_func, r, t, v0, g0, smooth=None, smooth_window='flat'):
+    G_of_t = lambda t_: G_func(r, t_, v0, g0)
+    Gc = smooth_func(G_of_t, t, smooth, window=smooth_window)
+    return Gc
+
 
 def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
               R0=1, noise_windows=None, bulk_window=None, weight=None,
               optimize={}, g0_bounds=(1e-8, 1e-3), b_bounds=(1e-5, 10),
               num_points_integration=1000,
-              smooth=None, smooth_window='bartlett',
+              smooth=None, smooth_window='flat',
               remove_noise=False, skip=None,
               adjust_sonset=None, adjust_sonset_options={},
               plot_energies=False, plot_energies_options={},
@@ -919,8 +924,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         for i, pair in enumerate(event_station_pairs):
             assert len(Ecoda[i]) > 0
             r = distances[pair]
-            G_of_t = lambda t: G_func(r, t, v0, g0)
-            Gc = smooth_func(G_of_t, tcoda[i], smooth, window=smooth_window)
+            Gc = Gsmooth(G_func, r, tcoda[i], v0, g0, smooth=smooth,
+                         smooth_window=smooth_window)
             Gcoda.append(Gc)
             if bulk_window:
                 t1, t2 = tbulk_window[pair]
