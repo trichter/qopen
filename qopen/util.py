@@ -137,6 +137,9 @@ def smooth_func(f, t, window_len=None, window='flat'):
         f_ = f(t)
     else:
         dt = t[1] - t[0]
+        if np.sum(np.abs(np.diff(t)-dt)) > 1e-5:
+            msg = 'samples have to be evenly spaced'
+            raise ValueError(msg)
         samples = int(round(window_len / dt))
         N1 = (samples - 1) // 2
         N2 = samples // 2
