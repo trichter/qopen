@@ -59,7 +59,13 @@ def calc_dependent(quantity, value, freq=None, v0=None):
 
 
 def freqlim(freq):
-    return freq[0] ** 1.5 / freq[1] ** 0.5, freq[-1] ** 1.5 / freq[-2] ** 0.5
+    try:
+        x1 = freq[0] ** 1.5 / freq[1] ** 0.5
+        x2 = freq[-1] ** 1.5 / freq[-2] ** 0.5
+    except IndexError:
+        return
+    return x1, x2
+
 
 
 def _savefig(fig, title=None, fname=None, dpi=None):
@@ -83,7 +89,7 @@ def _set_gridlabels(ax, i, nx, ny, N, xlabel='frequency (Hz)', ylabel=None):
         ax.set_ylabel(ylabel)
     if i < N - nx and xlabel:
         plt.setp(ax.get_xticklabels(), visible=False)
-    elif i % nx == (nx - 1) // 2 and i >= N - ny - 1 and xlabel:
+    elif i % nx == (nx - 1) // 2 and i >= N - ny - 2 and xlabel:
         ax.set_xlabel(xlabel)
 
 
@@ -258,7 +264,8 @@ def _get_times(tr):
 
 def plot_fits(energies, g0, b, W, R, v0, info, G_func,
               smooth=None, smooth_window='bartlett',
-              xlim=None, fname=None, title=None, figsize=None, **kwargs):
+              xlim=None, ylim=None, fname=None, title=None, figsize=None,
+              **kwargs):
     tcoda, tbulk, Ecoda, Ebulk, Gcoda, Gbulk = info
     N = len(energies)
     n = int(np.ceil(np.sqrt(N)))
@@ -333,7 +340,7 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
     ax.yaxis.set_major_locator(loglocator)
     ax.yaxis.set_minor_locator(mpl.ticker.NullLocator())
     ax.set_xlim(xlim or (0, max(tmaxs)))
-    ax.set_ylim((0.1 * min(ymins), 1.5 * max(ymaxs)))
+    ax.set_ylim(ylim or (0.1 * min(ymins), 1.5 * max(ymaxs)))
     _savefig(fig, fname=fname, title=title, **kwargs)
 
 
@@ -484,8 +491,8 @@ def plot_results(result, v0=None, fname=None, title=None,
 
 
 
-def plot_sites(result, fname=None, title=None, ylim=(1e-2, 1e2), mean=None,
-               nx=None, figsize=None):
+def plot_sites(result, fname=None, title=None, mean=None,
+               xlim=None, ylim=(1e-2, 1e2), nx=None, figsize=None):
     freq = np.array(result['freq'])
     g0, b, error, R, _, _, _ = collect_results(result)
     weights = 1 / np.array(error) if mean == 'weighted' else None
@@ -530,7 +537,7 @@ def plot_sites(result, fname=None, title=None, ylim=(1e-2, 1e2), mean=None,
         if share is None:
             share = ax
         i += 1
-    ax.set_xlim(freqlim(freq))
+    ax.set_xlim(xlim or freqlim(freq))
     if ylim:
         ax.set_ylim(ylim)
     if max_nobs != 1:
@@ -550,7 +557,8 @@ def _get_grid(N, nx=None):
 
 def plot_all_sds(result, seismic_moment_method=None,
                  seismic_moment_options=None,
-                 fname=None, title=None, ylim=None, nx=None, figsize=None):
+                 fname=None, title=None, xlim=None, ylim=None, nx=None,
+                 figsize=None):
     freq = np.array(result['freq'])
     conf = result.get('config', {})
     if seismic_moment_method is None:
@@ -589,13 +597,14 @@ def plot_all_sds(result, seismic_moment_method=None,
         if share is None:
             share = ax
     ax.autoscale()
-    ax.set_xlim(ax.set_xlim(freqlim(freq)))
+    ax.set_xlim(xlim or freqlim(freq))
     if ylim:
         ax.set_ylim(ylim)
     _savefig(fig, fname=fname, title=title)
 
 
-def plot_mags(result, fname=None, title=None, figsize=None):
+def plot_mags(result, fname=None, title=None, xlim=None, ylim=None,
+              figsize=None):
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
     temp = [(r['Mcat'], r['Mw']) for r in result['events'].values()
@@ -604,7 +613,12 @@ def plot_mags(result, fname=None, title=None, figsize=None):
         return
     Mcat, Mw = zip(*temp)
     ax.plot(Mcat, Mw, 'ok', ms=MS)
-    m = np.linspace(np.min(Mcat), np.max(Mcat), 100)
+    if xlim is not None:
+        mmin, mmax = xlim
+    else:
+        mmin, mmax = np.min(Mcat), np.max(Mcat)
+    m = np.linspace(mmin, mmax, 100)
+
     if len(Mw) > 2:
         a, b = linear_fit(Mw, Mcat)
         ax.plot(m, a * m + b, '-m', label='%.2fM %+.2f' % (a, b))
@@ -613,6 +627,8 @@ def plot_mags(result, fname=None, title=None, figsize=None):
         ax.plot(m, m + b2, '--m', label='M %+.2f' % (b2,))
     if len(Mw) > 2:
         ax.legend(loc='lower right')
+    if xlim:
+        ax.set_xlim(xlim)
     ax.set_xlabel('M from catalog')
     ax.set_ylabel('Mw from inversion')
     _savefig(fig, fname=fname, title=title)
