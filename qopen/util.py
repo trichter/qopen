@@ -163,6 +163,7 @@ def smooth(x, window_len=None, window='flat', method='zeros'):
     :param method: handling of border effects 'zeros', 'reflect', None
         'zeros': zero padding on both ends (len(smooth(x)) = len(x))
         'reflect': pad reflected signal on both ends (same)
+        'clip': pad signal on both ends with the last valid value (same)
         None: no handling of border effects
             (len(smooth(x)) = len(x) - len(window_len) + 1)
 
@@ -186,6 +187,9 @@ def smooth(x, window_len=None, window='flat', method='zeros'):
     elif method == 'reflect':
         s = np.r_[x[(window_len - 1) // 2:0:-1], x,
                   x[-1:-(window_len + 1) // 2:-1]]
+    elif method == 'clip':
+        s = np.r_[x[0] * np.ones((window_len - 1) // 2), x,
+                  x[-1] * np.ones(window_len // 2)]
     else:
         s = x
     if window == 'flat':

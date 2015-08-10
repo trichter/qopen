@@ -1,4 +1,4 @@
-### Configuration file for qopen package in json format
+### Configuration file for qopen package in JSON format
 # Comments are indicated with "#" and ignored while parsing
 
 {
@@ -194,21 +194,6 @@
 # - samples (the same weight as one sample in the coda window)
 "weight" : [1, "bulkwindow"],
 
-
-# Skip station if one of these conditions is fullfilled.
-# Possible conditions:
-# - "coda_window" shorter than x seconds
-# - "distance" between station and event larger than x km
-# - "maximum" of envelope is not in given window
-# - "num_pairs" 
-# Example:
-# "skip": {"coda_window": 5,
-#          "distance": 500,
-#          "maximum": ["0.5Stt", "S+10s"],
-#          "num_pairs": 2},
-"skip": null,
-
-
 # Smooth the coda over 'smooth' seconds (null for no smoothing)
 "smooth": 1,
 
@@ -217,6 +202,30 @@
 # "flat" corresponds to the moving average, for the rest see
 # http://docs.scipy.org/doc/numpy/reference/routines.window.html
 "smooth_window": "bartlett",
+
+# Cut coda if a local minimum is present in data (e.g. because of a second earthquake with bulk waves arriving in the coda)
+# Local maxima in the coda are compared to previous local minima. If the ratio between a maximum and the lowest minimum
+# before the maximum is above a thresshold the coda window will end at time of the minimum.
+# Coda can optionally be smoothed with a flat window for this operation.
+# Example:
+# "cut_coda": {"smooth": 5, "ratio": 5},
+"cut_coda": null,
+
+# Skip station if one of these conditions is fullfilled.
+# Possible conditions:
+# - "coda_window" shorter than x seconds
+# - "distance" between station and event larger than x km
+# - "maximum" of envelope is not in given window
+# - "num_pairs" number of station event pairs smaller than x 
+# Example:
+# "skip": {"coda_window": 5,
+#          "distance": 500,
+#          "maximum": ["0.5Stt", "S+10s"],
+#          "num_pairs": 2},
+"skip": null,
+
+
+
 
 # Calculate the seismic moment from the source displacement spectrum
 # as a mean of the values for frequencies smaller than 'fc',

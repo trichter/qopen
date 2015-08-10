@@ -636,13 +636,50 @@ def Gsmooth(G_func, r, t, v0, g0, smooth=None, smooth_window='flat'):
     Gc = smooth_func(G_of_t, t, smooth, window=smooth_window)
     return Gc
 
+def _get_local_minimum(tr, smooth=None, ratio=5):
+    data = tr.data
+    if smooth:
+        window_len = int(round(smooth * tr.stats.sampling_rate))
+        try:
+            data = smooth_(tr.data, window_len=window_len, method='clip')
+        except ValueError:
+            pass
+    mins = scipy.signal.argrelmin(data)[0]
+    maxs = scipy.signal.argrelmax(data)[0]
+    if len(mins) == 0 or len(maxs) == 0:
+        return
+    mins2 = [mins[0]]
+    for mi in mins[1:]:
+        if data[mi] < data[mins2[-1]]:
+            mins2.append(mi)
+    mins = np.array(mins2)
+    for ma in maxs:
+        try:
+            mi = np.nonzero(mins<ma)[0][-1]
+            mi = mins[mi]
+        except IndexError:
+            mi = 0
+        if data[ma] / data[mi] > ratio:
+            return tr.stats.starttime + mi * tr.stats.delta
+
+def _get_slice(energy, tw, pair, energies, bulk=False):
+    s = 'bulk' if bulk else 'coda'
+    try:
+        energyslice = energy.slice(*tw)
+        if _check_times(energyslice, tw):
+            raise ValueError('not enough data inside %s window' % s)
+        return energyslice
+    except ValueError as ex:
+        msg = '%s: cannot get %s window (%s) -> skip pair'
+        log.warning(msg, pair, s, ex)
+        energies.remove(energy)
 
 def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
               R0=1, noise_windows=None, bulk_window=None, weight=None,
               optimize={}, g0_bounds=(1e-8, 1e-3), b_bounds=(1e-5, 10),
               num_points_integration=1000,
               smooth=None, smooth_window='flat',
-              remove_noise=False, skip=None,
+              remove_noise=False, cut_coda=None, skip=None,
               adjust_sonset=None, adjust_sonset_options={},
               plot_energies=False, plot_energies_options={},
               plot_optimization=False, plot_optimization_options={},
@@ -779,22 +816,17 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         # mean
         if bulk_window:
             bulkw[pair] = tw2utc(bulk_window, energy)
-            try:
-                data = energy.slice(*bulkw[pair])
-                if _check_times(data, bulkw[pair]):
-                    raise ValueError('not enough data inside bulk window')
-                data = data.data
-            except ValueError as ex:
-                msg = '%s: cannot get bulk window (%s) -> skip pair'
-                log.warning(msg, pair, ex)
-                energies.remove(energy)
+            esl = _get_slice(energy, bulkw[pair], pair, energies, bulk=True)
+            if esl is None:
                 continue
+            data = esl.data
             Ebulk_val = np.mean(data)
             Nb = len(data)
             t_ = np.arange(Nb) / sr + distance / v0 + \
                 (bulkw[pair][0] - sonset)
             tbulk_val = np.sum(data * t_) / np.sum(data)
             tbulk_window[pair] = (t_[0], t_[-1])
+
         # Smooth energies
         if smooth:
             if plot_fits:
@@ -803,13 +835,35 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
                                   window=smooth_window, method='zeros')
         # Calculate coda windows in UTC
         codaw[pair] = tw2utc(coda_window, energy)
+        s = ''
         if bulk_window:
-            msg = '%s: bulk window %s'
-            log.debug(msg, pair, _tw_utc2s(bulkw[pair], otime))
-        msg = '%s: coda window %s'
-        log.debug(msg, pair, _tw_utc2s(codaw[pair], otime))
+            s = 'bulk window %s ' % (_tw_utc2s(bulkw[pair], otime),)
+        msg = '%s: %scoda window %s'
+        log.debug(msg, pair, s, _tw_utc2s(codaw[pair], otime))
         # Optionally skip some stations if specified conditions are met
         if skip and skip.get('coda_window'):
+            cw = codaw[pair]
+            val = skip['coda_window']
+            if val and cw[1] - cw[0] < val:
+                msg = ('%s: coda window of length %.1fs shorter than '
+                       '%.1f -> skip pair')
+                log.debug(msg, pair, cw[1] - cw[0], val)
+                energies.remove(energy)
+                continue
+        # use only data before detected local minimum in coda
+        if cut_coda:
+            if cut_coda is True:
+                cut_coda = {}
+            esl = _get_slice(energy, codaw[pair], pair, energies)
+            if esl is None:
+                continue
+            tmin = _get_local_minimum(esl, **cut_coda)
+            if tmin:
+                msg = '%s: cut coda at local minimum detected at %.2fs.'
+                log.debug(msg, pair, tmin-otime)
+                codaw[pair][1] = tmin
+        # Optionally skip some stations if specified conditions are met
+        if skip and skip.get('coda_window') and cut_coda:
             cw = codaw[pair]
             val = skip['coda_window']
             if val and cw[1] - cw[0] < val:
@@ -831,16 +885,10 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
                 energies.remove(energy)
                 continue
         # Get coda data
-        try:
-            data = energy.slice(*codaw[pair])
-            if _check_times(data, codaw[pair]):
-                raise ValueError('not enough data inside coda window')
-            data = data.data
-        except ValueError as ex:
-            msg = '%s: cannot get coda window (%s) -> skip pair'
-            log.warning(msg, pair, ex)
-            energies.remove(energy)
+        esl = _get_slice(energy, codaw[pair], pair, energies)
+        if esl is None:
             continue
+        data = esl.data
         Nc = len(data)
         # Adjust tcoda to onset of Green's function
         tc = np.arange(Nc) / sr + distance / v0 + (codaw[pair][0] - sonset)
