@@ -1,6 +1,7 @@
 from setuptools import find_packages, setup
 
-VERSION = '1.0'
+with open(os.path.join('qopen', '_version.py')) as f:
+    VERSION = f.read().split('=')[1].strip().strip("'")
 with open('README.rst') as f:
     README = f.read()
 if not 'dev' in VERSION:  # get image for correct version from travis-ci

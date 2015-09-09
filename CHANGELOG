@@ -1,4 +1,4 @@
-dev:
+v1.1:
   * bugfix: energy envelope and not velocity seismogram is now divided by filter width
   * bugfix: bulk wave was not correctly handled if beginning of coda window was before S-onset
   * bugfix: seismic moment magnitude now calculated more precisely
