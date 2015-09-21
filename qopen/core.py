@@ -36,6 +36,7 @@ import time
 
 import numpy as np
 import obspy
+from obspy.core.util.geodetics import gps2DistAzimuth
 import scipy
 import scipy.signal
 from statsmodels.regression.linear_model import OLS, WLS
@@ -470,6 +471,31 @@ def collect_results(results):
     return g0, b, error, R, W, eventids, v0
 
 
+def collect_station_coordinates(inventory):
+    coords = {}
+    for net in inventory.networks:
+        for sta in net.stations:
+            cha = sta.channels[0]
+            lat = cha.latitude or sta.latitude
+            lon = cha.longitude or sta.longitude
+            key = '%s.%s' % (net.code, sta.code)
+            coords[key] = (lat, lon)
+    return coords
+
+# http://stackoverflow.com/a/9400562
+def _merge_sets(sets):
+    newsets, sets = sets, []
+    while len(sets) != len(newsets):
+        sets, newsets = newsets, []
+        for aset in sets:
+            for eachset in newsets:
+                if not aset.isdisjoint(eachset):
+                    eachset.update(aset)
+                    break
+            else:
+                newsets.append(aset)
+    return newsets
+
 def correct_sensitivities(results, station=None, sensitivity=1.,
                           use_sparse=True):
     """(experimental) Correct station sensitivities and source energies
@@ -479,9 +505,16 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
     # Ignore not existing event results
     results['events'] = {evid: eres for (evid, eres) in
                          results['events'].items() if eres is not None}
+    join_unconnected = None
+    inventory = None
+    if join_unconnected:
+        msg = 'This feature needs more work and tests'
+        raise NotImplementedError(msg)
+        coordinates = collect_station_coordinates(inventory)
+        station_by_coordinate = {c: sta for sta, c in coordinates.items()}
     Ne = len(results['events'])
     if Ne == 1:
-        use_sparse=False
+        use_sparse = False
     # Determine number of freqs
     Nf = None
     for evid, eres in results['events'].items():
@@ -489,7 +522,7 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
         if Nf is not None:
             assert Nf == Nf2
         Nf = Nf2
-    # Determine number of stations for each freq band
+    # Determine number of events at stations for each freq band
     Nstations = [defaultdict(int) for i in range(Nf)]
     for evid, eres in results['events'].items():
         for i in range(Nf):
@@ -507,16 +540,87 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
                 Arepr[0].append(data)
                 Arepr[1][0].append(row[0])
                 Arepr[1][1].append(col)
-            row[0] += 1
         else:
             Arow = np.zeros(Ne)
             for col, data in coldata:
                 Arow[col] = data
             Arepr.append(Arow)
-    # Calculate best factors for each freq band with OLS A*factor=b
+        row[0] += 1
+    # calculate best factors for each freq band with OLS A*factor=b
     factors = np.empty((Ne, Nf))
     for i in range(Nf):
-        # construct A and b
+        # find unconnected areas
+        areas = []
+        for evid in results['events']:
+            R = results['events'][evid]['R']
+            area = {sta for sta, Rsta in R.items()
+                    if Rsta[i] is not None and not np.isnan(Rsta[i])}
+            if len(area) > 0:
+                areas.append(area)
+        areas = _merge_sets(areas)
+        areas = {list(a)[0]: a for a in areas}
+        log.info('found %d not connected areas', len(areas))
+        for name in areas:
+            stations = areas[name]
+            log.debug('area "%s" with %d stations', name, len(stations))
+        near_stations = []
+        near_stations_eq = {}
+        if join_unconnected:
+            # At the moment, areas are joined by setting the sensitifity of
+            # the station pair with smallest distance to 1
+            # Often this works, but sometimes it produces undesired results
+            # reduce number of coordinates in each area
+            hulls = {}
+            for name in areas:
+                points = np.array([coordinates[sta] for sta in areas[name]])
+                hull = scipy.spatial.ConvexHull(points)
+                hulls[name] = {station_by_coordinate[tuple(p)]
+                               for p in points[hull.vertices,:]}
+            # calculated distances between unconnected areas
+            distance = {}
+            for a1 in areas:
+                for a2 in areas:
+                    name = frozenset((a1, a2))
+                    if name in distance or a1 == a2:
+                        continue
+                    dists = {}
+                    for sta1 in hulls[a1]:
+                        for sta2 in hulls[a2]:
+                            args = coordinates[sta1] + coordinates[sta2]
+                            dist = gps2DistAzimuth(*args)[0]
+                            dists[(sta1, sta2)] = dist
+                    mink = min(dists, key=dists.get)
+                    distance[name] = (dists[mink] / 1e3, mink)
+            # join unconnected regions
+            while len(distance) > 0:
+                nearest_pair = min(distance, key=distance.get)
+                dist = distance[nearest_pair][0]
+                if dist > join_unconnected:
+                    break
+                s1, s2 = distance[nearest_pair][1]
+                near_stations.extend([s1, s2])
+                near_stations_eq[s1] = s2
+                near_stations_eq[s2] = s1
+                a1, a2 = tuple(nearest_pair)
+                msg = 'connect areas %s and %s with distance %.1fkm'
+                log.debug(msg, a1, a2, dist)
+                distance.pop(nearest_pair)
+                areas[a1] |= areas.pop(a2)
+                hulls[a1] |= hulls.pop(a2)
+                for a3 in areas:
+                    if a3 in (a1, a2):
+                        continue
+                    pair1 = frozenset((a1, a3))
+                    pair2 = frozenset((a2, a3))
+                    dist1 = distance[pair1]
+                    dist2 = distance.pop(pair2)
+                    if dist2[0] < dist1[0]:
+                        distance[pair1] = dist2
+        largest_area = max(areas, key=lambda k: len(areas[k]))
+        msg = 'use only largest area %s with %d stations'
+        log.info(msg, largest_area, len(areas[largest_area]))
+        largest_area = areas[largest_area]
+
         row = [0]
         b = []
         if use_sparse:
@@ -533,6 +637,8 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
             for sta, Rsta in eres['R'].items():
                 Rsta = Rsta[i]
                 if Rsta is None or np.isnan(Rsta):
+                    continue
+                if sta not in largest_area:
                     continue
                 if station is None:
                     # collect information if product of station sensitivities
@@ -551,20 +657,27 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
                     b_val = np.log(Rstal) - np.log(Rsta)
                     construct_ols(((k, 1), (kl, -1)), b_val)
                     last[sta] = k, Rsta
+                elif sta in near_stations and near_stations_eq[sta] in last:
+                    kl, Rstal = last[near_stations_eq[sta]]
+                    b_val = np.log(Rstal) - np.log(Rsta)
+                    construct_ols(((k, 1), (kl, -1)), b_val)
+                    last[sta] = k, Rsta
                 else:
                     last[sta] = first[sta] = (k, Rsta)
-        for sta in last:
-            # add pairs of sensitivities for one station
-            # and 2 different events
-            if first[sta] != last[sta]:
-                k, Rsta = first[sta]
-                kl, Rstal = last[sta]
-                b_val = np.log(Rstal) - np.log(Rsta)
-                construct_ols(((k, 1), (kl, -1)), b_val)
+#        for sta in last:
+#            if first[sta] != last[sta]:
+#                # add pairs of sensitivities for last and first event
+#                # This should not be necessary, but it does not hurt.
+#                k, Rsta = first[sta]
+#                kl, Rstal = last[sta]
+#                b_val = np.log(Rstal) - np.log(Rsta)
+#                construct_ols(((k, 1), (kl, -1)), b_val)
         if station is None:
             # pin product of station sensitivities
             norm_row_b += np.log(sensitivity)
             construct_ols(norm_row_A.items(), norm_row_b)
+        msg = 'constructed %scoefficient matrix with shape (%d, %d)'
+        log.debug(msg, 'sparse ' * use_sparse, row[0], Ne)
         # solve least squares system
         b = np.array(b)
         if use_sparse:
@@ -575,6 +688,7 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
             res = scipy.linalg.lstsq(A, b, overwrite_a=True, overwrite_b=True)
         factors[:, i] = np.exp(res[0])
     # Scale W and R
+    log.debug('scale events and sensitivities')
     for i in range(Nf):
         for k, item in enumerate(results['events'].items()):
             evid, eres = item
@@ -584,6 +698,8 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
             W[i] /= factors[k, i]
             R = eres['R']
             for sta, Rsta in R.items():
+                if sta not in largest_area:
+                    Rsta[i] = None
                 if Rsta[i] is None or np.isnan(Rsta[i]):
                     continue
                 Rsta[i] *= factors[k, i]
@@ -1177,7 +1293,7 @@ def invert(events, inventory, get_waveforms,
         except:
             raise CustomError
         args = (c['latitude'], c['longitude'], ori.latitude, ori.longitude)
-        hdist = obspy.core.util.geodetics.gps2DistAzimuth(*args)[0]
+        hdist = gps2DistAzimuth(*args)[0]
         vdist = (ori.depth + c['elevation'] * correct_for_elevation -
                  c['local_depth'])
         if c['local_depth'] > 0:
@@ -1759,20 +1875,20 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
           'loglevel': args.pop('loglevel', 3),
           'logfile': args.pop('logfile', None)}
     configure_logging(**kw)
-    if not correct_sens:
-        try:
+    try:
+        # Read inventory
+        inventory = args.pop('inventory')
+        if not isinstance(inventory, obspy.station.Inventory):
+            inventory = obspy.read_inventory(inventory)
+            channels = inventory.get_contents()['channels']
+            stations = list(set(get_station(ch) for ch in channels))
+            log.info('read inventory with %d stations', len(stations))
+        if not correct_sens:
             # Read events
             events = args.pop('events')
             if not isinstance(events, (list, obspy.core.event.Catalog)):
                 events = obspy.readEvents(events)
                 log.info('read %d events', len(events))
-            # Read inventory
-            inventory = args.pop('inventory')
-            if not isinstance(inventory, obspy.station.Inventory):
-                inventory = obspy.read_inventory(inventory)
-                channels = inventory.get_contents()['channels']
-                stations = list(set(get_station(ch) for ch in channels))
-                log.info('read inventory with %d stations', len(stations))
             # Initialize get_waveforms
             keys = ['client_options', 'plugin', 'cache_waveforms']
             tkwargs = {k: args.pop(k, None) for k in keys}
@@ -1780,11 +1896,11 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
                 data = args.pop('data')
                 get_waveforms = init_data(data, **tkwargs)
                 log.info('init data from %s', data)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except:
-            log.exception('cannot read events/stations or initalize data')
-            return
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except:
+        log.exception('cannot read events/stations or initalize data')
+        return
     # Optionally select event
     if eventid:
         elist = [ev for ev in events if get_eventid(ev) == eventid]
@@ -1796,8 +1912,8 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
         events = obspy.core.event.Catalog(elist)
     # Start main routine with remaining args
     log.debug('start qopen routine with parameters %s', json.dumps(args))
+    args['inventory'] = inventory
     if not correct_sens:
-        args['inventory'] = inventory
         args['get_waveforms'] = get_waveforms
         args['events'] = events
     output = args.pop('output', None)
