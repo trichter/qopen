@@ -18,7 +18,7 @@ from pkg_resources import load_entry_point
 import unittest
 
 import numpy as np
-from qopen.core import init_data, correct_sensitivities, run, run_cmdline
+from qopen.core import init_data, align_sites, run, run_cmdline
 from qopen.tests.util import tempdir, quiet
 
 
@@ -110,7 +110,7 @@ class TestCase(unittest.TestCase):
         f = init_data('plugin', plugin='qopen.tests.test_core : gw_test')
         self.assertEqual(f(nework=4, station=2), 42)
 
-    def test_correct_sensitivities(self):
+    def test_align_sites(self):
         r = {'E1':
              {'R': {'S1': [0.1, 100], 'S2': [1, 4]},
               'W': [10, 4]},
@@ -119,9 +119,8 @@ class TestCase(unittest.TestCase):
               'W': [1, 8]},
              }
         r = {'events': r}
-        cs = correct_sensitivities
-        r2 = cs(deepcopy(r), use_sparse=True)
-        r3 = cs(deepcopy(r), use_sparse=False)
+        r2 = align_sites(deepcopy(r), use_sparse=True)
+        r3 = align_sites(deepcopy(r), use_sparse=False)
         s1 = r2['events']['E1']['R']['S1'][0]
         s2 = r2['events']['E2']['R']['S1'][0]
         self.assertLess(abs(s1 - 1), 0.001)

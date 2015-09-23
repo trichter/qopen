@@ -496,11 +496,10 @@ def _merge_sets(sets):
                 newsets.append(aset)
     return newsets
 
-def correct_sensitivities(results, station=None, sensitivity=1.,
-                          use_sparse=True):
-    """(experimental) Correct station sensitivities and source energies
+def align_sites(results, station=None, response=1., use_sparse=True):
+    """(experimental) Align station site responses and correct source params
 
-    Determine best factor for each event so that sensitivity is the same
+    Determine best factor for each event so that site response is the same
     for each station and different events."""
     # Ignore not existing event results
     results['events'] = {evid: eres for (evid, eres) in
@@ -566,7 +565,7 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
         near_stations = []
         near_stations_eq = {}
         if join_unconnected:
-            # At the moment, areas are joined by setting the sensitifity of
+            # At the moment, areas are joined by setting the site response of
             # the station pair with smallest distance to 1
             # Often this works, but sometimes it produces undesired results
             # reduce number of coordinates in each area
@@ -631,7 +630,7 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
         norm_row_b = 0.
         first = {}
         last = {}
-        # add pairs of sensitivities for one station and different event
+        # add pairs of site responses for one station and different events
         for k, item in enumerate(results['events'].items()):
             evid, eres = item
             for sta, Rsta in eres['R'].items():
@@ -641,17 +640,17 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
                 if sta not in largest_area:
                     continue
                 if station is None:
-                    # collect information if product of station sensitivities
+                    # collect information if product of station site responses
                     # is to be normalized
                     fac = 1. / Nstations[i][sta] / len(Nstations[i])
                     norm_row_A[k] += fac
                     norm_row_b -= np.log(Rsta) * fac
                 if sta == station:
-                    # pin sensitivity of specific station
-                    b_val = np.log(sensitivity) - np.log(Rsta)
+                    # pin site response of specific station
+                    b_val = np.log(response) - np.log(Rsta)
                     construct_ols(((k, 1),), b_val)
                 elif sta in last:
-                    # add pairs of sensitivities for one station
+                    # add pairs of site responses for one station
                     # and 2 different events
                     kl, Rstal = last[sta]
                     b_val = np.log(Rstal) - np.log(Rsta)
@@ -664,17 +663,9 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
                     last[sta] = k, Rsta
                 else:
                     last[sta] = first[sta] = (k, Rsta)
-#        for sta in last:
-#            if first[sta] != last[sta]:
-#                # add pairs of sensitivities for last and first event
-#                # This should not be necessary, but it does not hurt.
-#                k, Rsta = first[sta]
-#                kl, Rstal = last[sta]
-#                b_val = np.log(Rstal) - np.log(Rsta)
-#                construct_ols(((k, 1), (kl, -1)), b_val)
         if station is None:
-            # pin product of station sensitivities
-            norm_row_b += np.log(sensitivity)
+            # pin product of station site responses
+            norm_row_b += np.log(response)
             construct_ols(norm_row_A.items(), norm_row_b)
         msg = 'constructed %scoefficient matrix with shape (%d, %d)'
         log.debug(msg, 'sparse ' * use_sparse, row[0], Ne)
@@ -688,7 +679,7 @@ def correct_sensitivities(results, station=None, sensitivity=1.,
             res = scipy.linalg.lstsq(A, b, overwrite_a=True, overwrite_b=True)
         factors[:, i] = np.exp(res[0])
     # Scale W and R
-    log.debug('scale events and sensitivities')
+    log.debug('scale events and site responses')
     for i in range(Nf):
         for k, item in enumerate(results['events'].items()):
             evid, eres = item
@@ -1481,7 +1472,7 @@ def invert(events, inventory, get_waveforms,
     kw.update({'rho0': rho0, 'borehole_stations': borehole_stations,
                'skip': skip, 'filter':filter})
     if fix_params:
-        # if fix_params is used, the inversion for station sensitivities and
+        # if fix_params is used, the inversion for station site responses and
         # energy source terms are done for fixed g0 and b from previous results
         kw['fix'] = True
         if set(fix_params['freq']) != set(freq_bands.keys()):
@@ -1802,7 +1793,7 @@ def configure_logging(loggingc, verbose=0, loglevel=3, logfile=None):
 
 def run(conf=None, create_config=None, tutorial=False, eventid=None,
         get_waveforms=None, prefix=None, plot=None, fix_params=None,
-        correct_sens=None, correct_sens_station=None, correct_sens_value=1.,
+        align_sites=None, align_sites_station=None, align_sites_value=1.,
         **args):
     """
     Main entry point for a direct call from Python
@@ -1883,7 +1874,7 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
             channels = inventory.get_contents()['channels']
             stations = list(set(get_station(ch) for ch in channels))
             log.info('read inventory with %d stations', len(stations))
-        if not correct_sens:
+        if not align_sites:
             # Read events
             events = args.pop('events')
             if not isinstance(events, (list, obspy.core.event.Catalog)):
@@ -1913,7 +1904,7 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
     # Start main routine with remaining args
     log.debug('start qopen routine with parameters %s', json.dumps(args))
     args['inventory'] = inventory
-    if not correct_sens:
+    if not align_sites:
         args['get_waveforms'] = get_waveforms
         args['events'] = events
     output = args.pop('output', None)
@@ -1928,18 +1919,17 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
             default = '%s.png' % t
             if key in args:
                 args[key]['fname'] = prefix + args[key].get('fname', default)
-    if fix_params and correct_sens is None:
+    if fix_params and align_sites is None:
         # Optionally fix g0 and b
         log.info('use fixed g0 and b')
         with open(fix_params) as f:
             args['fix_params'] = json.load(f)
-    if correct_sens:
-        log.info('correct for sensitivities')
-        with open(correct_sens) as f:
+    if align_sites:
+        log.info('correct station site responses and source parameters')
+        with open(align_sites) as f:
             orig_result = json.load(f)
-        result = correct_sensitivities(orig_result,
-                                       station=correct_sens_station,
-                                       sensitivity=correct_sens_value)
+        result = align_sites(orig_result, station=align_sites_station,
+                             response=align_sites_value)
         plot_(result, eventid=eventid, **args)
     else:
         result = invert_wrapper(**args)
@@ -1973,7 +1963,7 @@ def run_cmdline(args=None):
     p.add_argument('-v', '--verbose', help=msg, action='count',
                    default=SUPPRESS)
     msg = ('Add prefix for all output files defined in config '
-           '(useful for options --plot, --fix-params and --correct-sens')
+           '(useful for options --plot, --fix-params and --align-sites')
     p.add_argument('--prefix', help=msg)
 
     msg = ('parameters operating on json result file '
@@ -1983,17 +1973,17 @@ def run_cmdline(args=None):
            'together with -e to plot event results from the given event')
     g1.add_argument('-p', '--plot', help=msg)
     msg = ('Fix g0 and b from results in given json file to determine better '
-           'estimation of site corrections and source energies (experimental)')
+           'estimation of site responses and source energies (experimental)')
     g1.add_argument('--fix-params', help=msg)
-    msg = ('Correct sensitivities and source parameters from results in given '
-           'json file (experimental)')
-    g1.add_argument('--correct-sens', help=msg)
-    msg = ('Station to correct for (default: None -> correct for product '
-           'of  station sensitivities)')
-    g1.add_argument('--correct-sens-station', help=msg)
-    msg = ('New sensitivity for station or product of station sensitivities '
-           '(default: 1)')
-    g1.add_argument('--correct-sens-value', help=msg, default=1., type=float)
+    msg = ('Align site responses and correct source parameters from results '
+           'in given json file (experimental)')
+    g1.add_argument('--align-sites', help=msg)
+    msg = ('Site response of this station is fixed '
+           '(default: None -> product of station site responses is fixed)')
+    g1.add_argument('--align-sites-station', help=msg)
+    msg = ('Value of site response for specified station or product of '
+           'station site responses (default: 1)')
+    g1.add_argument('--align-sites-value', help=msg, default=1., type=float)
     g2 = p.add_argument_group('create example config or tutorial')
     msg = ('Create example configuration in specified file '
            '(default: conf.json if option is invoked without parameter)')

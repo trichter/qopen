@@ -1,5 +1,6 @@
 dev:
-  * core: "correct sensitivities" now only computes on largest contiguous area
+  * core: rename "correct sensitivities" to "align sites"
+  * core: "align sites" now only computes on largest contiguous area
 v1.1:
   * bugfix: energy envelope and not velocity seismogram is now divided by filter width
   * bugfix: bulk wave was not correctly handled if beginning of coda window was before S-onset
