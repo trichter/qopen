@@ -38,19 +38,19 @@ class TestCase(unittest.TestCase):
 
     @unittest.skipIf(not TRAVIS, 'save time')
     def test_cmdline(self):
-        use_joblib = os.environ.get('JOBLIB', 'true') == 'true'
+        parallel = os.environ.get('PARALLEL', 'true') == 'true'
         script = run_cmdline
         msg = ('Only %d plot files (%s) are created.\n\n'
                'Created files are:\n%s\n\n'
                '%s')
         with tempdir(delete=True):
             script(['--create-config', '--tutorial'])
-            args = [] if use_joblib else ['--no-parallel']
+            args = [] if parallel else ['--no-parallel']
             script(args)
             # check if pictures were created
             if os.path.exists('example.log'):
                 with open('example.log') as flog:
-                    log = 'Log file:\n' + flog.read()
+                    log = 'Content of log file:\n' + flog.read()
             else:
                 log = 'Log file does not exist.'
             files = list(glob('plots/*.png'))
