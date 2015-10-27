@@ -21,10 +21,6 @@ from future.builtins import (  # analysis:ignore
 import argparse
 import numpy as np
 
-# Correction factor for free surface
-# According to Emoto (2010) or Sato page 394 figure 9.39 this is around 4
-# for S-waves.
-FS = 4
 
 def Gb(t, c, g0, var='t'):
     """Bulk term of RT solution"""
@@ -102,7 +98,7 @@ def G(r, t, c, g0, eps=None, include_bulk=True):
         if include_bulk and 0 < i < len(G_) and eps > 0:
             b = Gb(r / c, c, g0, var='t') if include_bulk else 0
             G_[i - 1] = b / float(t[1] - t[0])
-    return FS * G_
+    return G_
 
 
 def plot_t(c, g0, r, t=None, N=100, log=False):

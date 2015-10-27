@@ -2,7 +2,7 @@
 # Comments are indicated with "#" and ignored while parsing
 
 {
-    
+
 ### Options for input and output ###
 
 # Filename of events file (QuakeML format)
@@ -11,7 +11,7 @@
 # Filename of inventory of stations (StationXML format)
 "inventory": "example_inventory.xml",
 
-# Data can be 
+# Data can be
 #   1. a glob expression of files. All files are read at once. If you have
 #      a huge dataset think about setting up a local webservice and use 2.
 #     (Setting up a seishub service is not difficult.)
@@ -24,11 +24,11 @@
 
 # Options for the webservices which are passed to Client.__init__.
 # See the documentation of the clients in ObsPy for available options.
-"client_options": {"user": "name@insitution.com"},                    
+"client_options": {"user": "name@insitution.com"},
 
 # Where to find the plugin in the form "module : func"
 # 'module' has to be importable (located in current path or PYTHON_PATH
-# environment variable). 
+# environment variable).
 # 'func' has to be the function which delivers the data, e.g. for a
 # FSDN client:
 #     # in module.py
@@ -69,7 +69,7 @@
 # The higher the log level the more verbose is the logging to the file (1-3)
 "loglevel": 3,
 
-# Use multiple processes for calculating the results 
+# Use multiple processes for calculating the results
 # for different frequencies parallel.
 # joblib must be installed for this feature
 "parallel": true,
@@ -95,7 +95,7 @@
 # ωM: ωM ∝ v0^(5/2)
 # Furthermore, necessary for calculating Qsc from g0 and li from b
 # This parameter can also be calculated from picks. If you want to
-# use this feature set "v0": null and "use_picks": true. 
+# use this feature set "v0": null and "use_picks": true.
 "v0": 3400,
 
 # Mean density in kg/m**3.
@@ -109,6 +109,14 @@
 # Important for calculating the correct modeled energy and therefore
 # scales W: W ∝ 1/R0, ωM ∝ 1/R0^(1/2)
 "R0": 1,
+
+# Correction factor for free surface.
+# According to Emoto (2010) the factor is around 4 for S-waves.
+# Specify a tuple like (4, 1) to use the first value for surface stations
+# and the second value for borehole stations. By default correction factors
+# for surface and borehole stations are the same to allow the direct comparison
+# of obtained site responses.
+"free_surface": 4,
 
 # Optimization options for the scattering coefficient.
 # Values are passed to scipy.optimize.minimize_scalar.
@@ -129,8 +137,8 @@
 "remove_response": "sensitivity",
 
 # When calculating the distance, correct for the elevation of the station.
-# Useful if depth of events catalog is relative to 0m
-"correct_for_elevation": false, 
+# Useful if depth of events catalog is given relative to sea level.
+"correct_for_elevation": false,
 
 # Filter options passed to obspy.core.Stream.filter for filtering the
 # different frequency bands (see obspy.core.Stream.filter).
@@ -139,13 +147,13 @@
 # Define frequency bands: step - difference between neighboring
 # central frequencies in octave (x octave corresponds to a factor of
 # 2**x between the frequencies)
-# width - difference between higher and lower corner frequency in octave 
+# width - difference between higher and lower corner frequency in octave
 # max - maximal central frequency,
 # min - minimal possible central frequency.
 "freqs": {"step": 1, "width": 1, "max": 6, "min": 0.3},
 
 # Use picks given in events file to determine the P- and S-onset.
-# Picks can also be used to calculate v0. 
+# Picks can also be used to calculate v0.
 "use_picks": false,
 
 # Otherwise these velocities are used together with the distance between
@@ -174,7 +182,7 @@
 #   The energy is integrated in this time window
 # - Time window defining the coda
 # Time windows are a list of two values (start and end time).
-# The start time and end time can be a string, e.g.: 
+# The start time and end time can be a string, e.g.:
 # - 'P-10s', 'S+10s', 'OT+10s' (seconds relative to onset or origin time),
 # - '1.2Stt', '0.8Ptt' (travel time relative to onset travel time),
 # - '3SNR' (only for end time of codawindow, time after start time when
@@ -197,7 +205,7 @@
 # Smooth the coda over 'smooth' seconds (null for no smoothing)
 "smooth": 1,
 
-# The window used for smoothing. Can be one of 
+# The window used for smoothing. Can be one of
 # "flat", "hanning", "hamming", "bartlett" or "blackman".
 # "flat" corresponds to the moving average, for the rest see
 # http://docs.scipy.org/doc/numpy/reference/routines.window.html
@@ -216,16 +224,13 @@
 # - "coda_window" shorter than x seconds
 # - "distance" between station and event larger than x km
 # - "maximum" of envelope is not in given window
-# - "num_pairs" number of station event pairs smaller than x 
+# - "num_pairs" number of station event pairs smaller than x
 # Example:
 # "skip": {"coda_window": 5,
 #          "distance": 500,
 #          "maximum": ["0.5Stt", "S+10s"],
 #          "num_pairs": 2},
 "skip": null,
-
-
-
 
 # Calculate the seismic moment from the source displacement spectrum
 # as a mean of the values for frequencies smaller than 'fc',

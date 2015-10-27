@@ -59,7 +59,7 @@ log.addHandler(logging.NullHandler())
 LOGLEVELS = {0: 'CRITICAL', 1: 'WARNING', 2: 'INFO', 3: 'DEBUG'}
 
 DUMP_CONFIG = ['invert_events_simultaniously', 'mean',
-               'v0', 'rho0', 'R0', 'dt',
+               'v0', 'rho0', 'R0', 'free_surface',
                'freqs', 'filter', 'optimize', 'g0_bounds', 'b_bounds',
                'seismic_moment_method', 'seismic_moment_options',
                'bulk_window', 'coda_window', 'noise_windows',
@@ -67,6 +67,11 @@ DUMP_CONFIG = ['invert_events_simultaniously', 'mean',
                'adjust_sonset', 'adjust_sonset_options',
                'remove_response', 'correct_for_elevation', 'skip',
                'G_module']
+
+# Correction factor for free surface
+# According to Emoto (2010) or Sato page 394 figure 9.39 this is around 4
+# for S-waves.
+FS = 4
 
 DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'freq', 'g0', 'b', 'error',
               'W', 'omM', 'R', 'events', 'v0', 'config']
@@ -114,7 +119,7 @@ def filter_width(sr, freq=None, freqmin=None, freqmax=None, corners=2,
 
     The result corresponds to the filter width, which equals approximately
     the difference of the corner frequencies. The energy density should
-    be divided by the result to get the correct the energy spectral density.
+    be divided by the result to get the correct energy spectral density.
 
     :param sr: sampling rate
     :param freq: corner frequencies of low- or highpass filter
@@ -164,20 +169,20 @@ def get_freqs(max=None, min=None, step=None, width=None, cfreqs=None,
     return fbands
 
 
-def energy1c(data, rho, df):
+def energy1c(data, rho, df, fs):
     """Energy density of one channel
 
     :param data: velocity data (m/s)
     :param rho: density (kg/m**3)"""
-    return rho * (data ** 2 + (scipy.fftpack.hilbert(data)) ** 2) / 4 / df
+    return rho * (data ** 2 + (scipy.fftpack.hilbert(data)) ** 2) / 4 / df / fs
 
 
-def observed_energy(stream, rho, df, tolerance=1):
+def observed_energy(stream, rho, df, fs=FS, tolerance=1):
     """Return trace with total energy density of three component stream
 
     :param stream: stream of a 3 component seismogram
     :param rho: energy density (kg/m**3)"""
-    data = [energy1c(tr.data, rho, df) for tr in stream]
+    data = [energy1c(tr.data, rho, df, fs) for tr in stream]
     Ns = [len(d) for d in data]
     if max(Ns) - min(Ns) > tolerance:
         msg = ('traces for one stream have different lengths %s. Tolerance '
@@ -782,7 +787,8 @@ def _get_slice(energy, tw, pair, energies, bulk=False):
         energies.remove(energy)
 
 def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
-              R0=1, noise_windows=None, bulk_window=None, weight=None,
+              R0=1, free_surface=FS,
+              noise_windows=None, bulk_window=None, weight=None,
               optimize={}, g0_bounds=(1e-8, 1e-3), b_bounds=(1e-5, 10),
               num_points_integration=1000,
               smooth=None, smooth_window='flat',
@@ -837,8 +843,14 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         stream.detrend('linear')
         stream.filter(**filter_)
         df = filter_width(sr, **filter_)
+        fs = free_surface
+        if isinstance(fs, (list, tuple)):
+            if get_station(stream[0].id) in borehole_stations:
+                fs = fs[1]
+            else:
+                fs = fs[0]
         try:
-            energies.append(observed_energy(stream, rho0, df))
+            energies.append(observed_energy(stream, rho0, df, fs=fs))
         except CustomError as ex:
             msg = '%s %s: cannot calculate ernergy (%s)'
             log.warning(msg, pair[0], pair[1], str(ex))
