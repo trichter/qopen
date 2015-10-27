@@ -39,12 +39,24 @@ class TestCase(unittest.TestCase):
     @unittest.skipIf(not TRAVIS, 'save time')
     def test_cmdline(self):
         script = run_cmdline
+        msg = ('Only %d plot files (%s) are created.\n\n'
+               'Created files are:\n%s\n\n'
+               '%s')
         with tempdir(delete=True):
             script(['--create-config', '--tutorial'])
             script()
             # check if pictures were created
-            self.assertEqual(len(list(glob('plots/*.png'))), 85)
-            self.assertEqual(len(glob('plots/*.pdf')), 4)
+            if os.path.exists('example.log'):
+                with open('example.log') as flog:
+                    log = 'Log file:\n' + flog.read()
+            else:
+                log = 'Log file does not exist.'
+            files = list(glob('plots/*.png'))
+            msg2 = msg % (len(files), 'png', files, log)
+            self.assertEqual(len(files), 85, msg=msg2)
+            files = list(glob('plots/*.pdf'))
+            msg2 = msg % (len(files), 'pdf', files, log)
+            self.assertEqual(len(files), 4, msg=msg2)
 
     def test_results_of_tutorial(self):
         """Test against publication of Sens-Schoenfelder and Wegler (2006)"""
