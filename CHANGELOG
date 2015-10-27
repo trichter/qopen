@@ -1,6 +1,8 @@
 dev:
   * core: rename "correct sensitivities" to "align sites"
   * core: "align sites" now only computes on largest contiguous area
+  * core: move free surface correction term from qopen.rt module to Eobs
+  * core: free surface correction is configurable
 v1.1:
   * bugfix: energy envelope and not velocity seismogram is now divided by filter width
   * bugfix: bulk wave was not correctly handled if beginning of coda window was before S-onset
