@@ -38,13 +38,15 @@ class TestCase(unittest.TestCase):
 
     @unittest.skipIf(not TRAVIS, 'save time')
     def test_cmdline(self):
+        use_joblib = os.environ.get('JOBLIB', 'true') == 'true'
         script = run_cmdline
         msg = ('Only %d plot files (%s) are created.\n\n'
                'Created files are:\n%s\n\n'
                '%s')
         with tempdir(delete=True):
             script(['--create-config', '--tutorial'])
-            script()
+            args = [] if use_joblib else ['--no-parallel']
+            script(args)
             # check if pictures were created
             if os.path.exists('example.log'):
                 with open('example.log') as flog:

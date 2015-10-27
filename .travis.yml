@@ -5,7 +5,7 @@ python:
 sudo: false
 env:
   -
-  - JOBLIB=true  
+  - JOBLIB=false  
 before_install:
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
       wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -19,8 +19,7 @@ before_install:
   - conda update -q conda
   - conda info -a
   - conda config --add channels obspy
-  - conda install python=$TRAVIS_PYTHON_VERSION nose statsmodels obspy
-  - if [[ $JOBLIB == true ]]; then conda install joblib; fi  
+  - conda install python=$TRAVIS_PYTHON_VERSION nose statsmodels joblib obspy
 install:
   - pip install --no-deps .
 script:
