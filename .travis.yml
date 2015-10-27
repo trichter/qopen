@@ -22,7 +22,7 @@ before_install:
   - conda install python=$TRAVIS_PYTHON_VERSION nose statsmodels obspy
   - if [[ $JOBLIB == true ]]; then conda install joblib; fi  
 install:
-  - pip install .
+  - pip install --no-deps .
 script:
   - mkdir empty; cd empty
   - qopen-runtests
