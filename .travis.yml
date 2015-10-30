@@ -24,7 +24,7 @@ install:
   - pip install --no-deps .
 script:
   - mkdir empty; cd empty
-  - qopen-runtests
+  - travis_wait qopen-runtests
 after_success:
 notifications:
     email: false
