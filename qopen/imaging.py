@@ -296,7 +296,7 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
         t = _get_times(energy) + r / v0 - (st.sonset - st.origintime)
 
         if smooth:
-            plot(t, energy.stats.orig_data, color='0.7')
+            plot(t, energy.data_unsmoothed, color='0.7')
         plot(t, energy.data, color=c1l)
         G_of_t = lambda tt: G_func(r, tt, v0, g0)
         G_ = smooth_func(G_of_t, t, smooth, window=smooth_window)

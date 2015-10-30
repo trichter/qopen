@@ -949,7 +949,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         # Smooth energies
         if smooth:
             if plot_fits:
-                energy.stats.orig_data = energy.data
+                energy.data_unsmoothed = energy.data
             energy.data = smooth_(energy.data, int(round(sr * smooth)),
                                   window=smooth_window, method='zeros')
         # Calculate coda windows in UTC
