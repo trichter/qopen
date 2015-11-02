@@ -501,7 +501,9 @@ def _merge_sets(sets):
                 newsets.append(aset)
     return newsets
 
-def align_sites(results, station=None, response=1., use_sparse=True):
+def align_site_responses(results, station=None, response=1., use_sparse=True,
+                         seismic_moment_method=None,
+                         seismic_moment_options=None):
     """(experimental) Align station site responses and correct source params
 
     Determine best factor for each event so that site response is the same
@@ -700,21 +702,29 @@ def align_sites(results, station=None, response=1., use_sparse=True):
                     continue
                 Rsta[i] *= factors[k, i]
     # Calculate omM, M0 and m again
-    rho0 = results.get('config', {}).get('rho0')
-    v02 = results.get('config', {}).get('v0')
-    smm = results.get('config', {}).get('seismic_moment_method')
-    smo = results.get('config', {}).get('seismic_moment_options')
+    csp = calculate_source_properties
+    csp(results, seismic_moment_method=seismic_moment_method,
+        seismic_moment_options=seismic_moment_options)
+    return results
+
+def calculate_source_properties(results, rh0=None, v0=None,
+                                seismic_moment_method=None,
+                                seismic_moment_options=None):
+    conf = results.get('config', {})
+    rho0 = rh0 or conf.get('rho0')
+    v02 = v0 or conf.get('v0')
+    smm = seismic_moment_method or conf.get('seismic_moment_method')
+    smo = seismic_moment_options or conf.get('seismic_moment_options')
     freq = results.get('freq')
     if rho0:
         for r in results['events'].values():
             v0 = r.get('v0') or v02
             if v0:
-                insert_source_properties(freq, r, smm, smo, v0, rho0)
+                insert_source_properties(freq, r, v0, rho0, smm, smo)
     return results
 
-
-def insert_source_properties(freq, evresult, seismic_moment_method,
-                             seismic_moment_options, v0, rho0, catmag=None):
+def insert_source_properties(freq, evresult, v0, rho0, seismic_moment_method,
+                             seismic_moment_options, catmag=None):
     """Insert omM, Mw and possibly Mcat in evresult dictionary"""
     if evresult['W'] and rho0 and v0:
         evresult['omM'] = []
@@ -1551,9 +1561,9 @@ def invert(events, inventory, get_waveforms,
     # Calculate source properties omM, M0 and Mw
     for event in events:
         evid = get_eventid(event)
-        args = (result['freq'], result['events'][evid],
+        args = (result['freq'], result['events'][evid], result['v0'], rho0,
                 seismic_moment_method, seismic_moment_options,
-                result['v0'], rho0, get_magnitude(event_dict[evid]))
+                get_magnitude(event_dict[evid]))
         result['events'][evid] = insert_source_properties(*args)
     result['R'] = OrderedDict(result['R'])
     result['events'] = OrderedDict(result['events'])
@@ -1806,6 +1816,7 @@ def configure_logging(loggingc, verbose=0, loglevel=3, logfile=None):
 def run(conf=None, create_config=None, tutorial=False, eventid=None,
         get_waveforms=None, prefix=None, plot=None, fix_params=None,
         align_sites=None, align_sites_station=None, align_sites_value=1.,
+        calc_source_params=None,
         **args):
     """
     Main entry point for a direct call from Python
@@ -1878,32 +1889,33 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
           'loglevel': args.pop('loglevel', 3),
           'logfile': args.pop('logfile', None)}
     configure_logging(**kw)
-    try:
-        # Read inventory
-        inventory = args.pop('inventory')
-        if not isinstance(inventory, obspy.station.Inventory):
-            inventory = obspy.read_inventory(inventory)
-            channels = inventory.get_contents()['channels']
-            stations = list(set(get_station(ch) for ch in channels))
-            log.info('read inventory with %d stations', len(stations))
-        if not align_sites:
-            # Read events
-            events = args.pop('events')
-            if not isinstance(events, (list, obspy.core.event.Catalog)):
-                events = obspy.readEvents(events)
-                log.info('read %d events', len(events))
-            # Initialize get_waveforms
-            keys = ['client_options', 'plugin', 'cache_waveforms']
-            tkwargs = {k: args.pop(k, None) for k in keys}
-            if get_waveforms is None:
-                data = args.pop('data')
-                get_waveforms = init_data(data, **tkwargs)
-                log.info('init data from %s', data)
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except:
-        log.exception('cannot read events/stations or initalize data')
-        return
+    if not calc_source_params:
+        try:
+            # Read inventory
+            inventory = args.pop('inventory')
+            if not isinstance(inventory, obspy.station.Inventory):
+                inventory = obspy.read_inventory(inventory)
+                channels = inventory.get_contents()['channels']
+                stations = list(set(get_station(ch) for ch in channels))
+                log.info('read inventory with %d stations', len(stations))
+            if not align_sites:
+                # Read events
+                events = args.pop('events')
+                if not isinstance(events, (list, obspy.core.event.Catalog)):
+                    events = obspy.readEvents(events)
+                    log.info('read %d events', len(events))
+                # Initialize get_waveforms
+                keys = ['client_options', 'plugin', 'cache_waveforms']
+                tkwargs = {k: args.pop(k, None) for k in keys}
+                if get_waveforms is None:
+                    data = args.pop('data')
+                    get_waveforms = init_data(data, **tkwargs)
+                    log.info('init data from %s', data)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            log.exception('cannot read events/stations or initalize data')
+            return
     # Optionally select event
     if eventid:
         elist = [ev for ev in events if get_eventid(ev) == eventid]
@@ -1915,8 +1927,9 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
         events = obspy.core.event.Catalog(elist)
     # Start main routine with remaining args
     log.debug('start qopen routine with parameters %s', json.dumps(args))
-    args['inventory'] = inventory
-    if not align_sites:
+    if not calc_source_params:
+        args['inventory'] = inventory
+    if not (align_sites or calc_source_params):
         args['get_waveforms'] = get_waveforms
         args['events'] = events
     output = args.pop('output', None)
@@ -1931,17 +1944,29 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
             default = '%s.png' % t
             if key in args:
                 args[key]['fname'] = prefix + args[key].get('fname', default)
-    if fix_params and align_sites is None:
+    if fix_params and not (align_sites or calc_source_params):
         # Optionally fix g0 and b
         log.info('use fixed g0 and b')
         with open(fix_params) as f:
             args['fix_params'] = json.load(f)
+    if align_sites or calc_source_params:
+        kw = {'seismic_moment_method': args.get('seismic_moment_method'),
+              'seismic_moment_options': args.get('seismic_moment_options')}
     if align_sites:
-        log.info('correct station site responses and source parameters')
+        msg = 'align station site responses and re-calculate source parameters'
+        log.info(msg)
         with open(align_sites) as f:
-            orig_result = json.load(f)
-        result = align_sites(orig_result, station=align_sites_station,
-                             response=align_sites_value)
+            result = json.load(f)
+        align_site_responses(result, station=align_sites_station,
+                             response=align_sites_value, **kw)
+        result.setdefault('config', {}).update(kw)
+        plot_(result, eventid=eventid, **args)
+    elif calc_source_params:
+        log.info('calculate source parameters')
+        with open(calc_source_params) as f:
+            result = json.load(f)
+        calculate_source_properties(result, **kw)
+        result.setdefault('config', {}).update(kw)
         plot_(result, eventid=eventid, **args)
     else:
         result = invert_wrapper(**args)
@@ -1975,10 +2000,19 @@ def run_cmdline(args=None):
     p.add_argument('-v', '--verbose', help=msg, action='count',
                    default=SUPPRESS)
     msg = ('Add prefix for all output files defined in config '
-           '(useful for options --plot, --fix-params and --align-sites')
+           '(useful for options operating on JSON files)')
     p.add_argument('--prefix', help=msg)
 
-    msg = ('parameters operating on json result file '
+    g2 = p.add_argument_group('create example configuration or tutorial')
+    msg = ('Create example configuration in specified file '
+           '(default: conf.json if option is invoked without parameter)')
+    g2.add_argument('--create-config', help=msg, nargs='?',
+                    const='conf.json', default=SUPPRESS)
+    msg = "Tutorial: create example configureation with data files"
+    g2.add_argument('--tutorial', help=msg, action='store_true',
+                    default=SUPPRESS)
+
+    msg = ('parameters operating on JSON result file '
            '(no or different processing)')
     g1 = p.add_argument_group(msg)
     msg = ('Plot results. Can be used '
@@ -1996,32 +2030,32 @@ def run_cmdline(args=None):
     msg = ('Value of site response for specified station or product of '
            'station site responses (default: 1)')
     g1.add_argument('--align-sites-value', help=msg, default=1., type=float)
-    g2 = p.add_argument_group('create example config or tutorial')
-    msg = ('Create example configuration in specified file '
-           '(default: conf.json if option is invoked without parameter)')
-    g2.add_argument('--create-config', help=msg, nargs='?',
-                    const='conf.json', default=SUPPRESS)
-    msg = "Tutorial: create example configureation with data files"
-    g2.add_argument('--tutorial', help=msg, action='store_true',
-                    default=SUPPRESS)
+    msg = ('Calculate seismic moment and moment magnitude from results in '
+           'given json file')
+    g1.add_argument('--calc-source-params', help=msg)
+
     msg = ('Use these flags to overwrite values in the config file. '
            'See the example configuration file for a description of '
-           'these options')
-
+           'these options. Options representing dictionaries or lists are '
+           'expected to be valid JSON.')
     g3 = p.add_argument_group('optional qopen arguments', description=msg)
-    features_str = ('events', 'inventory', 'data', 'output')
-    for f in features_str:
-        g3.add_argument('--' + f, default=SUPPRESS)
-    g3.add_argument('--njobs', default=SUPPRESS, type=int)
-
+    features_str = ('events', 'inventory', 'data', 'output',
+                    'seismic-moment-method')
+    features_json = ('seismic-moment-options',)
     features_bool = ('parallel', 'invert_events_simultaniously',
                      'plot_energies', 'plot_optimization', 'plot_fits',
                      'plot_eventresult', 'plot_eventsites')
+    for f in features_str:
+        g3.add_argument('--' + f, default=SUPPRESS)
+    for f in features_json:
+        g3.add_argument('--' + f, default=SUPPRESS, type=json.loads)
+    g3.add_argument('--njobs', default=SUPPRESS, type=int)
     for f in features_bool:
         g3.add_argument('--' + f.replace('_', '-'), dest=f,
                         action='store_true', default=SUPPRESS)
         g3.add_argument('--no-' + f.replace('_', '-'), dest=f,
                         action='store_false', default=SUPPRESS)
+
     # Get command line arguments and start :func: run
     args = vars(p.parse_args(args))
     try:
