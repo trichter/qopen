@@ -1451,9 +1451,10 @@ def invert(events, inventory, get_waveforms,
                 streams.remove(stream)
                 event_station_pairs.remove(pair)
                 continue
-        msg = ('instrument correction finished for %d streams of %d stations'
-               ' and %d events')
-        log.info(msg, len(streams), len(stations), len(origins))
+        msg = ('instrument correction (%s) finished for %d streams of %d '
+               'stations and %d events')
+        log.info(msg, remove_response, len(streams), len(stations),
+                 len(origins))
 
     # Check if enough pairs left
     if len(streams) == 0 or skip and len(streams) <= skip.get('num_pairs', 0):
