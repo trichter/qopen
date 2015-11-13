@@ -697,8 +697,6 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
             W[i] /= factors[k, i]
             R = eres['R']
             for sta, Rsta in R.items():
-                if sta not in largest_area:
-                    Rsta[i] = None
                 if Rsta[i] is None or np.isnan(Rsta[i]):
                     continue
                 Rsta[i] *= factors[k, i]
