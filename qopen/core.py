@@ -141,7 +141,7 @@ def filter_width(sr, freq=None, freqmin=None, freqmax=None, corners=2,
     ret = df * np.sum(np.abs(h) ** (2 * (zerophase + 1)))
     msg = ('%s filter (%s, %d corners, zerophase=%s, sr=%.1fHz) '
            'has a width of %.2gHz')
-    log.info(msg, type, ftext, corners, zerophase, sr, ret)
+    log.debug(msg, type, ftext, corners, zerophase, sr, ret)
     return ret
 
 
