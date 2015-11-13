@@ -555,6 +555,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
     # calculate best factors for each freq band with OLS A*factor=b
     factors = np.empty((Ne, Nf))
     for i in range(Nf):
+        log.info('align sites for freq no. %d', i)
         # find unconnected areas
         areas = []
         for evid in results['events']:
@@ -565,7 +566,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                 areas.append(area)
         areas = _merge_sets(areas)
         areas = {list(a)[0]: a for a in areas}
-        log.info('found %d not connected areas', len(areas))
+        log.info('found %d unconnected areas', len(areas))
         for name in areas:
             stations = areas[name]
             log.debug('area "%s" with %d stations', name, len(stations))
@@ -623,7 +624,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                     if dist2[0] < dist1[0]:
                         distance[pair1] = dist2
         largest_area = max(areas, key=lambda k: len(areas[k]))
-        msg = 'use only largest area %s with %d stations'
+        msg = 'use largest area %s with %d stations'
         log.info(msg, largest_area, len(areas[largest_area]))
         largest_area = areas[largest_area]
 
