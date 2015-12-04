@@ -11,7 +11,7 @@ Separation of intrinsic and scattering **Q** by envel\ **ope** inversio\ **n**
     branch=master
    :target: https://travis-ci.org/trichter/qopen
 
-Qopen is a script in seismology that determines shear wave scattering and intrinsic attenuation parameters by inversion of seismogram envelopes.
+Qopen is a script in seismology that estimates shear wave scattering and intrinsic attenuation parameters by inversion of seismogram envelopes.
 
 How it works
 ------------
