@@ -174,7 +174,8 @@ def energy1c(data, rho, df, fs):
 
     :param data: velocity data (m/s)
     :param rho: density (kg/m**3)"""
-    return rho * (data ** 2 + (scipy.fftpack.hilbert(data)) ** 2) / 2 / df / fs
+    hilb = scipy.fftpack.hilbert(data)
+    return rho * (data ** 2 + hilb ** 2) / 2 / df / fs
 
 
 def observed_energy(stream, rho, df, fs=FS, tolerance=1):
