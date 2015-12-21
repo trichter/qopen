@@ -353,9 +353,10 @@ def plot_sds(freq, result, ax=None, fname=None,
     fig = None
     obs = ('M0', 'fc', 'n', 'gamma')
     smo = seismic_moment_options
-    smo = {k: smo.get(k) or result.get(k) for k in obs}
-    M0 = smo['M0']
-    fc = smo['fc']
+    _get = lambda k: smo.get(k) or result.get(k)
+    smo = {k: _get(k) for k in obs if _get(k) is not None}
+    M0 = smo.get('M0')
+    fc = smo.get('fc')
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111)
