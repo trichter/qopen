@@ -11,6 +11,10 @@
 # Filename of inventory of stations (StationXML format)
 "inventory": "example_inventory.xml",
 
+# Filter inventory with Obspy method Inventory.select
+# example: "filter_inventory": {"channel": "HH?"},
+"filter_inventory": null,
+
 # Data can be
 #   1. a glob expression of files. All files are read at once. If you have
 #      a huge dataset think about setting up a local webservice and use 2.

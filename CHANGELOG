@@ -6,6 +6,7 @@ dev:
   * core: free surface correction is configurable
   * core: new command line option "--calc-source-params" for re-calculating source parameters
   * core: use source model of Abercrombie 2015 to fit source displacement spectra and allow to invert for M0, fc, n, and gamma
+  * core: add possibility to filter Inventory with Inventory.select
   * core: other new not very important but useful command line options
 v1.1:
   * bugfix: energy envelope and not velocity seismogram is now divided by filter width

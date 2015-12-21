@@ -1949,11 +1949,16 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
         try:
             # Read inventory
             inventory = args.pop('inventory')
+            fi = args.pop('filter_inventory', None)
             if not isinstance(inventory, obspy.station.Inventory):
                 inventory = obspy.read_inventory(inventory)
+                if fi:
+                    inventory = inventory.select(**fi)
                 channels = inventory.get_contents()['channels']
                 stations = list(set(get_station(ch) for ch in channels))
                 log.info('read inventory with %d stations', len(stations))
+            elif fi:
+                inventory = inventory.select(**fi)
             if not align_sites:
                 # Read events
                 events = args.pop('events')
