@@ -1951,7 +1951,7 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
             inventory = args.pop('inventory')
             fi = args.pop('filter_inventory', None)
             if not isinstance(inventory, obspy.station.Inventory):
-                inventory = obspy.read_inventory(inventory)
+                inventory = obspy.read_inventory(inventory, 'STATIONXML')
                 if fi:
                     inventory = inventory.select(**fi)
                 channels = inventory.get_contents()['channels']
