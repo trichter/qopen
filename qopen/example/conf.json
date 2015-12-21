@@ -242,7 +242,7 @@
 #"seismic_moment_method": "mean",
 #"seismic_moment_options": {"fc": 1.5},
 "seismic_moment_method": "robust_fit",
-"seismic_moment_options": {"fc": null, "a": 2, "b": 2, "fc_lim": [0.1, 10],
+"seismic_moment_options": {"fc": null, "n": null, "gamma": 2, "fc_lim": [0.1, 10],
                            "num_points": 4},
 
 # Optionally, a user defined module with alternative Green's function for scattering can be used.

@@ -17,8 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-from qopen.core import (get_pair, collect_results, linear_fit,
-                          seismic_moment, source_spectrum, moment_magnitude)
+from qopen.core import get_pair, collect_results, linear_fit, source_model
 from qopen.util import gerr, smooth_func
 
 MS = mpl.rcParams['lines.markersize'] // 2
@@ -344,19 +343,19 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
     _savefig(fig, fname=fname, title=title, **kwargs)
 
 
-def plot_sds(freq, omM, M0=None, fc=None, ax=None, fname=None,
+def plot_sds(freq, result, ax=None, fname=None,
              annotate=False,
              seismic_moment_method=None, seismic_moment_options={}):
     freq = np.array(freq)
-    omM = np.array(omM, dtype=np.float)
+    omM = np.array(result['omM'], dtype=np.float)
     if all(np.isnan(omM)):
         return
     fig = None
-    seismic_moment_options = copy(seismic_moment_options)
-    fc2 = seismic_moment_options.pop('fc', None)
-    seismic_moment_options.pop('fc_lim', None)
-    seismic_moment_options.pop('num_points', None)
-    fc = fc or fc2
+    obs = ('M0', 'fc', 'n', 'gamma')
+    smo = seismic_moment_options
+    smo = {k: smo.get(k) or result.get(k) for k in obs}
+    M0 = smo['M0']
+    fc = smo['fc']
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -365,9 +364,9 @@ def plot_sds(freq, omM, M0=None, fc=None, ax=None, fname=None,
         ax.loglog(freq[freq < fc], omM[freq < fc], 'o-k')
     elif seismic_moment_method in ('fit', 'robust_fit'):
         ax.loglog(freq, omM, 'ok')
-        if fc is not None:
+        if M0 and fc:
             f = np.linspace(freq[0] / 1.5, freq[-1] * 1.5, 100)
-            omM2 = source_spectrum(f, M0, fc, **seismic_moment_options)
+            omM2 = source_model(f, **smo)
             ax.loglog(f, omM2, '-k')
     else:
         ax.loglog(freq, omM, 'o-k')
@@ -376,9 +375,11 @@ def plot_sds(freq, omM, M0=None, fc=None, ax=None, fname=None,
         ax.axhline(M0, ls='--', color='k')
         if annotate:
             labels.append(r'M$_0$=%.1e Nm' % M0)
-    if fc and annotate:
-        labels.append(r'f$_{\rm{c}}$=%.1f Hz' % fc)
-    if len(labels) > 0:
+    labels = {'M0': r'M$_0$=%.1e Nm',
+              'fc': r'f$_{\rm{c}}$=%.1f Hz',
+              'n': 'n=%.1f', 'gamma': r'$\gamma$=%.2f'}
+    labels = [labels[key] % result[key] for key in obs if key in result]
+    if len(labels) > 0 and annotate:
         ax.annotate('\n'.join(labels), (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top', size='x-small')
 
@@ -403,8 +404,7 @@ def plot_eventresult(result, v0=None, fname=None, title=None,
     for i, q in enumerate(quantities):
         ax = plt.subplot(gs[i // n, i % n], sharex=share)
         if q == 'sds':
-            plot_sds(freq, res['omM'], M0=res.get('M0'),
-                     fc=res.get('fc'), ax=ax,
+            plot_sds(freq, res, ax=ax,
                      seismic_moment_method=seismic_moment_method,
                      seismic_moment_options=seismic_moment_options)
         else:
@@ -561,10 +561,8 @@ def plot_all_sds(result, seismic_moment_method=None,
                  figsize=None):
     freq = np.array(result['freq'])
     conf = result.get('config', {})
-    if seismic_moment_method is None:
-        seismic_moment_method = conf.get('seismic_moment_method')
-    if seismic_moment_options is None:
-        seismic_moment_options = copy(conf.get('seismic_moment_options', {}))
+    smm = seismic_moment_method or conf.get('seismic_moment_method')
+    smo = seismic_moment_options or conf.get('seismic_moment_options', {})
     #fc = seismic_moment_options.pop('fc', None)
     result = result['events']
     N = len(result)
@@ -574,23 +572,9 @@ def plot_all_sds(result, seismic_moment_method=None,
     nx, ny, gs = _get_grid(N, nx=nx)
     share = None
     for i, evid in enumerate(sorted(result)):
-        temp = seismic_moment(freq, result[evid]['omM'],
-                              method=seismic_moment_method,
-                              **seismic_moment_options)
-        if temp is None:
-            M0, fc = None, None
-        else:
-            M0, fc = temp
-            Mw = moment_magnitude(M0)
-            result[evid]['M0'] = M0
-            if seismic_moment_options.get('fc', None) is None:
-                result[evid]['fc'] = fc
-            result[evid]['Mw'] = Mw
         ax = plt.subplot(gs[i // nx, i % nx], sharex=share, sharey=share)
-        plot_sds(freq, result[evid]['omM'], M0=M0, fc=fc,
-                 seismic_moment_method=seismic_moment_method,
-                 seismic_moment_options=seismic_moment_options,
-                 ax=ax, annotate=nx < 7)
+        plot_sds(freq, result[evid], seismic_moment_method=smm,
+                 seismic_moment_options=smo, ax=ax, annotate=nx < 7)
         ax.annotate(evid, (0, 0), (5, 5), 'axes fraction',
                     'offset points', ha='left', va='bottom', size='x-small')
         _set_gridlabels(ax, i, nx, ny, N, ylabel=r'$\omega$M (Nm)')

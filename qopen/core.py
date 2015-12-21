@@ -73,7 +73,7 @@ DUMP_CONFIG = ['invert_events_simultaniously', 'mean',
 # for S-waves.
 FS = 4
 
-DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'freq', 'g0', 'b', 'error',
+DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma', 'freq', 'g0', 'b', 'error',
               'W', 'omM', 'R', 'events', 'v0', 'config']
 
 DUMP_PKL = False
@@ -208,33 +208,43 @@ def sds(W, f, v, rho):
     return np.sqrt(W * 2.5 / np.pi * rho * v ** 5 / f ** 2)
 
 
-def source_spectrum(freq, M0, fc, a=2, b=2):
-    """Omega square source spectrum
+def source_model(freq, M0, fc, n=2, gamma=1):
+    """Model for source displacement spectrum
 
     :param freq: frequencies
     :param M0: seismic moment (Nm)
     :param fc: corner frequency
-    :param a, b: coefficients in formula
+    :param n: high frequency fall-of
+    :param gamma: corner sharpness
     """
+    return M0 * (1 + (freq / fc) ** (n * gamma)) ** (-1/gamma)
+
+def _source_model_ab(freq, M0, fc, a=2, b=1):
     return M0 * (1 + (freq / fc) ** a) ** (-b)
 
 
-def seismic_moment(freq, omM, method='mean', fc=None, a=2, b=1, fc_lim=None,
-                   fall_back=5, num_points=None):
+def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
+            fall_back=5, num_points=None,
+            fc_lim=None,  n_lim=(0.5, 10), gamma_lim=(0.5, 10),
+            fc0=10, n0=2, gamma0=1, **opt_kw):
     """Calculate seismic moment M0 from source displacement spectrum
 
     :param freq, omM: frequencies, source displacement spectrum (same length)
     :param method: 'mean' - take mean of sds of frequencies below fc,
-        'fit', 'robust_fit' - fit omega square source spectrum to obtain M0.
-        If fc=None, M0 and fc are simultaneously determined. Robust version
-        uses a robust linear model (which downweights outliers).
-    :param fc: corner frequency
-    :param a, b: coefficients for omega square model
-    :param fc_lim: corner frequency has to be inside this interval
-        (for fit and fc=None)
+        'fit', 'robust_fit' - fit source model to obtain M0.
+        If one or more of fc, n, gamma are None, M0 and these values are
+        simultaneously determined.
+        Robust version uses a robust linear model (which downweights outliers).
+    :param fc, n, gamma: corner frequency and coefficients for source model
+    :param fc_lim, gamma_lim: bounds for corner frequency and gamma
+        (used for optimization if respective variable is set to None)
+    :param fc0, gamma0: starting values of fc and gamma for optimization
+        (only used for optimization for fc and gamma)
     :param fall_back: use robust fit only if number of data points >= fall_back
     :param num_points: determine M0 only if number of data points >= num_points
-    :return: M0, fc (if input fc == None) or M0, None (if input fc != None)
+    :param tol: tolerance, passed to scipy.optimization
+    :return: dictionary with M0 and optimized variables fc, n, and gamma
+        if applicable
         If M0 is not determined the function will return None
     """
     if method == 'mean':
@@ -246,12 +256,8 @@ def seismic_moment(freq, omM, method='mean', fc=None, a=2, b=1, fc_lim=None,
         if num_points is not None and len(M0) < num_points:
             return
         if len(M0) > 0:
-            return gmean(M0), None
+            return {'M0': gmean(M0)}
     elif method in ('fit', 'robust_fit'):
-        if a is None or b is None:
-            msg = ("a and b must be given for seismic_moment_method 'fit' "
-                   "or 'robust_fit'")
-            raise ValueError(msg)
         omM = np.array(omM, dtype=float)
         freq = np.array(freq)[~np.isnan(omM)]
         omM = omM[~np.isnan(omM)]
@@ -262,25 +268,75 @@ def seismic_moment(freq, omM, method='mean', fc=None, a=2, b=1, fc_lim=None,
         else:
             Model = OLS
 
-        def lstsq(fc, opt=False):
-            if (fc_lim and not fc_lim[0] < fc < fc_lim[1] or fc <= 0) and opt:
-                return np.inf
-            # calculate constant offset == M0
-            y = np.log(omM) - np.log(source_spectrum(freq, 1, fc, a=a, b=b))
+        def lstsq(fc, n, gamma, opt=False):
+            # Inversion for M0
+            model = source_model(freq, 1, fc, n, gamma)
+            y = np.log(omM) - np.log(model)
             X = np.ones(len(y))
             res = Model(y, X).fit()
             if opt:
-                return np.sum(res.resid ** 2)
-            return np.exp(res.params[0])
-        if fc:
-            return lstsq(fc), None
-        elif fc is None and len(freq) > 1:
+                return np.mean(res.resid ** 2)
+            return {'M0': np.exp(res.params[0])}
+        def lstsqab(fc, a, opt=False):
+            # Inversion for M0 and b
+            model = _source_model_ab(freq, 1, fc, a, 1)
+            y = np.log(omM)
+            X = np.empty((len(y), 2))
+            X[:, 0] = 1
+            X[:, 1] = np.log(model)
+            res = Model(y, X).fit()
+            if opt:
+                return np.mean(res.resid ** 2)
+            return {'M0': np.exp(res.params[0]), 'b': res.params[1]}
+
+        unknowns = ((fc is None) * ('fc',) +
+                    (n is None) * ('n',) + (gamma is None) * ('gamma',))
+        if n is None and gamma is None:
+            unknowns = (fc is None) * ('fc',) + ('a',)
+        wrapper = {
+            'fc': lambda x, opt=False: lstsq(x, n, gamma, opt=opt),
+            'n': lambda x, opt=False: lstsq(fc, x, gamma, opt=opt),
+            'gamma': lambda x, opt=False: lstsq(fc, n, x, opt=opt),
+            'fcn': lambda x, opt=False: lstsq(x[0], x[1], gamma, opt=opt),
+            'fcgamma': lambda x, opt=False: lstsq(x[0], n, x[1], opt=opt),
+            'a': lambda x, opt=False: lstsqab(fc, x, opt=opt),
+            'fca': lambda x, opt=False: lstsqab(x[0], x[1], opt=opt),
+             }
+        a_lim = None
+        if n_lim and gamma_lim:
+            a_lim = [n_lim[0] * gamma_lim[0], n_lim[1] * gamma_lim[1]]
+        bounds = {'fc': fc_lim or (freq[0], freq[-1]), 'n': n_lim,
+                  'gamma': gamma_lim, 'a': a_lim}
+        start = {'fc': fc0, 'n': n0, 'gamma': gamma0, 'a': gamma0 * n0}
+
+        result = {}
+        if len(unknowns) == 0:
+            return lstsq(fc, n, gamma)
+        elif len(unknowns) == 1 and len(freq) > 1:
             optimize = scipy.optimize.minimize_scalar
-            opt = optimize(lstsq, args=(True,), method='golden',
-                           bracket=(freq[0], freq[-1]), tol=0.1)
-            fc = opt.x
-            M0 = lstsq(fc)
-            return M0, fc
+            x = unknowns[0]
+            lstsq2 = wrapper[x]
+            opt = optimize(lstsq2, args=(True,), bounds=bounds[x],
+                           method='bounded', **opt_kw)
+            result = {x: opt.x}
+            result.update(lstsq2(opt.x))
+        elif len(freq) > len(unknowns) >= 2:
+            optimize = scipy.optimize.minimize
+            lstsq2 = wrapper[''.join(unknowns)]
+            bounds = [bounds[u] for u in unknowns]
+            x0 = [start[u] for u in unknowns]
+            opt = optimize(lstsq2, x0, args=(True,), bounds=bounds, **opt_kw)
+            result = {u: opt.x[i] for i, u in enumerate(unknowns)}
+            result.update(lstsq2(opt.x))
+            msg = 'Optimization for M0 and %s terminated because of %s'
+            log.debug(msg, unknowns, opt.message.lower())
+        if 'a' in result:
+            a = result.pop('a')
+            b = result.pop('b')
+            result['gamma'] = 1 / b
+            result['n'] = a * b
+        return result
+
 
 
 def moment_magnitude(M0):
@@ -719,6 +775,10 @@ def calculate_source_properties(results, rh0=None, v0=None,
     if rho0:
         for r in results['events'].values():
             v0 = r.get('v0') or v02
+            r.pop('M0', None)
+            r.pop('fc', None)
+            r.pop('n', None)
+            r.pop('gamma', None)
             if v0:
                 insert_source_properties(freq, r, v0, rho0, smm, smo)
     return results
@@ -735,16 +795,11 @@ def insert_source_properties(freq, evresult, v0, rho0, seismic_moment_method,
             evresult['omM'].append(None)
     if seismic_moment_method:
         omM = evresult['omM']
-        temp = seismic_moment(freq, omM,
-                              method=seismic_moment_method,
-                              **seismic_moment_options)
-        if temp is not None:
-            M0, fc = temp
-            Mw = moment_magnitude(M0)
-            evresult['M0'] = M0
-            if seismic_moment_options.get('fc', None) is None:
-                evresult['fc'] = fc
-            evresult['Mw'] = Mw
+        fitresult = fit_sds(freq, omM, method=seismic_moment_method,
+                            **seismic_moment_options)
+        if fitresult is not None:
+            evresult.update(fitresult)
+            evresult['Mw'] = moment_magnitude(fitresult['M0'])
             if catmag is not None:
                 evresult['Mcat'] = catmag
     return sort_dict(evresult)
