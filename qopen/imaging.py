@@ -88,7 +88,7 @@ def _set_gridlabels(ax, i, nx, ny, N, xlabel='frequency (Hz)', ylabel=None):
         ax.set_ylabel(ylabel)
     if i < N - nx and xlabel:
         plt.setp(ax.get_xticklabels(), visible=False)
-    elif i % nx == (nx - 1) // 2 and i >= N - ny - 2 and xlabel:
+    elif i % nx == (nx - 1) // 2 and N - i <= nx and xlabel:
         ax.set_xlabel(xlabel)
 
 
