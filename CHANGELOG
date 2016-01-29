@@ -1,4 +1,4 @@
-dev:
+v1.2:
   * bugfix: observed energy now correctly calculated with a factor of 1/2 instead of 1/4
   * core: rename "correct sensitivities" to "align sites"
   * core: "align sites" now only computes on largest contiguous area
