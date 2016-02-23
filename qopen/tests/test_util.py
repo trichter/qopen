@@ -76,7 +76,6 @@ class TestCase(unittest.TestCase):
         np.testing.assert_array_less(err1, err1_)
         np.testing.assert_array_less(err2, err2_)
 
-
     def test_smooth(self):
         # test window lenght of smoothed signal
         x = np.arange(100)
@@ -84,9 +83,9 @@ class TestCase(unittest.TestCase):
         self.assertEqual(len(smooth(x, 10, method='zeros')), len(x))
         self.assertEqual(len(smooth(x, 11, method='reflect')), len(x))
         self.assertEqual(len(smooth(x, 10, method='reflect')), len(x))
-        self.assertEqual(len(smooth(x, 10, method=None)), len(x)- 10 + 1)
+        self.assertEqual(len(smooth(x, 10, method=None)), len(x) - 10 + 1)
         x = np.arange(101)
-        self.assertEqual(len(smooth(x, 11, method='zeros')),len(x))
+        self.assertEqual(len(smooth(x, 11, method='zeros')), len(x))
         self.assertEqual(len(smooth(x, 10, method='zeros')), len(x))
         self.assertEqual(len(smooth(x, 11, method='reflect')), len(x))
         self.assertEqual(len(smooth(x, 10, method='reflect')), len(x))

@@ -9,10 +9,9 @@ from future.builtins import (  # analysis:ignore
     pow, round, super,
     filter, map, zip)
 
-from obspy import readEvents, read_inventory
-from obspy.arclink import Client as ArcClient
-from obspy.core import Stream, UTCDateTime as UTC
-from obspy.fdsn import Client as FSDNClient
+from obspy import read_events, read_inventory, Stream, UTCDateTime as UTC
+from obspy.clients.arclink import Client as ArcClient
+from obspy.clients.fdsn import Client as FSDNClient
 
 
 evname = './example_events.xml'
@@ -35,7 +34,7 @@ client_kwargs = {'host': 'eida.bgr.de', 'port': 18001, 'user': 'example@qopen'}
 def get_events():
     print('Read event file')
     try:
-        return readEvents(evname)
+        return read_events(evname)
     except:
         pass
     client = FSDNClient('NERIES')

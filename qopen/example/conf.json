@@ -5,10 +5,10 @@
 
 ### Options for input and output ###
 
-# Filename of events file (QuakeML format)
+# Filename of events file (format supported by ObsPy)
 "events": "example_events.xml",
 
-# Filename of inventory of stations (StationXML format)
+# Filename of inventory of stations (format supported by ObsPy)
 "inventory": "example_inventory.xml",
 
 # Filter inventory with Obspy method Inventory.select
@@ -18,9 +18,10 @@
 # Data can be
 #   1. a glob expression of files. All files are read at once. If you have
 #      a huge dataset think about setting up a local webservice and use 2.
-#     (Setting up a seishub service is not difficult.)
-#   2. one of "arclink", "seishub" or "fdsn" for getting the data from
-#      a webservice. Option "client_options" is available.
+#      (Setting up a seishub service is not difficult.)
+#   2. one of the client modules supported by ObsPy (e.g "arclink", "fdsn")
+#      for getting the data from a webservice.
+#      Option "client_options" is available.
 #   3. "plugin" for a 	heterogenous dataset. You have the freedom to get your
 #       data from different locations. In this case the option "plugin" is
 #       available
@@ -36,7 +37,7 @@
 # 'func' has to be the function which delivers the data, e.g. for a
 # FSDN client:
 #     # in module.py
-#     from obspy.fsdn import Client
+#     from obspy.clients.fsdn import Client
 #     client = Client()
 #     def func(**kwargs):
 #         kwargs.pop('event')  # event kwarg is not needed by client

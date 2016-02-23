@@ -66,7 +66,6 @@ def freqlim(freq):
     return x1, x2
 
 
-
 def _savefig(fig, title=None, fname=None, dpi=None):
     if title:
         extra = (fig.suptitle(title),)
@@ -165,14 +164,14 @@ def plot_lstsq(rec, ax=None, fname=None, base=np.e):
     tmax = max(tcoda[i][-1] for i in range(len(tcoda)))
     for i in range(len(tcoda)):
         offset = R[i % len(R)] * W[i // len(R)] / W[0]
-        #offset = R[i] if len(W) == 1 else C[i]
-        #Bci = np.log(Ecoda[i]) - np.log(FS * Gcoda[i]) - np.log(offset)  # + R0
+#        offset = R[i] if len(W) == 1 else C[i]
+#        Bci = np.log(Ecoda[i]) - np.log(FS * Gcoda[i]) - np.log(offset)
         Bci = np.log(Ecoda[i]) - np.log(Gcoda[i]) - np.log(offset)
         ax.plot(tcoda[i], Bci / np.log(base), color='0.7')
     for i in range(len(tbulk)):
-        #offset = R[i] if len(W) == 1 else C[i]
         offset = R[i % len(R)] * W[i // len(R)] / W[0]
-        #Bbi = np.log(Ebulk[i]) - np.log(FS * Gbulk[i]) - np.log(offset)  # + R0
+#        offset = R[i] if len(W) == 1 else C[i]
+#        Bbi = np.log(Ebulk[i]) - np.log(FS * Gbulk[i]) - np.log(offset)
         Bbi = np.log(Ebulk[i]) - np.log(Gbulk[i]) - np.log(offset)
         ax.plot(tbulk[i], Bbi / np.log(base), 'o', color='0.4', mec='0.4',
                 ms=MS)
@@ -286,21 +285,21 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
         plot = ax.semilogy
 
         def get_Emod(G, t):
-            #return FS * R[station] * W[evid] * G * np.exp(-b * t)
             return R[station] * W[evid] * G * np.exp(-b * t)
+#            return FS * R[station] * W[evid] * G * np.exp(-b * t)
         st = energy.stats
         r = st.distance
-        #ax.axvline(st.starttime - st.origintime + r / v0, ls = '--', c='gray')
-        #ax.axvline(r / v0, ls='--', c='gray')
+#        ax.axvline(st.starttime - st.origintime + r / v0, ls = '--', c='gray')
+#        ax.axvline(r / v0, ls='--', c='gray')
         t = _get_times(energy) + r / v0 - (st.sonset - st.origintime)
 
         if smooth:
             plot(t, energy.data_unsmoothed, color='0.7')
         plot(t, energy.data, color=c1l)
-        G_of_t = lambda tt: G_func(r, tt, v0, g0)
-        G_ = smooth_func(G_of_t, t, smooth, window=smooth_window)
+        G_ = smooth_func(lambda t_: G_func(r, t_, v0, g0),
+                         t, smooth, window=smooth_window)
         Emod = get_Emod(G_, t)
-        index = np.argwhere(Emod<1e-30)[-1]
+        index = np.argwhere(Emod < 1e-30)[-1]
         Emod[index] = 1e-30
         plot(t, Emod, color=c2l)
 
@@ -319,7 +318,7 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
         ax.annotate(l, (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top', size='x-small')
         _set_gridlabels(ax, i, n, n, N, xlabel='time (s)',
-                       ylabel=r'E (Jm$^{-3}$Hz$^{-1}$)')
+                        ylabel=r'E (Jm$^{-3}$Hz$^{-1}$)')
         tmaxs.append(t[-1])
         ymaxs.append(max(np.max(Emod), np.max(energy.data)))
         ymins.append(min(np.min(Emodcoda), np.max(Ecoda[i])))
@@ -353,7 +352,8 @@ def plot_sds(freq, result, ax=None, fname=None,
     fig = None
     obs = ('M0', 'fc', 'n', 'gamma')
     smo = seismic_moment_options
-    _get = lambda k: smo.get(k) or result.get(k)
+
+    def _get(k): smo.get(k) or result.get(k)
     smo = {k: _get(k) for k in obs if _get(k) is not None}
     M0 = smo.get('M0')
     fc = smo.get('fc')
@@ -491,7 +491,6 @@ def plot_results(result, v0=None, fname=None, title=None,
     _savefig(fig, fname=fname, title=title)
 
 
-
 def plot_sites(result, fname=None, title=None, mean=None,
                xlim=None, ylim=(1e-2, 1e2), nx=None, figsize=None):
     freq = np.array(result['freq'])
@@ -503,8 +502,8 @@ def plot_sites(result, fname=None, title=None, mean=None,
     for station in sorted(R):
         if not np.all(np.isnan(R[station])):
             N = N + 1
-    #N = len(R) + (max_nobs > 1)
-    #for i
+#    N = len(R) + (max_nobs > 1)
+#    for i
     fig = plt.figure(figsize=figsize)
     nx, ny, gs = _get_grid(N, nx=nx)
     cmap = plt.get_cmap('hot_r', max_nobs)
@@ -520,7 +519,7 @@ def plot_sites(result, fname=None, title=None, mean=None,
         nobs = 1. * np.sum(~np.isnan(R[station]), axis=0)
         errs = (err1, err2)
         freqs = np.repeat(freq[np.newaxis, :], R[station].shape[0], axis=0)
-        #if not np.all(np.isnan(R[station])):
+#        if not np.all(np.isnan(R[station])):
         if max_nobs == 1:
             kwargs = {'c': 'k'}
         else:
@@ -548,6 +547,7 @@ def plot_sites(result, fname=None, title=None, mean=None,
                      ticks=np.arange(0, max_nobs + 1, max(1, max_nobs // 5)))
     _savefig(fig, fname=fname, title=title)
 
+
 def _get_grid(N, nx=None):
     if nx is None:
         nx = ny = int(np.ceil(np.sqrt(N)))
@@ -555,6 +555,7 @@ def _get_grid(N, nx=None):
         ny = 1 + (N-1) // nx
     gs = gridspec.GridSpec(ny, nx)
     return nx, ny, gs
+
 
 def plot_all_sds(result, seismic_moment_method=None,
                  seismic_moment_options=None,
@@ -564,12 +565,12 @@ def plot_all_sds(result, seismic_moment_method=None,
     conf = result.get('config', {})
     smm = seismic_moment_method or conf.get('seismic_moment_method')
     smo = seismic_moment_options or conf.get('seismic_moment_options', {})
-    #fc = seismic_moment_options.pop('fc', None)
+#    fc = seismic_moment_options.pop('fc', None)
     result = result['events']
     N = len(result)
-    #n = int(np.ceil(np.sqrt(N)))
+#    n = int(np.ceil(np.sqrt(N)))
     fig = plt.figure(figsize=figsize)
-    #gs = gridspec.GridSpec(n, n)
+#    gs = gridspec.GridSpec(n, n)
     nx, ny, gs = _get_grid(N, nx=nx)
     share = None
     for i, evid in enumerate(sorted(result)):

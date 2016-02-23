@@ -5,7 +5,7 @@ with open(os.path.join('qopen', '_version.py')) as f:
     VERSION = f.read().split('=')[1].strip().strip("'")
 with open('README.rst') as f:
     README = f.read()
-if not 'dev' in VERSION:  # get image for correct version from travis-ci
+if 'dev' not in VERSION:  # get image for correct version from travis-ci
     README = README.replace('branch=master', 'branch=v%s' % VERSION)
 DESCRIPTION = 'Separation of intrinsic and scattering Q by envelope inversion'
 LONG_DESCRIPTION = '\n'.join(README.split('\n')[7:13])
@@ -16,7 +16,7 @@ ENTRY_POINTS = {
                         'qopen-rt = qopen.rt:main']}
 
 DEPS = ['future', 'numpy>=1.7', 'matplotlib>=1.3', 'scipy>=0.11',
-        'obspy>=0.10', 'statsmodels', 'joblib']
+        'obspy>=1.0', 'statsmodels', 'joblib']
 
 setup(name='qopen',
       version=VERSION,

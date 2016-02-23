@@ -131,6 +131,7 @@ def gerr(data, axis=None, weights=None, unbiased=True, robust=False):
     err2 = np.exp(mean + err) - np.exp(mean)
     return np.exp(mean), err1, err2
 
+
 def smooth_func(f, t, window_len=None, window='flat'):
     """Smooth a function f at time samples t"""
     if window_len is None:
@@ -148,6 +149,7 @@ def smooth_func(f, t, window_len=None, window='flat'):
         f_ = f(t_)
         f_ = smooth(f_, samples, method=None, window=window)
     return f_
+
 
 def smooth(x, window_len=None, window='flat', method='zeros'):
     """Smooth the data using a window with requested size.
@@ -178,7 +180,7 @@ def smooth(x, window_len=None, window='flat', method='zeros'):
         raise ValueError("Input vector needs to be bigger than window size.")
     if window_len < 3:
         return x
-    if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+    if window not in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
         raise ValueError("Window is one of 'flat', 'hanning', 'hamming',"
                          "'bartlett', 'blackman'")
     if method == 'zeros':

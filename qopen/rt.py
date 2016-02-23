@@ -42,6 +42,7 @@ def Gcoda_red(r, t):
          np.exp(t * (a ** 0.75 - 1)) * F(t * a ** 0.75))
     return o
 
+
 def Gr_red(r, t, eps=0):
     """Coda term as a function of r in reduced coordinates  r'=rg0, t'=tcg0
 
@@ -167,6 +168,7 @@ def main(args=None):
         plot_t(c, 1/l, r, t=t, log=args.log)
     elif com == 'plot-r':
         plot_r(c, 1/l, t, r=r, log=args.log)
+
 
 if __name__ == '__main__':
     main()

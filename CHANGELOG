@@ -1,3 +1,6 @@
+v1.3:
+  * fix ObsPy depreciation warnings
+  * remove support for ObsPy<1.0
 v1.2:
   * bugfix: observed energy now correctly calculated with a factor of 1/2 instead of 1/4
   * core: rename "correct sensitivities" to "align sites"

@@ -16,6 +16,7 @@ import unittest
 
 from qopen.rt import G, Gb, Gcoda_red
 
+
 class TestCase(unittest.TestCase):
 
     def test_Paasschens(self):
@@ -26,7 +27,7 @@ class TestCase(unittest.TestCase):
                  (2.8 * 2, 4.0, 2, 2, 0.03 / (2.8 * 2) ** 2 / 2, 2e-5),
                  (4, 1, 6, 1, 0.02 / 4 ** 2, 2e-4)]  # r=4.0l, (6, 0.02)
         for r, t, c, l, P, dP in tests:
-            #print(r, t, c, l, P, G(r, t, c, 1/l) / FS, dP)
+            # print(r, t, c, l, P, G(r, t, c, 1/l) / FS, dP)
             self.assertLess(abs(G(r, t, c, 1 / l) - P), dP)
 
     def test_preservation_of_total_energy(self):
@@ -39,7 +40,7 @@ class TestCase(unittest.TestCase):
             Gb_ = 4 * np.pi * c ** 2 * t ** 2 * Gb(t, c, g0, var='r')
             G_int = 4 * np.pi * np.sum(r ** 2 * G_) * (r[1] - r[0]) + Gb_
             # 2% error are OK for Paaschens solution
-            #print(abs(G_int - 1))
+#            print(abs(G_int - 1))
             self.assertLess(abs(G_int - 1), 0.02)
 
     def test_reduced_Sato(self):

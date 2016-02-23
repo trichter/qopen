@@ -36,7 +36,7 @@ import time
 
 import numpy as np
 import obspy
-from obspy.core.util.geodetics import gps2DistAzimuth
+from obspy.geodetics import gps2dist_azimuth
 import scipy
 import scipy.signal
 from statsmodels.regression.linear_model import OLS, WLS
@@ -68,15 +68,11 @@ DUMP_CONFIG = ['invert_events_simultaniously', 'mean',
                'remove_response', 'correct_for_elevation', 'skip',
                'G_module']
 
-# Correction factor for free surface
-# According to Emoto (2010) or Sato page 394 figure 9.39 this is around 4
-# for S-waves.
-FS = 4
-
-DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma', 'freq', 'g0', 'b', 'error',
-              'W', 'omM', 'R', 'events', 'v0', 'config']
+DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma', 'freq', 'g0', 'b',
+              'error', 'W', 'omM', 'R', 'events', 'v0', 'config']
 
 DUMP_PKL = False
+
 
 class CustomError(Exception):
     pass
@@ -87,8 +83,7 @@ class ParseError(Exception):
 
 
 def sort_dict(dict_, order=DUMP_ORDER):
-    return OrderedDict(sorted(dict_.items(),
-                       key=lambda t: order.index(t[0])))
+    return OrderedDict(sorted(dict_.items(), key=lambda t: order.index(t[0])))
 
 
 def linear_fit(y, x, m=None, method='robust'):
@@ -152,8 +147,7 @@ def get_freqs(max=None, min=None, step=None, width=None, cfreqs=None,
 
     See example configuration file."""
     if cfreqs is None and fbands is None:
-        max_exp = int(np.log(max / min)
-                      / step / np.log(2))
+        max_exp = int(np.log(max / min) / step / np.log(2))
         exponents = step * np.arange(max_exp + 1)[::-1]
         cfreqs = max / 2 ** exponents
     if fbands is None:
@@ -169,7 +163,7 @@ def get_freqs(max=None, min=None, step=None, width=None, cfreqs=None,
     return fbands
 
 
-def energy1c(data, rho, df, fs):
+def energy1c(data, rho, df, fs=4):
     """Energy density of one channel
 
     :param data: velocity data (m/s)
@@ -178,12 +172,16 @@ def energy1c(data, rho, df, fs):
     return rho * (data ** 2 + hilb ** 2) / 2 / df / fs
 
 
-def observed_energy(stream, rho, df, fs=FS, tolerance=1):
+def observed_energy(stream, rho, df, fs=4, tolerance=1):
     """Return trace with total energy density of three component stream
 
     :param stream: stream of a 3 component seismogram
-    :param rho: energy density (kg/m**3)"""
-    data = [energy1c(tr.data, rho, df, fs) for tr in stream]
+    :param rho: energy density (kg/m**3)
+    :param df: filter width in Hz
+    :param fs: free surface correction (default: 4)
+    :param tolerance: the number of samples the length of the traces
+        in the 3 component stream may differ (default: 1)"""
+    data = [energy1c(tr.data, rho, df, fs=fs) for tr in stream]
     Ns = [len(d) for d in data]
     if max(Ns) - min(Ns) > tolerance:
         msg = ('traces for one stream have different lengths %s. Tolerance '
@@ -192,7 +190,7 @@ def observed_energy(stream, rho, df, fs=FS, tolerance=1):
     elif max(Ns) - min(Ns) > 0:
         data = [d[:min(Ns)] for d in data]
     data = np.sum(data, axis=0)
-    tr = obspy.core.Trace(data=data, header=stream[0].stats)
+    tr = obspy.Trace(data=data, header=stream[0].stats)
     tr.stats.channel = tr.stats.channel[:2] + 'X'
     return tr
 
@@ -217,16 +215,16 @@ def source_model(freq, M0, fc, n=2, gamma=1):
     :param n: high frequency fall-of
     :param gamma: corner sharpness
     """
-    return M0 * (1 + (freq / fc) ** (n * gamma)) ** (-1/gamma)
+    return M0 * (1 + (freq / fc) ** (n * gamma)) ** (-1 / gamma)
+
 
 def _source_model_ab(freq, M0, fc, a=2, b=1):
     return M0 * (1 + (freq / fc) ** a) ** (-b)
 
 
 def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
-            fall_back=5, num_points=None,
-            fc_lim=None,  n_lim=(0.5, 10), gamma_lim=(0.5, 10),
-            fc0=10, n0=2, gamma0=1, **opt_kw):
+            fc_lim=None, n_lim=(0.5, 10), gamma_lim=(0.5, 10),
+            fc0=10, n0=2, gamma0=1, fall_back=5, num_points=None, **opt_kw):
     """Calculate seismic moment M0 from source displacement spectrum
 
     :param freq, omM: frequencies, source displacement spectrum (same length)
@@ -242,9 +240,10 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
         (only used for optimization for fc and gamma)
     :param fall_back: use robust fit only if number of data points >= fall_back
     :param num_points: determine M0 only if number of data points >= num_points
-    :param tol: tolerance, passed to scipy.optimization
+    All other kwargs are passed to scipy.optimization, e.g.
+        :param tol: tolerance for optimization
     :return: dictionary with M0 and optimized variables fc, n, and gamma
-        if applicable
+        if applicable.
         If M0 is not determined the function will return None
     """
     if method == 'mean':
@@ -277,6 +276,7 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
             if opt:
                 return np.mean(res.resid ** 2)
             return {'M0': np.exp(res.params[0])}
+
         def lstsqab(fc, a, opt=False):
             # Inversion for M0 and b
             model = _source_model_ab(freq, 1, fc, a, 1)
@@ -301,7 +301,7 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
             'fcgamma': lambda x, opt=False: lstsq(x[0], n, x[1], opt=opt),
             'a': lambda x, opt=False: lstsqab(fc, x, opt=opt),
             'fca': lambda x, opt=False: lstsqab(x[0], x[1], opt=opt),
-             }
+        }
         a_lim = None
         if n_lim and gamma_lim:
             a_lim = [n_lim[0] * gamma_lim[0], n_lim[1] * gamma_lim[1]]
@@ -338,7 +338,6 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
         return result
 
 
-
 def moment_magnitude(M0):
     """Moment magnitude Mw from seismic moment M0"""
     return 2 / 3 * np.log10(M0) - 6.07
@@ -371,7 +370,7 @@ def get_magnitude(event):
     """Preferred or first magnitude of event
 
     This is not the coda magnitude determined by the script, but the magnitude
-    from the original event information.
+    from the original event catalogue.
     """
     try:
         mag = event.preferred_magnitude() or event.magnitudes[0]
@@ -544,6 +543,7 @@ def collect_station_coordinates(inventory):
             coords[key] = (lat, lon)
     return coords
 
+
 # http://stackoverflow.com/a/9400562
 def _merge_sets(sets):
     newsets, sets = sets, []
@@ -557,6 +557,7 @@ def _merge_sets(sets):
             else:
                 newsets.append(aset)
     return newsets
+
 
 def align_site_responses(results, station=None, response=1., use_sparse=True,
                          seismic_moment_method=None,
@@ -609,6 +610,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                 Arow[col] = data
             Arepr.append(Arow)
         row[0] += 1
+
     # calculate best factors for each freq band with OLS A*factor=b
     factors = np.empty((Ne, Nf))
     for i in range(Nf):
@@ -639,7 +641,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                 points = np.array([coordinates[sta] for sta in areas[name]])
                 hull = scipy.spatial.ConvexHull(points)
                 hulls[name] = {station_by_coordinate[tuple(p)]
-                               for p in points[hull.vertices,:]}
+                               for p in points[hull.vertices, :]}
             # calculated distances between unconnected areas
             distance = {}
             for a1 in areas:
@@ -651,7 +653,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                     for sta1 in hulls[a1]:
                         for sta2 in hulls[a2]:
                             args = coordinates[sta1] + coordinates[sta2]
-                            dist = gps2DistAzimuth(*args)[0]
+                            dist = gps2dist_azimuth(*args)[0]
                             dists[(sta1, sta2)] = dist
                     mink = min(dists, key=dists.get)
                     distance[name] = (dists[mink] / 1e3, mink)
@@ -763,6 +765,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         seismic_moment_options=seismic_moment_options)
     return results
 
+
 def calculate_source_properties(results, rh0=None, v0=None,
                                 seismic_moment_method=None,
                                 seismic_moment_options=None):
@@ -782,6 +785,7 @@ def calculate_source_properties(results, rh0=None, v0=None,
             if v0:
                 insert_source_properties(freq, r, v0, rho0, smm, smo)
     return results
+
 
 def insert_source_properties(freq, evresult, v0, rho0, seismic_moment_method,
                              seismic_moment_options, catmag=None):
@@ -808,10 +812,12 @@ def insert_source_properties(freq, evresult, v0, rho0, seismic_moment_method,
 def _check_times(tr, tw, tol=0.5):
     return tr.stats.starttime > tw[0] + tol or tr.stats.endtime < tw[1] - tol
 
+
 def Gsmooth(G_func, r, t, v0, g0, smooth=None, smooth_window='flat'):
-    G_of_t = lambda t_: G_func(r, t_, v0, g0)
-    Gc = smooth_func(G_of_t, t, smooth, window=smooth_window)
+    Gc = smooth_func(lambda t_: G_func(r, t_, v0, g0),
+                     t, smooth, window=smooth_window)
     return Gc
+
 
 def _get_local_minimum(tr, smooth=None, ratio=5):
     data = tr.data
@@ -832,12 +838,13 @@ def _get_local_minimum(tr, smooth=None, ratio=5):
     mins = np.array(mins2)
     for ma in maxs:
         try:
-            mi = np.nonzero(mins<ma)[0][-1]
+            mi = np.nonzero(mins < ma)[0][-1]
             mi = mins[mi]
         except IndexError:
             mi = 0
         if data[ma] / data[mi] > ratio:
             return tr.stats.starttime + mi * tr.stats.delta
+
 
 def _get_slice(energy, tw, pair, energies, bulk=False):
     s = 'bulk' if bulk else 'coda'
@@ -851,8 +858,9 @@ def _get_slice(energy, tw, pair, energies, bulk=False):
         log.warning(msg, pair, s, ex)
         energies.remove(energy)
 
+
 def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
-              R0=1, free_surface=FS,
+              R0=1, free_surface=4,
               noise_windows=None, bulk_window=None, weight=None,
               optimize={}, g0_bounds=(1e-8, 1e-3), b_bounds=(1e-5, 10),
               num_points_integration=1000,
@@ -1044,7 +1052,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             tmin = _get_local_minimum(esl, **cut_coda)
             if tmin:
                 msg = '%s: cut coda at local minimum detected at %.2fs.'
-                log.debug(msg, pair, tmin-otime)
+                log.debug(msg, pair, tmin - otime)
                 codaw[pair][1] = tmin
         # Optionally skip some stations if specified conditions are met
         if skip and skip.get('coda_window') and cut_coda:
@@ -1115,18 +1123,18 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     # Ai = 1 0 0 0 0 -1
     # Solve |AC-B| -> min
     # Construct part of the linear equation system
-    #tc = []
-    #Eobsc = []
-    #tb = []
-    #Eobsb = []
-    #tbulkinterval = []
+#    tc = []
+#    Eobsc = []
+#    tb = []
+#    Eobsb = []
+#    tbulkinterval = []
 
     As = []
     Ns = len(stations)
     Ne = len(eventids)
     for i, B in enumerate(Ecoda + [[_] for _ in Ebulk]):
         A = np.zeros((Ns + Ne - fix, len(B)))
-        #A[i % Ns, :] = 1
+#        A[i % Ns, :] = 1
         evid, st = event_station_pairs[i % len(event_station_pairs)]
         A[stations.index(st), :] = 1
         idx = eventids.index(evid)
@@ -1167,7 +1175,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         E = np.hstack(Ecoda + Ebulk)
         G = np.hstack(Gcoda + Gbulk)
         B = np.log(E) - np.log(G)
-        #B = np.log(E) - np.log(G)
+#        B = np.log(E) - np.log(G)
         if b_fix:
             B = B + b_fix * np.hstack(tcoda + tbulk)
         if bulk_window:
@@ -1251,6 +1259,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
 
     # Optionally plot result of optimization routine
     label_eventid = (len(eventids) == 1)
+
     def fname_and_title(fname, evtotitle=False):
         part1 = '%05.2fHz-%05.2fHz' % freq_band
         title = 'filter: (%.2fHz, %.2fHz)' % freq_band
@@ -1260,6 +1269,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             if evtotitle:
                 title = 'event: %s  %s' % (eventid, title)
         return (fname % part1), title
+
     try:
         if plot_energies and len(energies) > 0:
             pkwargs = copy(plot_energies_options)
@@ -1361,7 +1371,7 @@ def invert(events, inventory, get_waveforms,
         except:
             raise CustomError
         args = (c['latitude'], c['longitude'], ori.latitude, ori.longitude)
-        hdist = gps2DistAzimuth(*args)[0]
+        hdist = gps2dist_azimuth(*args)[0]
         vdist = (ori.depth + c['elevation'] * correct_for_elevation -
                  c['local_depth'])
         if c['local_depth'] > 0:
@@ -1447,7 +1457,7 @@ def invert(events, inventory, get_waveforms,
         stream = get_waveforms(**kwargs2)
         # Check for gaps
         if stream:
-            gaps = stream.getGaps(min_gap=1)
+            gaps = stream.get_gaps(min_gap=1)
             if len(gaps) > 0:
                 msg = '%s: %d gaps longer than 1s detected -> skip pair'
                 log.warning(msg, pair, len(gaps))
@@ -1548,7 +1558,7 @@ def invert(events, inventory, get_waveforms,
     # Construct kwargs for invert_fb call
     kw = copy(kwargs)
     kw.update({'rho0': rho0, 'borehole_stations': borehole_stations,
-               'skip': skip, 'filter':filter})
+               'skip': skip, 'filter': filter})
     if fix_params:
         # if fix_params is used, the inversion for station site responses and
         # energy source terms are done for fixed g0 and b from previous results
@@ -1609,11 +1619,11 @@ def invert(events, inventory, get_waveforms,
             evid = get_eventid(event)
             if W is None:
                 result['events'][evid]['W'].append(None)
-                # result['events'][evid]['omM'].append(None)
+#                result['events'][evid]['omM'].append(None)
             else:
                 result['events'][evid]['W'].append(W.get(evid))
-                #omM = sds(W.get(evid), cfreq, kwargs.get('v0'), rho0)
-                # result['events'][evid]['omM'].append(omM)
+#                omM = sds(W.get(evid), cfreq, kwargs.get('v0'), rho0)
+#                result['events'][evid]['omM'].append(omM)
     # Calculate source properties omM, M0 and Mw
     for event in events:
         evid = get_eventid(event)
@@ -1797,18 +1807,16 @@ def init_data(data, client_options=None, plugin=None, cache_waveforms=False):
     See example configuration file for a description of the options"""
     if client_options is None:
         client_options = {}
-    is_webservice = data in ('arclink', 'fdsn', 'seishub')
-    if is_webservice:
-        webservice_module = import_module('obspy.%s' % data)
-        Client = getattr(webservice_module, 'Client')
+    try:
+        client_module = import_module('obspy.clients.%s' % data)
+    except ImportError:
+        client_module = None
+    if client_module:
+        Client = getattr(client_module, 'Client')
         client = Client(**client_options)
-        if data == 'fdsn':
-            get_waveforms_orig = client.get_waveforms
-        else:
-            get_waveforms_orig = client.getWaveform
 
         def get_waveforms(event=None, **args):
-            return get_waveforms_orig(**args)
+            return client.get_waveforms(**args)
     elif data == 'plugin':
         modulename, funcname = plugin.split(':')
         get_waveforms = load_func(modulename.strip(), funcname.strip())
@@ -1831,10 +1839,11 @@ def init_data(data, client_options=None, plugin=None, cache_waveforms=False):
         except Exception as ex:
             seedid = '.'.join((kwargs['network'], kwargs['station'],
                                kwargs['location'], kwargs['channel']))
-            msg = 'channel %s: error while retireving data: %s'
+            msg = 'channel %s: error while retrieving data: %s'
             log.debug(msg, seedid, ex)
 
-    use_cache = cache_waveforms and (is_webservice or data == 'plugin')
+    use_cache = client_module is not None or data == 'plugin'
+    use_cache = use_cache and cache_waveforms
     if use_cache and joblib:
         log.info('use waveform cache in %s', cache_waveforms)
         memory = joblib.Memory(cachedir=cache_waveforms, verbose=0)
@@ -1845,9 +1854,7 @@ def init_data(data, client_options=None, plugin=None, cache_waveforms=False):
 
 
 class ConfigJSONDecoder(json.JSONDecoder):
-
     """Strip lines from comments"""
-
     def decode(self, s):
         s = '\n'.join(l.split('#', 1)[0] for l in s.split('\n'))
         return super(ConfigJSONDecoder, self).decode(s)
@@ -1868,6 +1875,7 @@ def configure_logging(loggingc, verbose=0, loglevel=3, logfile=None):
             loggingc['handlers']['file']['filename'] = logfile
     logging.config.dictConfig(loggingc)
     logging.captureWarnings(loggingc.get('capture_warnings', False))
+
 
 def run(conf=None, create_config=None, tutorial=False, eventid=None,
         get_waveforms=None, prefix=None, plot=None, fix_params=None,
@@ -1950,8 +1958,12 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
             # Read inventory
             inventory = args.pop('inventory')
             fi = args.pop('filter_inventory', None)
-            if not isinstance(inventory, obspy.station.Inventory):
-                inventory = obspy.read_inventory(inventory, 'STATIONXML')
+            if not isinstance(inventory, obspy.Inventory):
+                if isinstance(inventory, str):
+                    format_ = None
+                else:
+                    inventory, format_ = inventory
+                inventory = obspy.read_inventory(inventory, format_)
                 if fi:
                     inventory = inventory.select(**fi)
                 channels = inventory.get_contents()['channels']
@@ -1962,10 +1974,16 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
             if not align_sites:
                 # Read events
                 events = args.pop('events')
-                if not isinstance(events, (list, obspy.core.event.Catalog)):
-                    events = obspy.readEvents(events)
+                if (not isinstance(events, obspy.Catalog) or
+                        not isinstance(events, list) or
+                        (len(events) == 2 and isinstance(events[0], str))):
+                    if isinstance(events, str):
+                        format_ = None
+                    else:
+                        events, format_ = events
+                    events = obspy.read_events(events, format_)
                     log.info('read %d events', len(events))
-                # Initialize get_waveforms
+            # Initialize get_waveforms
                 keys = ['client_options', 'plugin', 'cache_waveforms']
                 tkwargs = {k: args.pop(k, None) for k in keys}
                 if get_waveforms is None:
@@ -1985,7 +2003,7 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
                    'Example id from file: %s')
             raise ParseError(msg % (eventid, str(events[0].resource_id)))
         log.debug('use only event with id %s', eventid)
-        events = obspy.core.event.Catalog(elist)
+        events = obspy.Catalog(elist)
     # Start main routine with remaining args
     log.debug('start qopen routine with parameters %s', json.dumps(args))
     if not calc_source_params:
@@ -2039,7 +2057,7 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
         path = os.path.dirname(output)
         if path != '' and not os.path.isdir(path):
             os.makedirs(path)
-        fmode = 'w' + 'b' * (not IS_PY3) # dirty hack for now
+        fmode = 'w' + 'b' * (not IS_PY3)  # dirty hack for now
         with open(output, fmode) as f:
             json.dump(result, f, indent=indent)
     time_end = time.time()

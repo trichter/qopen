@@ -110,7 +110,7 @@ class TestCase(unittest.TestCase):
 #        print('M0 test vs paper')
 #        print(np.array(M0_qopen))
 #        print(M0)
-#        plot_comparison(result['freq'], freq, result['g0'], g0, result['b'], b)
+#        plot_comparison(result['freq'], freq, result['g0'], g0, result['b'],b)
 
         np.testing.assert_equal(result['freq'], freq)
 #        print(np.log10(result['g0'] / g0))
