@@ -16,10 +16,17 @@ Qopen is a script in seismology that estimates shear wave scattering and intrins
 How it works
 ------------
 
-The method will be described in an upcoming publication. Please read our `DGG 2015 poster`__ in the meantime.
+The method is described in the following publication:
 
-.. __: https://dx.doi.org/10.6084/m9.figshare.2074693.v1
+Tom Eulenfeld and Ulrich Wegler (2016), Measurement of intrinsic and scattering attenuation of shear waves in two sedimentary basins and comparison to crystalline sites in Germany, *Geophysical Journal International*, 205(2), 744-757, doi:`10.1093/gji/ggw035`__. `[pdf]`_
 
+Alternatively, have a look at our poster_ presented at the 2015 Annual Meeting of the DGG.
+
+.. __: https://dx.doi.org/10.1093/gji/ggw035
+
+.. _`[pdf]`: https://www.researchgate.net/profile/Tom_Eulenfeld/publication/297661773_Measurement_of_intrinsic_and_scattering_attenuation_of_shear_waves_in_two_sedimentary_basins_and_comparison_to_crystalline_sites_in_Germany
+
+.. _poster: https://dx.doi.org/10.6084/m9.figshare.2074693
 
 How to use it
 -------------
