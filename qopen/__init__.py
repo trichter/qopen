@@ -1,2 +1,3 @@
-from qopen._version import __version__
 from qopen.core import run, __doc__
+
+__version__ = '1.3'
