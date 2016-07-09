@@ -19,12 +19,13 @@ before_install:
   - conda update -q conda
   - conda info -a
   - conda config --add channels obspy
-  - conda install python=$TRAVIS_PYTHON_VERSION nose statsmodels joblib obspy
+  - conda install python=$TRAVIS_PYTHON_VERSION nose statsmodels joblib obspy coverage
 install:
   - pip install --no-deps .
 script:
   - mkdir empty; cd empty
-  - travis_wait qopen-runtests
+  - travis_wait coverage run --include='*/qopen/*' -m qopen.tests
 after_success:
+  - bash <(curl -s https://codecov.io/bash)
 notifications:
     email: false
