@@ -52,5 +52,6 @@ setup(name='qopen',
       install_requires=DEPS,
       entry_points=ENTRY_POINTS,
       include_package_data=True,
-      zip_safe=False
+      zip_safe=False,
+      classifiers=CLASSIFIERS
       )
