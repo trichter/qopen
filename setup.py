@@ -15,12 +15,8 @@ def find_version(*paths):
 
 version = find_version('qopen', '__init__.py')
 
-with open('README.rst') as f:
-    README = f.read()
-if 'dev' not in version:  # get image for correct version from travis-ci
-    README = README.replace('branch=master', 'branch=v%s' % version)
 DESCRIPTION = 'Separation of intrinsic and scattering Q by envelope inversion'
-LONG_DESCRIPTION = '\n'.join(README.split('\n')[7:13])
+LONG_DESCRIPTION = 'Please look at the project site for more information.'
 
 ENTRY_POINTS = {
     'console_scripts': ['qopen-runtests = qopen.tests:run',
@@ -30,6 +26,19 @@ ENTRY_POINTS = {
 DEPS = ['future', 'matplotlib>=1.3', 'numpy>=1.7', 'scipy>=0.11',
         'setuptools', 'obspy>=1.0',
         'joblib', 'statsmodels']
+
+CLASSIFIERS = [
+    'Environment :: Console',
+    'Intended Audience :: Science/Research',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
+    'Topic :: Scientific/Engineering :: Physics'
+    ]
 
 setup(name='qopen',
       version=version,

@@ -5,11 +5,20 @@
 
 Separation of intrinsic and scattering **Q** by envel\ **ope** inversio\ **n**
 
-|buildstatus|
+|buildstatus| |coverage| |version| |pyversions|
 
-.. |buildstatus| image:: https://api.travis-ci.org/trichter/qopen.png?
+.. |buildstatus| image:: https://api.travis-ci.org/trichter/qopen.svg?
     branch=master
    :target: https://travis-ci.org/trichter/qopen
+
+.. |coverage| image:: https://codecov.io/gh/trichter/qopen/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/trichter/qopen
+
+.. |version| image:: https://img.shields.io/pypi/v/qopen.svg
+   :target: https://pypi.python.org/pypi/qopen
+
+.. |pyversions| image:: https://img.shields.io/pypi/pyversions/qopen.svg
+   :target: https://python.org
 
 Qopen is a script in seismology that estimates shear wave scattering and intrinsic attenuation parameters by inversion of seismogram envelopes.
 
