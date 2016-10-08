@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-from qopen.core import get_pair, collect_results, linear_fit, source_model
-from qopen.util import gerr, smooth_func
+from qopen.core import get_pair, collect_results, source_model
+from qopen.util import gerr, smooth_func, linear_fit
 
 MS = mpl.rcParams['lines.markersize'] // 2
 

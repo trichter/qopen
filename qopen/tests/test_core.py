@@ -11,14 +11,13 @@ from future.builtins import (  # analysis:ignore
     pow, round, super,
     filter, map, zip)
 
-from copy import deepcopy
 from glob import glob
 import os
 from pkg_resources import load_entry_point
 import unittest
 
 import numpy as np
-from qopen.core import init_data, align_site_responses, run, run_cmdline
+from qopen.core import init_data, run, run_cmdline
 from qopen.tests.util import tempdir, quiet
 
 
@@ -123,34 +122,6 @@ class TestCase(unittest.TestCase):
     def test_plugin_option(self):
         f = init_data('plugin', plugin='qopen.tests.test_core : gw_test')
         self.assertEqual(f(nework=4, station=2), 42)
-
-    def test_align_site_responses(self):
-        r = {'E1':
-             {'R': {'S1': [0.1, 100], 'S2': [1, 4]},
-              'W': [10, 4]},
-             'E2':
-             {'R': {'S1': [10, 2.0], 'S3': [1, 4]},
-              'W': [1, 8]},
-             }
-        r = {'events': r}
-        r2 = align_site_responses(deepcopy(r), use_sparse=True)
-        r3 = align_site_responses(deepcopy(r), use_sparse=False)
-        s1 = r2['events']['E1']['R']['S1'][0]
-        s2 = r2['events']['E2']['R']['S1'][0]
-        self.assertLess(abs(s1 - 1), 0.001)
-        self.assertLess(abs(s2 - 1), 0.001)
-
-        def _comp(d1, d2):
-            if isinstance(d1, float):
-                self.assertLess(abs(d1 - d2), 0.001)
-            elif isinstance(d1, list):
-                _comp(d1[0], d2[0])
-                _comp(d1[1], d2[1])
-            else:
-                for k in d1:
-                    _comp(d1[k], d2[k])
-
-        _comp(r2, r3)
 
 
 def plot_comparison(freq1, freq2, g1, g2, b1, b2):

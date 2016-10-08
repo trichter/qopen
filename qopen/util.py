@@ -10,7 +10,9 @@ from future.builtins import (  # analysis:ignore
     filter, map, zip)
 
 import functools
+
 import numpy as np
+from statsmodels.regression.linear_model import OLS
 from statsmodels.robust.robust_linear_model import RLM
 
 try:
@@ -199,3 +201,24 @@ def smooth(x, window_len=None, window='flat', method='zeros'):
     else:
         w = getattr(np, window)(window_len)
     return np.convolve(w / w.sum(), s, mode='valid')
+
+
+def linear_fit(y, x, m=None, method='robust'):
+    """Linear fit between x and y
+
+    :param x, y: data
+    :param m: fix slope at specific value
+    :param method: one of ('least_squares', 'robust')
+    :return: slope a and intercept b of y = ax + b
+    """
+    Model = RLM if method == 'robust' else OLS
+    if m is None:
+        X = np.empty((len(y), 2))
+        X[:, 0] = x
+        X[:, 1] = 1
+        res = Model(y, X).fit()
+        return res.params
+    else:
+        X = np.ones(len(y))
+        res = Model(np.array(y) - m * np.array(x), X).fit()
+        return m, res.params[0]
