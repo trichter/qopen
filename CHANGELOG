@@ -1,5 +1,8 @@
 dev:
   * move some functions from core to new source and site modules
+  * if picks are used to determine onsets, stations without picks are ignored,
+    now, only S picks are compulsory, P picks can be calculated from distance
+    and vp if necessary
 v1.3:
   * fix ObsPy depreciation warnings
   * remove support for ObsPy<1.0

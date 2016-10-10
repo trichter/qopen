@@ -41,10 +41,10 @@ import scipy
 import scipy.signal
 from statsmodels.regression.linear_model import WLS
 
-from qopen.util import (cache, gmean, smooth as smooth_, smooth_func,
-                        LOGGING_DEFAULT_CONFIG)
 from qopen.site import align_site_responses
 from qopen.source import calculate_source_properties, insert_source_properties
+from qopen.util import (cache, gmean, smooth as smooth_, smooth_func,
+                        LOGGING_DEFAULT_CONFIG)
 
 try:
     import joblib
@@ -960,12 +960,13 @@ def invert(events, inventory, get_waveforms,
 
     # Calculate onsets
     def _get_onsets(evid, sta):
+        ori = origins[evid]
         if use_picks:
             onsets = get_picks(arrivals[evid], sta)
         else:
-            ori = origins[evid]
-            onsets = {'P': ori.time + _get_distance(evid, sta) / vp,
-                      'S': ori.time + _get_distance(evid, sta) / vs}
+            onsets = {'S': ori.time + _get_distance(evid, sta) / vs}
+        if 'P' not in onsets:
+            onsets['P'] = ori.time + _get_distance(evid, sta) / vp
         return onsets
 
     try:
