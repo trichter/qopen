@@ -25,7 +25,7 @@ def sds(W, f, v, rho):
 
 
 def source_model(freq, M0, fc, n=2, gamma=1):
-    """Model for source displacement spectrum
+    """Model for source displacement spectrum (Abercrombie 1995)
 
     :param freq: frequencies
     :param M0: seismic moment (Nm)

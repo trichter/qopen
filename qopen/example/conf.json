@@ -90,9 +90,9 @@
 "invert_events_simultaniously": false,
 
 # If previous option is false, the results are determined as a mean
-# of the inversions for individual events. If 'weighted_mean' is true,
-# the mean is determined as a weighted mean, where the weights correspond
-# to the reciprocal of the error of the inversion
+# of the inversions for individual events. "mean" can take the values
+# "robust" (downweights outliers), "weigthed" (uses errors), all other values
+# use the normal average.
 "mean": "robust",
 
 # Mean shear wave velocity in m/s for calculating the Green's function.
@@ -158,7 +158,8 @@
 "freqs": {"step": 1, "width": 1, "max": 6, "min": 0.3},
 
 # Use picks given in events file to determine the P- and S-onset.
-# Picks can also be used to calculate v0.
+# Picks can also be used to calculate v0. If a station does not have a
+# S pick (S or Sg) it is ignored.
 "use_picks": false,
 
 # Otherwise these velocities are used together with the distance between
@@ -189,12 +190,13 @@
 # Time windows are a list of two values (start and end time).
 # The start time and end time can be a string, e.g.:
 # - 'P-10s', 'S+10s', 'OT+10s' (seconds relative to onset or origin time),
-# - '1.2Stt', '0.8Ptt' (travel time relative to onset travel time),
+# - '1.2Stt', '0.8Ptt' (travel time relative to onset travel time '1Stt'),
 # - '3SNR' (only for end time of codawindow, time after start time when
 #          the energy hits this level relative to the noise level) or
 # - 'time>3SNR' (same as previous, but time after which the noise level
 #                is checked is explicitly given, e.g. "S+10s>3SNR")
-# The start time and end time can also be a list, in this case the largest start time and the smallest end time is chosen.
+# The start time and end time can also be a list, in this case the largest
+# start time and the smallest end time is chosen.
 "noise_windows": [["OT-10s", "OT-5s"], ["OT-5s", "OT+0s"]],
 "bulk_window": ["S-2s", "S+20s"],
 "coda_window": ["S+20s", ["S+150s", "3SNR"]], # Coda window ends 150s after S-onset or if SNR of 3 is reached.
@@ -216,9 +218,11 @@
 # http://docs.scipy.org/doc/numpy/reference/routines.window.html
 "smooth_window": "bartlett",
 
-# Cut coda if a local minimum is present in data (e.g. because of a second earthquake with bulk waves arriving in the coda)
-# Local maxima in the coda are compared to previous local minima. If the ratio between a maximum and the lowest minimum
-# before the maximum is above a threshold the coda window will end at time of the minimum.
+# Cut coda if a local minimum is present in data (e.g. because of a second
+# earthquake with bulk waves arriving in the coda). Local maxima in the coda
+# are compared to previous local minima. If the ratio between a maximum and
+# the lowest minimum before the maximum is above a threshold the coda window
+# will end at time of the minimum.
 # Coda can optionally be smoothed with a flat window before this operation.
 # Example:
 # "cut_coda": {"smooth": 5, "ratio": 5},
@@ -229,7 +233,7 @@
 # - "coda_window" shorter than x seconds
 # - "distance" between station and event larger than x km
 # - "maximum" of envelope is not in given window
-# - "num_pairs" number of station event pairs smaller than x
+# - "num_pairs" skip event if number of station event pairs smaller than x
 # Example:
 # "skip": {"coda_window": 5,
 #          "distance": 500,
@@ -237,18 +241,22 @@
 #          "num_pairs": 2},
 "skip": null,
 
-# Calculate the seismic moment from the source displacement spectrum
-# as a mean of the values for frequencies smaller than 'fc',
-# null for no calculation of the seismic moment
-# More sophisticated methods (e.g. fitting omega square source model)
-# are not yet available.
-# Masuda and Suzuki (1982) Objective estimation of source parameters and local Q values by ...
-
+# Calculate the seismic moment from the source displacement spectrum.
+# Possible values:
+# null: no calculation of the seismic moment
+# "mean" of the values for frequencies smaller than 'fc',
+# "fit" fit source displacement spectrum to source model
+# "robust_fit" robustly fit source displacement spectrum to source model
+# The model is defined in qopen.source.source_model()
+# The options passed to qopen.source.fit_sds() (see documentation there) are
+# defined in the seismic_moment_options dictionary. It is for example possible
+# to invert the source displacement spectrum for fc, n and gamma simultaniously
+# or to fix a subset of the parameters and invert for the others.
 #"seismic_moment_method": "mean",
 #"seismic_moment_options": {"fc": 1.5},
 "seismic_moment_method": "robust_fit",
-"seismic_moment_options": {"fc": null, "n": null, "gamma": 2, "fc_lim": [0.1, 10],
-                           "num_points": 4},
+"seismic_moment_options": {"fc": null, "n": null, "gamma": 2,
+                           "fc_lim": [0.1, 10], "num_points": 4},
 
 # Optionally, a user defined module with alternative Green's function for scattering can be used.
 # The module has to define a function 'G' with the following arguments:
