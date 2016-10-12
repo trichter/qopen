@@ -256,7 +256,7 @@ def get_picks(arrivals, station):
     return picks
 
 
-def time2utc(time, trace, after=None):
+def time2utc(time, trace, starttime=None):
     """Convert string with time information to UTC object
 
     :param time: can be one of:
@@ -266,7 +266,7 @@ def time2utc(time, trace, after=None):
          "???Ptt" travel time relative to P-onset travel time
          "???Stt" travel time relative to S-onset travel time
          "???SNR" time after which SNR falls below this value
-                  (after time given in after)
+                  (after time given in starttime)
          "time>???SNR" time after which SNR falls below this value
                   (after time given in front of expression)
     :param trace: Trace object with stats entries
@@ -280,16 +280,20 @@ def time2utc(time, trace, after=None):
         if '>' in time:
             time1, time = time.split('>')
             if time1 != '':
-                after = time2utc(time1, trace)
-        assert after is not None
-        tr = trace.slice(starttime=after)
+                st = time2utc(time1, trace)
+                if st < starttime:
+                    msg = "time stated before '<' is before window starttime"
+                    log.warning(msg)
+                starttime = st
+        assert starttime is not None
+        tr = trace.slice(starttime=starttime)
         snr = float(time[:-3])
         noise_level = tr.stats.noise_level
         try:
-            index = np.where(tr.data < snr * noise_level)[0][0] - 1
+            index = np.where(tr.data < snr * noise_level)[0][0]
         except IndexError:
-            index = len(tr.data) - 1
-        t = tr.stats.starttime + index * tr.stats.delta
+            index = len(tr.data)
+        t = starttime + index * tr.stats.delta
     elif time.endswith('stt') or time.endswith('ptt'):
         rel = p if time[-3] == 'p' else s
         t = ot + float(time[:-3]) * (rel - ot)
@@ -310,19 +314,16 @@ def tw2utc(tw, trace):
         endtime is taken.
     :param trace: Trace object with stats entries
     """
-    ret = []
+    starttime = None
     for val in tw:
-        after = ret[0] if len(ret) > 0 else None
         if isinstance(val, (list, tuple)):
-            times = [time2utc(v, trace, after=after) for v in val]
-            if len(ret) == 0:
-                t = max(times)
-            else:
-                t = min(times)
+            times = [time2utc(v, trace, starttime=starttime) for v in val]
+            t = max(times) if starttime is None else min(times)
         else:
-            t = time2utc(val, trace, after=after)
-        ret.append(t)
-    return ret
+            t = time2utc(val, trace, starttime=starttime)
+        if starttime is None:
+            starttime = t
+    return starttime, t
 
 
 def collect_results(results):
@@ -436,6 +437,11 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         are calculated in invert function.
     All other options are described in the example configuration file.
     """
+    if skip is None:
+        skip = {}
+    # coda window is forced to have a minimal length of 0.05s
+    # this value should be configured much higher
+    skip.setdefault('coda_window', 0.05)
     msg = 'freq band (%.2fHz, %.2fHz): start optimization'
     log.debug(msg, *freq_band)
     if len(streams) == 0:
