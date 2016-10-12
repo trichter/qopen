@@ -354,7 +354,7 @@ def plot_sds(freq, result, ax=None, fname=None,
     obs = ('M0', 'fc', 'n', 'gamma')
     smo = seismic_moment_options
 
-    def _get(k): smo.get(k) or result.get(k)
+    def _get(k): return smo.get(k) or result.get(k)
     smo = {k: _get(k) for k in obs if _get(k) is not None}
     M0 = smo.get('M0')
     fc = smo.get('fc')

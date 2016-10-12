@@ -12,6 +12,15 @@ In the above case site responses and source powers will be adjusted such that
 the site response of station B is the same for both runs.
 """
 
+# The following lines are for Py2/Py3 support with the future module.
+from __future__ import (absolute_import, division,
+                        print_function, unicode_literals)
+from future.builtins import (  # analysis:ignore
+    bytes, dict, int, list, object, range, str,
+    ascii, chr, hex, input, next, oct, open,
+    pow, round, super,
+    filter, map, zip)
+
 from collections import defaultdict
 import logging
 import numpy as np
