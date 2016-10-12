@@ -25,7 +25,7 @@ log = logging.getLogger('qopen.site')
 log.addHandler(logging.NullHandler())
 
 
-def collect_station_coordinates(inventory):
+def _collect_station_coordinates(inventory):
     coords = {}
     for net in inventory.networks:
         for sta in net.stations:
@@ -35,7 +35,38 @@ def collect_station_coordinates(inventory):
             key = '%s.%s' % (net.code, sta.code)
             coords[key] = (lat, lon)
     return coords
-    
+
+
+def _get_number_of_freqs(results):
+    Nf = None
+    for evid, eres in results['events'].items():
+        Nf2 = len(eres['W'])
+        if Nf is not None:
+            assert Nf == Nf2
+        Nf = Nf2
+    return Nf
+
+
+def _rescale_results(results, factors):
+    log.debug('scale events and site responses')
+    Nf = _get_number_of_freqs(results)
+    for i in range(Nf):
+        for k, item in enumerate(results['events'].items()):
+            evid, eres = item
+            W = eres['W']
+            if W[i] is None or np.isnan(W[i]):
+                continue
+            W[i] /= factors[k, i]
+            R = eres['R']
+            for sta, Rsta in R.items():
+                if Rsta[i] is None or np.isnan(Rsta[i]):
+                    continue
+                Rsta[i] *= factors[k, i]
+
+
+def _sum_residuals(results):
+    pass
+
 
 # http://stackoverflow.com/a/9400562
 def _merge_sets(sets):
@@ -52,6 +83,79 @@ def _merge_sets(sets):
     return newsets
 
 
+def _find_unconnected_areas(results, freqi):
+    areas = []
+    for evid in results['events']:
+        R = results['events'][evid]['R']
+        area = {sta for sta, Rsta in R.items()
+                if Rsta[freqi] is not None and not np.isnan(Rsta[freqi])}
+        if len(area) > 0:
+            areas.append(area)
+    areas = _merge_sets(areas)
+    areas = {list(a)[0]: a for a in areas}
+    log.info('found %d unconnected areas', len(areas))
+    for name in areas:
+        stations = areas[name]
+        log.debug('area "%s" with %d stations', name, len(stations))
+    return areas
+
+
+def _join_unconnected_areas(areas, max_distance, inventory):
+    # At the moment, areas are joined by setting the site response of
+    # the station pair with smallest distance to 1
+    # Often this works, but sometimes it produces undesired results
+    coordinates = _collect_station_coordinates(inventory)
+    station_by_coordinate = {c: sta for sta, c in coordinates.items()}
+    # reduce number of coordinates in each area
+    hulls = {}
+    for name in areas:
+        points = np.array([coordinates[sta] for sta in areas[name]])
+        hull = scipy.spatial.ConvexHull(points)
+        hulls[name] = {station_by_coordinate[tuple(p)]
+                       for p in points[hull.vertices, :]}
+    # calculated distances between unconnected areas
+    distance = {}
+    for a1 in areas:
+        for a2 in areas:
+            name = frozenset((a1, a2))
+            if name in distance or a1 == a2:
+                continue
+            dists = {}
+            for sta1 in hulls[a1]:
+                for sta2 in hulls[a2]:
+                    args = coordinates[sta1] + coordinates[sta2]
+                    dist = gps2dist_azimuth(*args)[0]
+                    dists[(sta1, sta2)] = dist
+            mink = min(dists, key=dists.get)
+            distance[name] = (dists[mink] / 1e3, mink)
+    # join unconnected regions if distance is smaller than max_distance
+    near_stations = {}
+    while len(distance) > 0:
+        nearest_pair = min(distance, key=distance.get)
+        dist = distance[nearest_pair][0]
+        if dist > max_distance:
+            break
+        s1, s2 = distance[nearest_pair][1]
+        near_stations[s1] = s2
+        near_stations[s2] = s1
+        a1, a2 = tuple(nearest_pair)
+        msg = 'connect areas %s and %s with distance %.1fkm'
+        log.debug(msg, a1, a2, dist)
+        distance.pop(nearest_pair)
+        areas[a1] |= areas.pop(a2)
+        hulls[a1] |= hulls.pop(a2)
+        for a3 in areas:
+            if a3 in (a1, a2):
+                continue
+            pair1 = frozenset((a1, a3))
+            pair2 = frozenset((a2, a3))
+            dist1 = distance[pair1]
+            dist2 = distance.pop(pair2)
+            if dist2[0] < dist1[0]:
+                distance[pair1] = dist2
+    return areas, near_stations
+
+
 def align_site_responses(results, station=None, response=1., use_sparse=True,
                          seismic_moment_method=None,
                          seismic_moment_options=None):
@@ -63,22 +167,15 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
     results['events'] = {evid: eres for (evid, eres) in
                          results['events'].items() if eres is not None}
     join_unconnected = None
-    inventory = None
     if join_unconnected:
+        inventory = None
         msg = 'This feature needs more work and tests'
         raise NotImplementedError(msg)
-        coordinates = collect_station_coordinates(inventory)
-        station_by_coordinate = {c: sta for sta, c in coordinates.items()}
     Ne = len(results['events'])
     if Ne == 1:
         use_sparse = False
     # Determine number of freqs
-    Nf = None
-    for evid, eres in results['events'].items():
-        Nf2 = len(eres['W'])
-        if Nf is not None:
-            assert Nf == Nf2
-        Nf = Nf2
+    Nf = _get_number_of_freqs(results)
     # Determine number of events at stations for each freq band
     Nstations = [defaultdict(int) for i in range(Nf)]
     for evid, eres in results['events'].items():
@@ -109,72 +206,10 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
     for i in range(Nf):
         log.info('align sites for freq no. %d', i)
         # find unconnected areas
-        areas = []
-        for evid in results['events']:
-            R = results['events'][evid]['R']
-            area = {sta for sta, Rsta in R.items()
-                    if Rsta[i] is not None and not np.isnan(Rsta[i])}
-            if len(area) > 0:
-                areas.append(area)
-        areas = _merge_sets(areas)
-        areas = {list(a)[0]: a for a in areas}
-        log.info('found %d unconnected areas', len(areas))
-        for name in areas:
-            stations = areas[name]
-            log.debug('area "%s" with %d stations', name, len(stations))
-        near_stations = []
-        near_stations_eq = {}
+        areas = _find_unconnected_areas(results, i)
         if join_unconnected:
-            # At the moment, areas are joined by setting the site response of
-            # the station pair with smallest distance to 1
-            # Often this works, but sometimes it produces undesired results
-            # reduce number of coordinates in each area
-            hulls = {}
-            for name in areas:
-                points = np.array([coordinates[sta] for sta in areas[name]])
-                hull = scipy.spatial.ConvexHull(points)
-                hulls[name] = {station_by_coordinate[tuple(p)]
-                               for p in points[hull.vertices, :]}
-            # calculated distances between unconnected areas
-            distance = {}
-            for a1 in areas:
-                for a2 in areas:
-                    name = frozenset((a1, a2))
-                    if name in distance or a1 == a2:
-                        continue
-                    dists = {}
-                    for sta1 in hulls[a1]:
-                        for sta2 in hulls[a2]:
-                            args = coordinates[sta1] + coordinates[sta2]
-                            dist = gps2dist_azimuth(*args)[0]
-                            dists[(sta1, sta2)] = dist
-                    mink = min(dists, key=dists.get)
-                    distance[name] = (dists[mink] / 1e3, mink)
-            # join unconnected regions
-            while len(distance) > 0:
-                nearest_pair = min(distance, key=distance.get)
-                dist = distance[nearest_pair][0]
-                if dist > join_unconnected:
-                    break
-                s1, s2 = distance[nearest_pair][1]
-                near_stations.extend([s1, s2])
-                near_stations_eq[s1] = s2
-                near_stations_eq[s2] = s1
-                a1, a2 = tuple(nearest_pair)
-                msg = 'connect areas %s and %s with distance %.1fkm'
-                log.debug(msg, a1, a2, dist)
-                distance.pop(nearest_pair)
-                areas[a1] |= areas.pop(a2)
-                hulls[a1] |= hulls.pop(a2)
-                for a3 in areas:
-                    if a3 in (a1, a2):
-                        continue
-                    pair1 = frozenset((a1, a3))
-                    pair2 = frozenset((a2, a3))
-                    dist1 = distance[pair1]
-                    dist2 = distance.pop(pair2)
-                    if dist2[0] < dist1[0]:
-                        distance[pair1] = dist2
+            areas, near_stations = _join_unconnected_areas(
+                areas, join_unconnected, inventory)
         largest_area = max(areas, key=lambda k: len(areas[k]))
         msg = 'use largest area %s with %d stations'
         log.info(msg, largest_area, len(areas[largest_area]))
@@ -211,13 +246,17 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                     construct_ols(((k, 1),), b_val)
                 elif sta in last:
                     # add pairs of site responses for one station
-                    # and 2 different events
+                    # and two different events
                     kl, Rstal = last[sta]
                     b_val = np.log(Rstal) - np.log(Rsta)
                     construct_ols(((k, 1), (kl, -1)), b_val)
                     last[sta] = k, Rsta
-                elif sta in near_stations and near_stations_eq[sta] in last:
-                    kl, Rstal = last[near_stations_eq[sta]]
+                elif (join_unconnected and sta in near_stations.keys() and
+                        near_stations[sta] in last):
+                    # add pairs of site responses for two nearby stations
+                    # (in two previously unconnected areas)
+                    # and two different events
+                    kl, Rstal = last[near_stations[sta]]
                     b_val = np.log(Rstal) - np.log(Rsta)
                     construct_ols(((k, 1), (kl, -1)), b_val)
                     last[sta] = k, Rsta
@@ -233,28 +272,19 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         b = np.array(b)
         if use_sparse:
             A = scipy.sparse.csr_matrix(tuple(Arepr), shape=(row[0], Ne))
+#            import matplotlib.pyplot as plt
+#            plt.spy(A)
+#            plt.show()
+#            1/0
             res = scipy.sparse.linalg.lsmr(A, b)
         else:
             A = np.array(Arepr)
             res = scipy.linalg.lstsq(A, b, overwrite_a=True, overwrite_b=True)
         factors[:, i] = np.exp(res[0])
     # Scale W and R
-    log.debug('scale events and site responses')
-    for i in range(Nf):
-        for k, item in enumerate(results['events'].items()):
-            evid, eres = item
-            W = eres['W']
-            if W[i] is None or np.isnan(W[i]):
-                continue
-            W[i] /= factors[k, i]
-            R = eres['R']
-            for sta, Rsta in R.items():
-                if Rsta[i] is None or np.isnan(Rsta[i]):
-                    continue
-                Rsta[i] *= factors[k, i]
+    _rescale_results(results, factors)
     # Calculate omM, M0 and m again
-    csp = calculate_source_properties
-    csp(results, seismic_moment_method=seismic_moment_method,
+    calculate_source_properties(
+        results, seismic_moment_method=seismic_moment_method,
         seismic_moment_options=seismic_moment_options)
     return results
-
