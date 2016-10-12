@@ -246,8 +246,8 @@ def get_picks(arrivals, station):
             phase = phase[0]
         if phase not in 'PS':
             continue
-        pick = arrival.pick_id.getReferredObject()
-        seedid = pick.waveform_id.getSEEDString()
+        pick = arrival.pick_id.get_referred_object()
+        seedid = pick.waveform_id.get_seed_string()
         if station == get_station(seedid):
             if phase in picks:
                 msg = '%s, %s-onset: multiple picks'
