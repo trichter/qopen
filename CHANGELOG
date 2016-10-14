@@ -1,7 +1,9 @@
-dev:
+v1.4:
   * move some functions from core to new source and site modules
+  * API documentation now available on readthedocs
   * bugfix: fix plotting of source model and seismic moment in sds plots
   * core: if picks are used, S picks are compulsory and P picks are optional now
+  * core: fix some more ObsPy depreciation warnings
 v1.3:
   * fix ObsPy depreciation warnings
   * remove support for ObsPy<1.0
