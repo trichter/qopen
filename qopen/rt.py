@@ -1,4 +1,4 @@
-# Author: Tom Eulenfeld
+# Copyright 2015-2016 Tom Eulenfeld, MIT license
 """
 Radiative Transfer: Approximative interpolation solution of Paasschens (1997)
 

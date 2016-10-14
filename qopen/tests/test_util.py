@@ -1,3 +1,4 @@
+# Copyright 2015-2016 Tom Eulenfeld, MIT license
 """
 Tests for util module.
 """

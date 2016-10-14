@@ -1,4 +1,4 @@
-# Author: Tom Eulenfeld
+# Copyright 2015-2016 Tom Eulenfeld, MIT license
 
 # The following lines are for Py2/Py3 support with the future module.
 from __future__ import (absolute_import, division,

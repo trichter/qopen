@@ -1,5 +1,4 @@
-# coding=utf-8
-# Author: Tom Eulenfeld
+# Copyright 2015-2016 Tom Eulenfeld, MIT license
 """
 Qopen
 =====
@@ -7,8 +6,6 @@ Qopen
 Seperation of intrinsic and scattering **Q** by envel\ **ope** inversio\ **n**
 
 Determining scattering parameters and seismic moment.
-
-Based partly upon Sens-Schönfelder and Wegler (2006).
 
 run_cmdline -> run -> invert_wrapper -> invert -> invert_fb
 """

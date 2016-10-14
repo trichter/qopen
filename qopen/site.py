@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Author: Tom Eulenfeld
+# Copyright 2015-2016 Tom Eulenfeld, MIT license
 """
 Align site responses of different runs of Qopen.
 
