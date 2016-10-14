@@ -48,6 +48,10 @@ class Mock(object):
         else:
             return Mock()
 
+    @classmethod
+    def __getitem__(cls, name):
+        return 0
+
 # Mock all modules in qopen which raise an import error
 for i in range(20):
     try:
