@@ -1,12 +1,12 @@
 # Copyright 2015-2016 Tom Eulenfeld, MIT license
 """
-Align site responses of different runs of Qopen.
+Align site responses of different runs of Qopen
 
 Consider two runs of Qopen with stations A, B in run 1 and stations
 B, C in run 2. Qopen assumes a mean site amplification for each run of 1
 with the default configuration.
-Use `align_site_responses` to correct source power and site amplification
-factors afterwards.
+Use `align_site_responses` or the command line option ``qopen --align-sites``
+to correct source power and site amplification factors afterwards.
 In the above case site responses and source powers will be adjusted such that
 the site response of station B is the same for both runs.
 """
@@ -167,10 +167,17 @@ def _join_unconnected_areas(areas, max_distance, inventory):
 def align_site_responses(results, station=None, response=1., use_sparse=True,
                          seismic_moment_method=None,
                          seismic_moment_options=None):
-    """(experimental) Align station site responses and correct source params
+    """
+    Align station site responses and correct source parameters (experimental)
 
     Determine best factor for each event so that site response is the same
-    for each station and different events."""
+    for each station and different events.
+
+    :param results: original result dictionary. For the other options see
+        the help for the corresponding command line options or configuration
+        parameters.
+    :return: corrected result dictionary
+    """
     # Ignore not existing event results
     results['events'] = {evid: eres for (evid, eres) in
                          results['events'].items() if eres is not None}

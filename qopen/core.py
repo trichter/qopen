@@ -1,13 +1,25 @@
 # Copyright 2015-2016 Tom Eulenfeld, MIT license
 """
-Qopen
-=====
+Qopen command line script and routines
 
-Seperation of intrinsic and scattering **Q** by envel\ **ope** inversio\ **n**
+:func:`run_cmdline` is started by the ``qopen`` command line script.
+Import and call :func:`run` if you want to use *Qopen* inside Python code:
 
-Determining scattering parameters and seismic moment.
+>>> from qopen import run
+>>> run(conf='conf.json')
 
-run_cmdline -> run -> invert_wrapper -> invert -> invert_fb
+Qopen will run the following functions top-down:
+
+.. autosummary::
+  :nosignatures:
+
+   run_cmdline
+   run
+   invert_wrapper
+   invert
+   invert_fb
+
+|
 """
 # The following lines are for Py2/Py3 support with the future module.
 from __future__ import (absolute_import, division,
@@ -91,14 +103,15 @@ def filter_width(sr, freq=None, freqmin=None, freqmax=None, corners=2,
 
     The result corresponds to the filter width, which equals approximately
     the difference of the corner frequencies. The energy density should
-    be divided by the result to get the correct energy spectral density.
+    be divided by the result to get the correct spectral energy density.
 
     :param sr: sampling rate
     :param freq: corner frequencies of low- or highpass filter
-    :param freqmin, freqmax: corner frequencies of bandpass filter
+    :param freqmin,freqmax: corner frequencies of bandpass filter
     :param corners: number of corners
     :param zerophase: if True number of corners are doubled
     :param type: 'bandpass', 'highpass' or 'lowpass'
+    :return: filter width
     """
     if type == 'bandpass':
         fs = (freqmin / (0.5 * sr), freqmax / (0.5 * sr))
@@ -122,7 +135,8 @@ def get_freqs(max=None, min=None, step=None, width=None, cfreqs=None,
               fbands=None):
     """Determine frequency bands
 
-    See example configuration file."""
+    :param args: See example configuration file.
+    :return: ordered dictionary {central frequency: corner frequencies}"""
     if cfreqs is None and fbands is None:
         max_exp = int(np.log(max / min) / step / np.log(2))
         exponents = step * np.arange(max_exp + 1)[::-1]
@@ -141,23 +155,29 @@ def get_freqs(max=None, min=None, step=None, width=None, cfreqs=None,
 
 
 def energy1c(data, rho, df, fs=4):
-    """Energy density of one channel
+    """Spectral energy density of one channel
 
     :param data: velocity data (m/s)
-    :param rho: density (kg/m**3)"""
+    :param rho: density (kg/m**3)
+    :param df: filter width in Hz
+    :param fs: free surface correction (default: 4)
+    :return: energy density
+    """
     hilb = scipy.fftpack.hilbert(data)
     return rho * (data ** 2 + hilb ** 2) / 2 / df / fs
 
 
 def observed_energy(stream, rho, df, fs=4, tolerance=1):
-    """Return trace with total energy density of three component stream
+    """
+    Return trace with total spectral energy density of three component stream
 
     :param stream: stream of a 3 component seismogram
-    :param rho: energy density (kg/m**3)
+    :param rho: density (kg/m**3)
     :param df: filter width in Hz
     :param fs: free surface correction (default: 4)
     :param tolerance: the number of samples the length of the traces
-        in the 3 component stream may differ (default: 1)"""
+        in the 3 component stream may differ (default: 1)
+    :return: trace with total energy density"""
     data = [energy1c(tr.data, rho, df, fs=fs) for tr in stream]
     Ns = [len(d) for d in data]
     if max(Ns) - min(Ns) > tolerance:
@@ -209,7 +229,7 @@ def get_magnitude(event):
 
 
 def get_arrivals(event):
-    """Arrivals of appropriate event"""
+    """Arrivals of appropriate origin from event"""
     ar = get_origin(event).arrivals
     if len(ar) > 0:
         return ar
@@ -254,20 +274,20 @@ def get_picks(arrivals, station):
 
 
 def time2utc(time, trace, starttime=None):
-    """Convert string with time information to UTC object
+    """Convert string with time information to UTCDateTime object
 
-    :param time: can be one of:
-         "OT+-???s" seconds relative to origin time
-         "P+-???s" seconds relative to P-onset
-         "S+-???s" seconds relative to S-onset
-         "???Ptt" travel time relative to P-onset travel time
-         "???Stt" travel time relative to S-onset travel time
+    :param time: can be one of:\n
+         "OT+-???s" seconds relative to origin time\n
+         "P+-???s" seconds relative to P-onset\n
+         "S+-???s" seconds relative to S-onset\n
+         "???Ptt" travel time relative to P-onset travel time\n
+         "???Stt" travel time relative to S-onset travel time\n
          "???SNR" time after which SNR falls below this value
-                  (after time given in starttime)
+                  (after time given in starttime)\n
          "time>???SNR" time after which SNR falls below this value
                   (after time given in front of expression)
     :param trace: Trace object with stats entries
-    :param after: UTC object for SNR case.
+    :param starttime: UTCDatetime object for SNR case.
     """
     ot = trace.stats.origintime
     p = trace.stats.ponset
@@ -306,7 +326,7 @@ def time2utc(time, trace, starttime=None):
 def tw2utc(tw, trace):
     """Convert time window to UTC time window
 
-    :param tw: tuple of two values, both can be a string (see :func: time2utc)
+    :param tw: tuple of two values, both can be a string (see :func:`time2utc`)
         or a list of strings in which case the latest starttime and earliest
         endtime is taken.
     :param trace: Trace object with stats entries
@@ -326,6 +346,9 @@ def tw2utc(tw, trace):
 def collect_results(results):
     """
     Collect g0, b, error, R, W, eventids and v0 from results of multiple events
+
+    :param results: result dictionary returned by :func:`run`
+    :return: lists of g0, b, error, R, W, eventids, v0
     """
     if 'g0' not in list(results['events'].items())[0][1]:
         g0 = [results['g0']]
@@ -367,6 +390,7 @@ def _check_times(tr, tw, tol=0.5):
 
 
 def Gsmooth(G_func, r, t, v0, g0, smooth=None, smooth_window='flat'):
+    """Return smoothed Green's function as a function of time"""
     Gc = smooth_func(lambda t_: G_func(r, t_, v0, g0),
                      t, smooth, window=smooth_window)
     return Gc
@@ -428,11 +452,15 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
               fix=False, fix_params=None,
               **kwargs):
     """
-    inversion for given streams and a specific frequency band
+    Inverst streams in a specific frequency band for attenuation parameters
 
-    :param freq_band, streams, borehole_stations, fix, fix_params:
-        are calculated in invert function.
-    All other options are described in the example configuration file.
+    :parameters:
+        **freq_band**, **streams**, **borehole_stations**,
+        **fix**, **fix_params** --
+        are determined in :func:`invert`.
+        All other options are described in the example configuration file.
+    :return: result tuple
+
     """
     if skip is None:
         skip = {}
@@ -711,7 +739,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     recorded_g0 = set()
     max_record = plot_optimization_options.get('num', 7)
     nonlocal_ = {'warn': True}
-    G_func = load_func(G_module, 'G')
+    G_func = _load_func(G_module, 'G')
 
     def lstsq(g0, opt=False, b_fix=None):
         """Error for optimization of g0"""
@@ -882,11 +910,12 @@ def invert(events, inventory, get_waveforms,
            fix_params=None,
            **kwargs):
     """
-    qopen function inverting all events and stations simultaneously.
+    Qopen function to invert events and stations simultaneously
 
-    :param events: is determined in :func: qopens
-    :param inventory, get_waveforms: are determined in :func: run
-    All other options are described in the example configuration file.
+    :param events: is determined in :func:`invert_wrapper`
+    :param inventory,get_waveforms: are determined in :func:`run`
+        All other options are described in the example configuration file.
+    :return: result dictionary
     """
     if joblib and parallel:
         log.debug('use %d cores for parallel computation', njobs)
@@ -1205,7 +1234,7 @@ def invert(events, inventory, get_waveforms,
                   'seismic_moment_options': seismic_moment_options}
             plot_eventresult_options.update(kw)
         try:
-            plot_(result, eventid=get_eventid(event),
+            _plot(result, eventid=get_eventid(event),
                   # v0=kwargs.get('v0'),
                   plot_eventresult=plot_eventresult,
                   plot_eventresult_options=plot_eventresult_options,
@@ -1224,14 +1253,16 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
                    plot_mags=False, plot_mags_options={},
                    invert_events_simultaniously=False,
                    mean=None, **kwargs):
-    """qopen function for a list or Catalog of events
+    """Qopen function for a list or Catalog of events
 
     Depending on 'invert_events_simultaniously' flag the function
-    calls :func: qopen for each event seperately or for all events once.
+    calls :func:`invert` for each event seperately or for all events once.
     In the first case mean results are calculated.
 
-    :param events: is determined in :func: run.
-    The rest of the options are described in the example configuration file.
+    :param events: is determined in :func:`run`.
+        The rest of the options are described in the example configuration
+        file.
+    :return: result dictionary
     """
     # Sort events by origin time
     time_event_pairs = []
@@ -1282,7 +1313,7 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
     result = sort_dict(result)
     # Optionally plot stuff
     try:
-        plot_(result, plot_results=plot_results,
+        _plot(result, plot_results=plot_results,
               plot_results_options=plot_results_options,
               plot_sites=plot_sites, plot_sites_options=plot_sites_options,
               plot_sds=plot_sds, plot_sds_options=plot_sds_options,
@@ -1294,7 +1325,7 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
     return result
 
 
-def plot_(result, eventid=None, v0=None,
+def _plot(result, eventid=None, v0=None,
           plot_results=False, plot_results_options={},
           plot_sites=False, plot_sites_options={},
           plot_sds=False, plot_sds_options={},
@@ -1351,7 +1382,7 @@ def plot_(result, eventid=None, v0=None,
             log.debug('create eventsites plot at %s', fname)
 
 
-def load_func(modulename, funcname):
+def _load_func(modulename, funcname):
     """Load and return function from Python module"""
     sys.path.append(os.path.curdir)
     module = import_module(modulename)
@@ -1378,7 +1409,7 @@ def init_data(data, client_options=None, plugin=None, cache_waveforms=False):
             return client.get_waveforms(**args)
     elif data == 'plugin':
         modulename, funcname = plugin.split(':')
-        get_waveforms = load_func(modulename.strip(), funcname.strip())
+        get_waveforms = _load_func(modulename.strip(), funcname.strip())
     else:
         from obspy import read
         stream = read(data)
@@ -1413,7 +1444,7 @@ def init_data(data, client_options=None, plugin=None, cache_waveforms=False):
 
 
 class ConfigJSONDecoder(json.JSONDecoder):
-    """Strip lines from comments"""
+    """Decode JSON config with comments stripped"""
     def decode(self, s):
         s = '\n'.join(l.split('#', 1)[0] for l in s.split('\n'))
         return super(ConfigJSONDecoder, self).decode(s)
@@ -1441,21 +1472,27 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
         align_sites=None, align_sites_station=None, align_sites_value=1.,
         calc_source_params=None,
         **args):
-    """
-    Main entry point for a direct call from Python
+    """Main entry point for a direct call from Python
 
-    Example call: main(conf='conf.json')
+    Example usage:
+
+    >>> from qopen import run
+    >>> run(conf='conf.json')
 
     :param args: All args correspond to the respective command line and
         configuration options.
         See the example configuration file for help and possible arguments.
         Options in args can overwrite the configuration from the file.
-    Exceptions from description in configuration file:
+        E.g. ``run(conf='conf.json', events=my_catalogue)`` will ignore
+        ``events`` value in the configuration file.
+
+        Exceptions from the description in configuration file:
     :param events: can be filename or ObsPy Catalog object
     :param inventory: can be filename or ObsPy Inventory object
     :param get_waveforms: function, if given the data option will be ignored.
         get_waveforms will be called as described in the example configuration
         file
+    :return: result dictionary
     """
     time_start = time.time()
     # Copy example files if create_config or tutorial
@@ -1504,7 +1541,7 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
         else:
             result['config'].update(args)
             args = result['config']
-        plot_(result, eventid=eventid, **args)
+        _plot(result, eventid=eventid, **args)
         return
     # Configure logging
     kw = {'loggingc': args.pop('logging', None),
@@ -1598,14 +1635,14 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
         align_site_responses(result, station=align_sites_station,
                              response=align_sites_value, **kw)
         result.setdefault('config', {}).update(kw)
-        plot_(result, eventid=eventid, **args)
+        _plot(result, eventid=eventid, **args)
     elif calc_source_params:
         log.info('calculate source parameters')
         with open(calc_source_params) as f:
             result = json.load(f)
         calculate_source_properties(result, **kw)
         result.setdefault('config', {}).update(kw)
-        plot_(result, eventid=eventid, **args)
+        _plot(result, eventid=eventid, **args)
     else:
         result = invert_wrapper(**args)
         # Output and return result
@@ -1694,7 +1731,7 @@ def run_cmdline(args=None):
         g3.add_argument('--no-' + f.replace('_', '-'), dest=f,
                         action='store_false', default=SUPPRESS)
 
-    # Get command line arguments and start :func: run
+    # Get command line arguments and start run function
     args = vars(p.parse_args(args))
     try:
         run(**args)

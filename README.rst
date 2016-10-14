@@ -80,3 +80,18 @@ To use the script with your own data you need 1. an inventory (StationXML or oth
     qopen --create-config
 
 This file has to be adapted to your needs (time window selection, etc.). The inversion is started by simply running `qopen` again.
+
+Use Qopen in Python scripts
+...........................
+
+To call Qopen from Python do e.g. ::
+
+    from qopen import run
+    run(conf='conf.json')
+
+All configuration options in `conf.json` can be overwritten by keyword
+arguments passed to `run()`.
+
+Please also consult the `API documentation`_.
+
+.. _`API documentation`: https://qopen.readthedocs.io

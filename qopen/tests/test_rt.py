@@ -15,7 +15,7 @@ from future.builtins import (  # analysis:ignore
 import numpy as np
 import unittest
 
-from qopen.rt import G, Gb, Gcoda_red
+from qopen.rt import G, Gcoda_red, Gdirect
 
 
 class TestCase(unittest.TestCase):
@@ -37,9 +37,9 @@ class TestCase(unittest.TestCase):
         g0 = 1e-5
         for t in (1, 10, 100):
             r = np.linspace(0, 1.5 * c * t, 1000)
-            G_ = G(r, t, c, g0, include_bulk=False)
-            Gb_ = 4 * np.pi * c ** 2 * t ** 2 * Gb(t, c, g0, var='r')
-            G_int = 4 * np.pi * np.sum(r ** 2 * G_) * (r[1] - r[0]) + Gb_
+            G_ = G(r, t, c, g0, include_direct=False)
+            Gd = 4 * np.pi * c ** 2 * t ** 2 * Gdirect(t, c, g0, var='r')
+            G_int = 4 * np.pi * np.sum(r ** 2 * G_) * (r[1] - r[0]) + Gd
             # 2% error are OK for Paaschens solution
 #            print(abs(G_int - 1))
             self.assertLess(abs(G_int - 1), 0.02)

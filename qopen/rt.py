@@ -2,11 +2,27 @@
 """
 Radiative Transfer: Approximative interpolation solution of Paasschens (1997)
 
-r ... Distance to source in m
-t ... Time after source in s
-c ... Velocity in m/s
-l ... transport mean free path in m
-la ... absorption length in m
+Use the ``qopen-rt`` command line script to calculate or plot the
+spectral energy densitiy Green's function.
+
+Used variables::
+
+    r ... Distance to source in m
+    t ... Time after source in s
+    c ... Velocity in m/s
+    l ... (transport) mean free path in m
+    la ... absorption length in m
+    g0 = 1/l ... (transport) scattering coefficient
+
+
+
+.. note::
+    The formula for the Green's function is valid for the
+    scattering coefficient (g0) under assumption of isotropic scattering.
+    However, g0 is used by `qopen.core` module as transport scattering
+    coefficient (g*) under the assumption of non-isotropic scattering.
+    ``g*=g0`` is a reasonable assumption under these conditions (see paper).
+
 """
 
 # The following lines are for Py2/Py3 support with the future module.
@@ -22,8 +38,8 @@ import argparse
 import numpy as np
 
 
-def Gb(t, c, g0, var='t'):
-    """Bulk term of RT solution"""
+def Gdirect(t, c, g0, var='t'):
+    """Direct wave term of radiative transfer solution"""
     if var == 'r':
         fac = 1  # * delta(r - c * t)
     else:
@@ -36,7 +52,7 @@ def F(x):
 
 
 def Gcoda_red(r, t):
-    """Coda term for t>r in reduced coordinates r'=rg, t'=tgc"""
+    """Coda term for ``t>r`` in reduced coordinates ``r'=rg0, t'=tg0c``"""
     a = 1 - r ** 2 / t ** 2
     o = (a ** 0.125 / (4 * np.pi * t / 3) ** 1.5 *
          np.exp(t * (a ** 0.75 - 1)) * F(t * a ** 0.75))
@@ -44,9 +60,10 @@ def Gcoda_red(r, t):
 
 
 def Gr_red(r, t, eps=0):
-    """Coda term as a function of r in reduced coordinates  r'=rg0, t'=tcg0
+    """
+    Coda term as a function of r in reduced coordinates  ``r'=rg0, t'=tcg0``
 
-    All values for r>t-eps will be 0"""
+    All values for ``r>t-eps`` will be 0"""
     o1 = np.zeros(np.count_nonzero(t - r <= eps))
     r = r[t - r > eps]
     o2 = Gcoda_red(r, t)
@@ -54,9 +71,9 @@ def Gr_red(r, t, eps=0):
 
 
 def G_red(r, t, eps='dt'):
-    """Coda term as a function of t in reduced coordinates  r'=rg0, t'=tcg0
+    """Coda term as a function of t in reduced coordinates  ``r'=rg0, t'=tcg0``
 
-    All values for t<r+eps will be 0"""
+    All values for ``t<r+eps`` will be 0"""
     if eps == 'dt':
         eps = t[1] - t[0]
     if isinstance(t, (int, float)):
@@ -70,8 +87,8 @@ def G_red(r, t, eps='dt'):
     return np.hstack((o1, o2))
 
 
-def G(r, t, c, g0, eps=None, include_bulk=True):
-    """Full Green's function with bulk term (optional)"""
+def G(r, t, c, g0, eps=None, include_direct=True):
+    """Full Green's function with direct wave term (optional)"""
     t_isarray = isinstance(t, np.ndarray)
     r_isarray = isinstance(r, np.ndarray)
     if t_isarray and r_isarray:
@@ -90,20 +107,20 @@ def G(r, t, c, g0, eps=None, include_bulk=True):
         eps_nodim = eps * c * g0
     G_redfunc = Gr_red if r_isarray else G_red
     G_ = G_redfunc(r * g0, t * c * g0, eps=eps_nodim) * g0 ** 3
-    if r_isarray and include_bulk:
-        msg = 'include_bulk=True is not implemented for G as a function of r'
+    if r_isarray and include_direct:
+        msg = 'include_direct=True is not implemented for G as a function of r'
         raise NotImplementedError(msg)
     elif t_isarray:
         i = np.count_nonzero(t - r / c <= eps)
         G_[:i] = 0
-        if include_bulk and 0 < i < len(G_) and eps > 0:
-            b = Gb(r / c, c, g0, var='t') if include_bulk else 0
+        if include_direct and 0 < i < len(G_) and eps > 0:
+            b = Gdirect(r / c, c, g0, var='t') if include_direct else 0
             G_[i - 1] = b / float(t[1] - t[0])
     return G_
 
 
 def plot_t(c, g0, r, t=None, N=100, log=False):
-    """Plot solution as a function of time"""
+    """Plot Green's function as a function of time"""
     import matplotlib.pyplot as plt
     if t is None:
         t = 10 * r / c
@@ -122,7 +139,7 @@ def plot_t(c, g0, r, t=None, N=100, log=False):
 
 
 def plot_r(c, g0, t, r=None, N=100, log=False):
-    """Plot solution as a function of distance"""
+    """Plot Green's function as a function of distance"""
     import matplotlib.pyplot as plt
     if r is None:
         r = 10 * c * t
@@ -151,14 +168,14 @@ def main(args=None):
     p.add_argument('--log', help='log plot', action='store_true')
     msg = 'absorption length'
     p.add_argument('-a', '--absorption', help=msg, type=float)
-    msg = 'calculate ballistic term, ignore argument -r and -a'
-    p.add_argument('-b', '--ballistic', help=msg, action='store_true')
+    msg = 'calculate direct wave term, ignore argument -r and -a'
+    p.add_argument('-d', '--direct-wave', help=msg, action='store_true')
     args = p.parse_args(args)
     r, t, c, l, la = args.r, args.t, args.c, args.l, args.absorption
     com = args.command
     if com == 'calc':
-        if args.ballistic:
-            print(Gb(t, c, 1/l))
+        if args.direct_wave:
+            print(Gdirect(t, c, 1/l))
         else:
             res = G(r, t, c, 1/l)
             if la:

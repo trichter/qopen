@@ -149,12 +149,16 @@
 # different frequency bands (see obspy.core.Stream.filter).
 "filter": {"corners": 2, "zerophase": true},
 
-# Define frequency bands: step - difference between neighboring
-# central frequencies in octave (x octave corresponds to a factor of
-# 2**x between the frequencies)
+# Define frequency bands:
+# step - difference between neighboring central frequencies in octave
+# (x octave corresponds to a factor of 2**x between the frequencies)
 # width - difference between higher and lower corner frequency in octave
 # max - maximal central frequency,
 # min - minimal possible central frequency.
+# cfreqs - list of central frequencies (min, max and step are ignored)
+# fbands - list frequency bands (all other entries are ignored)
+#"freqs": {"width": 1, "cfreqs": [1.5, 3, 6]},
+#"freqs": {"fbands": [[1, 2], [2, 4], [4, 8]]},
 "freqs": {"step": 1, "width": 1, "max": 6, "min": 0.3},
 
 # Use picks given in events file to determine the P- and S-onset.

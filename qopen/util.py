@@ -1,5 +1,5 @@
 # Copyright 2015-2016 Tom Eulenfeld, MIT license
-
+"""Some utility functions"""
 # The following lines are for Py2/Py3 support with the future module.
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
@@ -164,12 +164,12 @@ def smooth(x, window_len=None, window='flat', method='zeros'):
     :param window: the type of window from 'flat', 'hanning', 'hamming',
         'bartlett', 'blackman'
         flat window will produce a moving average smoothing.
-    :param method: handling of border effects 'zeros', 'reflect', None
-        'zeros': zero padding on both ends (len(smooth(x)) = len(x))
-        'reflect': pad reflected signal on both ends (same)
-        'clip': pad signal on both ends with the last valid value (same)
+    :param method: handling of border effects\n
+        'zeros': zero padding on both ends (len(smooth(x)) = len(x))\n
+        'reflect': pad reflected signal on both ends (same)\n
+        'clip': pad signal on both ends with the last valid value (same)\n
         None: no handling of border effects
-            (len(smooth(x)) = len(x) - len(window_len) + 1)
+        (len(smooth(x)) = len(x) - len(window_len) + 1)
 
     See also:
     www.scipy.org/Cookbook/SignalSmooth
@@ -206,7 +206,7 @@ def smooth(x, window_len=None, window='flat', method='zeros'):
 def linear_fit(y, x, m=None, method='robust'):
     """Linear fit between x and y
 
-    :param x, y: data
+    :param y,x: data
     :param m: fix slope at specific value
     :param method: one of ('least_squares', 'robust')
     :return: slope a and intercept b of y = ax + b

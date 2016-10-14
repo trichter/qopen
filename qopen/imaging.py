@@ -1,4 +1,5 @@
 # Copyright 2015-2016 Tom Eulenfeld, MIT license
+"""Plotting functions"""
 
 # The following lines are for Py2/Py3 support with the future module.
 from __future__ import (absolute_import, division,
@@ -42,7 +43,13 @@ DEPMAP = {'g0': 'g0', 'lsc': 'g0', 'Qsc': 'g0',
 
 
 def calc_dependent(quantity, value, freq=None, v0=None):
-    """Calculate dependent value (Qsc, Qi, lsc, li) from g0 and b"""
+    """Calculate dependent value (Qsc, Qi, lsc, li) from g0 and b
+
+    :param str quantity: one of Qsc, Qi, lsc, li
+    :param value: value of g0 or b depending on reuqested quantity
+    :param freq: frequency in Hz (needed for some calculations)
+    :param v0: velocity in m/s (needed for some calculations)
+    :return: value of quantity"""
     q = quantity
     val = np.array(value, dtype=float)
     if q in ('g0', 'b', 'W', 'omM', 'error'):
@@ -95,6 +102,9 @@ def plot_energies(energies,
                   bulk_window=None, coda_window=None, downsample_to=None,
                   xlim_lin=None, xlim_log=None,
                   figsize=None, **kwargs):
+    """
+    Plot observed spectral energy densities on different scales (linear, log)
+    """
     gs = gridspec.GridSpec(2 * len(energies), 2)
     gs.update(wspace=0.05)
     fig = plt.figure(figsize=figsize)
@@ -154,6 +164,7 @@ def plot_energies(energies,
 
 
 def plot_lstsq(rec, ax=None, fname=None, base=np.e):
+    """Plot solution of weighted least squares inversion"""
     err, g0, b, W, R, info = rec
     tcoda, tbulk, Ecoda, Ebulk, Gcoda, Gbulk = info
     fig = None
@@ -185,6 +196,7 @@ def plot_lstsq(rec, ax=None, fname=None, base=np.e):
 
 def plot_optimization(record, record_g0, num=7, fname=None, title=None,
                       figsize=None, **kwargs):
+    """Plot some steps of optimization"""
     fig = plt.figure(figsize=figsize)
     if num > 1:
         n = (num + 1) // 2
@@ -264,6 +276,7 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
               smooth=None, smooth_window='bartlett',
               xlim=None, ylim=None, fname=None, title=None, figsize=None,
               **kwargs):
+    """Plot fits of spectral energy densities"""
     tcoda, tbulk, Ecoda, Ebulk, Gcoda, Gbulk = info
     N = len(energies)
     n = int(np.ceil(np.sqrt(N)))
@@ -345,6 +358,7 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
 def plot_sds(freq, result, ax=None, fname=None,
              annotate=False,
              seismic_moment_method=None, seismic_moment_options={}):
+    """Plot source displacement spectrum and fitted source model"""
     freq = np.array(freq)
     omM = np.array(result['omM'], dtype=np.float)
     if all(np.isnan(omM)):
@@ -392,6 +406,7 @@ def plot_eventresult(result, v0=None, fname=None, title=None,
                      quantities=QUANTITIES_EVENT,
                      seismic_moment_method=None, seismic_moment_options={},
                      figsize=None):
+    """Plot all results of one `~qopen.core.invert()` call"""
     v0 = v0 or result.get('v0') or result.get('config', {}).get('v0')
     freq = np.array(result['freq'])
     res = copy(result)
@@ -421,6 +436,7 @@ def plot_eventresult(result, v0=None, fname=None, title=None,
 
 
 def plot_eventsites(result, fname=None, title=None, figsize=None):
+    """Plot site amplification factors of one `~qopen.core.invert()` call"""
     freq = np.array(result['freq'])
     R = result['R']
     N = len(R)
@@ -452,6 +468,7 @@ def plot_eventsites(result, fname=None, title=None, figsize=None):
 def plot_results(result, v0=None, fname=None, title=None,
                  quantities=QUANTITIES, mean=None,
                  llim=None, Qlim=None, figsize=None):
+    """Plot results"""
     freq = np.array(result['freq'])
     N = len(quantities)
     n = int(np.ceil(np.sqrt(N)))
@@ -493,6 +510,7 @@ def plot_results(result, v0=None, fname=None, title=None,
 
 def plot_sites(result, fname=None, title=None, mean=None,
                xlim=None, ylim=(1e-2, 1e2), nx=None, figsize=None):
+    """Plot site amplification factors"""
     freq = np.array(result['freq'])
     g0, b, error, R, _, _, _ = collect_results(result)
     weights = 1 / np.array(error) if mean == 'weighted' else None
@@ -561,6 +579,7 @@ def plot_all_sds(result, seismic_moment_method=None,
                  seismic_moment_options=None,
                  fname=None, title=None, xlim=None, ylim=None, nx=None,
                  figsize=None):
+    """Plot all source displacement spectra with fitted source models"""
     freq = np.array(result['freq'])
     conf = result.get('config', {})
     smm = seismic_moment_method or conf.get('seismic_moment_method')
@@ -591,6 +610,7 @@ def plot_all_sds(result, seismic_moment_method=None,
 
 def plot_mags(result, fname=None, title=None, xlim=None, ylim=None,
               figsize=None):
+    """Plot Qopen moment magnitudes versus catalogue magnitudes"""
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
     temp = [(r['Mcat'], r['Mw']) for r in result['events'].values()

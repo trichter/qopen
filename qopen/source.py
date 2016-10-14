@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2016 Tom Eulenfeld, MIT license
 """
-Functions dealing with the source.
+Fit source displacement spectrum with source model
+
+(and some other functions dealing with the source)
+
+If you want to fit source displacement spectra on the command line again
+use the ``qopen --calc-source-params`` option.
 """
 
 # The following lines are for Py2/Py3 support with the future module.
@@ -54,21 +59,21 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
             fc0=10, n0=2, gamma0=1, fall_back=5, num_points=None, **opt_kw):
     """Fit source displacement spectrum and calculate seismic moment
 
-    :param freq, omM: frequencies, source displacement spectrum (same length)
+    :param freq,omM: frequencies, source displacement spectrum (same length)
     :param method: 'mean' - take mean of sds of frequencies below fc,
         'fit', 'robust_fit' - fit source model to obtain M0.
         If one or more of fc, n, gamma are None, M0 and these values are
         simultaneously determined.
         Robust version uses a robust linear model (which downweights outliers).
-    :param fc, n, gamma: corner frequency and coefficients for source model
-    :param fc_lim, gamma_lim: bounds for corner frequency and gamma
+    :param fc,n,gamma: corner frequency and coefficients for source model
+    :param fc_lim,gamma_lim: bounds for corner frequency and gamma
         (used for optimization if respective variable is set to None)
-    :param fc0, gamma0: starting values of fc and gamma for optimization
+    :param fc0,gamma0: starting values of fc and gamma for optimization
         (only used for optimization for fc and gamma)
     :param fall_back: use robust fit only if number of data points >= fall_back
     :param num_points: determine M0 only if number of data points >= num_points
-    All other kwargs are passed to scipy.optimization, e.g.
-        :param tol: tolerance for optimization
+        All other kwargs are passed to scipy.optimization, e.g.
+    :param tol: tolerance for optimization
     :return: dictionary with M0 and optimized variables fc, n, and gamma
         if applicable.
         If M0 is not determined the function will return None
