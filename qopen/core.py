@@ -928,12 +928,11 @@ def invert(events, inventory, get_waveforms,
         arrivals = {}
     for event in events:
         event_dict[get_eventid(event)] = event
+        origins[get_eventid(event)] = get_origin(event)
         if use_picks:
             ar = get_arrivals(event)
             if ar is not None:
                 arrivals[get_eventid(event)] = ar
-        if not use_picks or ar is not None:
-            origins[get_eventid(event)] = get_origin(event)
     # Get frequencies
     freq_bands = get_freqs(**freqs)
     # Get stations
@@ -942,6 +941,8 @@ def invert(events, inventory, get_waveforms,
     one_channel = {get_station(ch): ch for ch in channels}
     event_station_pairs = [(evid, sta) for evid in origins
                            for sta in stations]
+    msg = '%d stations and %d events -> %s pairs'
+    log.info(msg, len(stations), len(origins), len(event_station_pairs))
     # Start processing
     # Calculate distances and remove pairs with distance above threshold
 
@@ -989,6 +990,8 @@ def invert(events, inventory, get_waveforms,
     # Sort events by origin time and stations by distance
     event_station_pairs = sorted(
         event_station_pairs, key=lambda p: (origins[p[0]].time, distances[p]))
+    msg = '%s pairs after distance selection'
+    log.info(msg, len(event_station_pairs))
 
     # Calculate onsets
     def _get_onsets(evid, sta):
@@ -997,7 +1000,7 @@ def invert(events, inventory, get_waveforms,
             onsets = get_picks(arrivals[evid], sta)
         else:
             onsets = {'S': ori.time + _get_distance(evid, sta) / vs}
-        if 'P' not in onsets:
+        if 'S' in onsets and 'P' not in onsets and vp is not None:
             onsets['P'] = ori.time + _get_distance(evid, sta) / vp
         return onsets
 
@@ -1030,6 +1033,7 @@ def invert(events, inventory, get_waveforms,
         msg = ('only %d pairs left -> return')
         log.info(msg, len(event_station_pairs))
         return
+    log.info('%s pairs with determined onsets/picks', len(event_station_pairs))
 
     # Retrieve data
     streams = []
@@ -1076,7 +1080,7 @@ def invert(events, inventory, get_waveforms,
                 tr.stats.sonset = onsets['S'][pair]
                 tr.stats.distance = distances[pair]
             streams.append(stream)
-    msg = 'succesfully requested %d streams for %d stations and %d events'
+    msg = 'succesfully fetched %d streams for %d stations and %d events'
     log.info(msg, len(streams), len(stations), len(origins))
 
     # Optionally remove instrument response
@@ -1104,10 +1108,8 @@ def invert(events, inventory, get_waveforms,
                 streams.remove(stream)
                 event_station_pairs.remove(pair)
                 continue
-        msg = ('instrument correction (%s) finished for %d streams of %d '
-               'stations and %d events')
-        log.info(msg, remove_response, len(streams), len(stations),
-                 len(origins))
+        msg = 'instrument correction (%s) finished for %d streams'
+        log.info(msg, remove_response, len(streams))
 
     # Check if enough pairs left
     if len(streams) == 0 or skip and len(streams) <= skip.get('num_pairs', 0):
@@ -1570,13 +1572,11 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
             if not align_sites:
                 # Read events
                 events = args.pop('events')
-                if (not isinstance(events, obspy.Catalog) or
-                        not isinstance(events, list) or
-                        (len(events) == 2 and isinstance(events[0], str))):
-                    if isinstance(events, str):
-                        format_ = None
-                    else:
-                        events, format_ = events
+                if isinstance(events, str):
+                    events = [events, None]
+                if (isinstance(events, (tuple, list)) and
+                        not isinstance(events[0], obspy.core.event.Event)):
+                    events, format_ = events
                     events = obspy.read_events(events, format_)
                     log.info('read %d events', len(events))
             # Initialize get_waveforms
