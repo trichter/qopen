@@ -632,14 +632,18 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         if cut_coda:
             if cut_coda is True:
                 cut_coda = {}
-            esl = _get_slice(energy, codaw[pair], pair, energies)
+            cw = codaw[pair]
+            if cut_coda.get('smooth'):
+                seam = 0.5 * cut_coda['smooth']
+                cw = (cw[0] - seam, cw[1] + seam)
+            esl = _get_slice(energy, cw, pair, energies)
             if esl is None:
                 continue
             tmin = _get_local_minimum(esl, **cut_coda)
             if tmin:
                 msg = '%s: cut coda at local minimum detected at %.2fs.'
                 log.debug(msg, pair, tmin - otime)
-                codaw[pair][1] = tmin
+                codaw[pair] = (min(codaw[pair][0], tmin), tmin)
         # Optionally skip some stations if specified conditions are met
         if skip and skip.get('coda_window') and cut_coda:
             cw = codaw[pair]
