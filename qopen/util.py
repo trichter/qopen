@@ -114,13 +114,8 @@ def robust_stat(data, axis=None, fall_back=5):
     return res.params[0], res.scale
 
 
-def gmean(data, **kwargs):
-    """Weighted or robust geometric mean"""
-    return gerr(data, **kwargs)[0]
-
-
-def gerr(data, axis=None, weights=None, unbiased=True, robust=False):
-    """Weighted or robust geometric mean and lower/upper error"""
+def gstat(data, axis=None, weights=None, unbiased=True, robust=False):
+    """Weighted or robust geometric mean and error (log scale)"""
     data = np.log(np.ma.masked_invalid(data))
     if robust and weights is not None:
         raise NotImplementedError
@@ -129,6 +124,17 @@ def gerr(data, axis=None, weights=None, unbiased=True, robust=False):
     else:
         mean, err = weighted_stat(data, axis=axis, weights=weights,
                                   unbiased=unbiased)
+    return mean, err
+
+
+def gmean(data, **kwargs):
+    """Weighted or robust geometric mean"""
+    return np.exp(gstat(data, **kwargs)[0])
+
+
+def gerr(data, **kwargs):
+    """Weighted or robust geometric mean and lower/upper error"""
+    mean, err = gstat(data, **kwargs)
     err1 = np.exp(mean) - np.exp(mean - err)
     err2 = np.exp(mean + err) - np.exp(mean)
     return np.exp(mean), err1, err2

@@ -24,7 +24,7 @@ from statsmodels.regression.linear_model import OLS
 from statsmodels.robust.robust_linear_model import RLM
 import scipy.optimize
 
-from qopen.util import gmean
+from qopen.util import gstat
 
 
 def sds(W, f, v, rho):
@@ -87,7 +87,8 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
         if num_points is not None and len(M0) < num_points:
             return
         if len(M0) > 0:
-            return {'M0': gmean(M0)}
+            mean, err = gstat(M0, unbiased=False)
+            return {'M0': np.exp(mean), 'sds_error': err}
     elif method in ('fit', 'robust_fit'):
         omM = np.array(omM, dtype=float)
         freq = np.array(freq)[~np.isnan(omM)]
@@ -105,9 +106,10 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
             y = np.log(omM) - np.log(model)
             X = np.ones(len(y))
             res = Model(y, X).fit()
+            err = np.mean(res.resid ** 2)
             if opt:
-                return np.mean(res.resid ** 2)
-            return {'M0': np.exp(res.params[0])}
+                return err
+            return {'M0': np.exp(res.params[0]), 'sds_error': err ** 0.5}
 
         def lstsqab(fc, a, opt=False):
             # Inversion for M0 and b
@@ -117,9 +119,11 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
             X[:, 0] = 1
             X[:, 1] = np.log(model)
             res = Model(y, X).fit()
+            err = np.mean(res.resid ** 2)
             if opt:
-                return np.mean(res.resid ** 2)
-            return {'M0': np.exp(res.params[0]), 'b': res.params[1]}
+                return err
+            return {'M0': np.exp(res.params[0]), 'b': res.params[1],
+                    'err': err ** 0.5}
 
         unknowns = ((fc is None) * ('fc',) +
                     (n is None) * ('n',) + (gamma is None) * ('gamma',))

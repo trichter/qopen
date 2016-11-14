@@ -78,8 +78,9 @@ DUMP_CONFIG = ['invert_events_simultaniously', 'mean',
                'remove_response', 'correct_for_elevation', 'skip',
                'G_module']
 
-DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma', 'freq', 'g0', 'b',
-              'error', 'W', 'omM', 'R', 'events', 'v0', 'config']
+DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma',
+              'freq', 'g0', 'b', 'error',
+              'W', 'omM', 'sds_error', 'R', 'events', 'v0', 'config']
 
 DUMP_PKL = False
 
@@ -516,7 +517,6 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         except Exception as ex:
             msg = '%s %s: cannot calculate ernergy (%s)'
             log.error(msg, pair[0], pair[1], str(ex))
-
     bulkw = {}
     codaw = {}
     time_adjustments = []

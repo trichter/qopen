@@ -10,12 +10,14 @@ from future.builtins import (  # analysis:ignore
     pow, round, super,
     filter, map, zip)
 
+from collections import OrderedDict
 from copy import copy
+import os
+
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 
 from qopen.core import get_pair, collect_results
 from qopen.source import source_model
@@ -385,18 +387,20 @@ def plot_sds(freq, result, ax=None, fname=None,
             ax.loglog(f, omM2, '-k')
     else:
         ax.loglog(freq, omM, 'o-k')
-    labels = []
     if M0:
         ax.axhline(M0, ls='--', color='k')
-        if annotate:
-            labels.append(r'M$_0$=%.1e Nm' % M0)
-    labels = {'M0': r'M$_0$=%.1e Nm',
-              'fc': r'f$_{\rm{c}}$=%.1f Hz',
-              'n': 'n=%.1f', 'gamma': r'$\gamma$=%.2f'}
-    labels = [labels[key] % result[key] for key in obs if key in result]
+    labels = OrderedDict((('M0', r'M$_0$=%.1e Nm'),
+                          ('fc', r'f$_{\rm{c}}$=%.1f Hz'),
+                          ('n', 'n=%.1f'),
+                          ('gamma', r'$\gamma$=%.2f'),
+                          ('sds_error', 'err=%.2f')))
+    labels = [labels[key] % result[key] for key in labels if key in result]
     if len(labels) > 0 and annotate:
-        ax.annotate('\n'.join(labels), (1, 1), (-5, -5), 'axes fraction',
-                    'offset points', ha='right', va='top', size='x-small')
+        va = annotate if annotate in ('top', 'bottom') else 'top'
+        ypos = 1 if annotate == 'top' else 0
+        ax.annotate('\n'.join(labels), (1, ypos), (-5, 5 - 10 * ypos),
+                    'axes fraction', 'offset points',
+                    ha='right', va=va, size='x-small')
 
     if fig and fname:
         _savefig(fig, fname=fname)
@@ -420,7 +424,7 @@ def plot_eventresult(result, v0=None, fname=None, title=None,
     for i, q in enumerate(quantities):
         ax = plt.subplot(gs[i // n, i % n], sharex=share)
         if q == 'sds':
-            plot_sds(freq, res, ax=ax,
+            plot_sds(freq, res, ax=ax, annotate='bottom',
                      seismic_moment_method=seismic_moment_method,
                      seismic_moment_options=seismic_moment_options)
         else:
