@@ -50,6 +50,7 @@ import scipy
 import scipy.signal
 from statsmodels.regression.linear_model import WLS
 
+import qopen
 from qopen.site import align_site_responses
 from qopen.source import calculate_source_properties, insert_source_properties
 from qopen.util import (cache, gmean, smooth as smooth_, smooth_func,
@@ -397,12 +398,13 @@ def Gsmooth(G_func, r, t, v0, g0, smooth=None, smooth_window='flat'):
     return Gc
 
 
-def _get_local_minimum(tr, smooth=None, ratio=5):
+def _get_local_minimum(tr, smooth=None, ratio=5, smooth_window='flat'):
     data = tr.data
     if smooth:
         window_len = int(round(smooth * tr.stats.sampling_rate))
         try:
-            data = smooth_(tr.data, window_len=window_len, method='clip')
+            data = smooth_(tr.data, window_len=window_len, method='clip',
+                           window=smooth_window)
         except ValueError:
             pass
     mins = scipy.signal.argrelmin(data)[0]
@@ -639,6 +641,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             esl = _get_slice(energy, cw, pair, energies)
             if esl is None:
                 continue
+            cut_coda.setdefault('smooth_window', smooth_window)
             tmin = _get_local_minimum(esl, **cut_coda)
             if tmin:
                 msg = '%s: cut coda at local minimum detected at %.2fs.'
@@ -1471,6 +1474,7 @@ def configure_logging(loggingc, verbose=0, loglevel=3, logfile=None):
             loggingc['handlers']['file']['filename'] = logfile
     logging.config.dictConfig(loggingc)
     logging.captureWarnings(loggingc.get('capture_warnings', False))
+    log.info('Qopen version %s - start logging', qopen.__version__)
 
 
 def run(conf=None, create_config=None, tutorial=False, eventid=None,
