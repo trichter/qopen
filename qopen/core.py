@@ -86,11 +86,15 @@ DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma',
 DUMP_PKL = False
 
 
-class CustomError(Exception):
+class QopenError(Exception):
     pass
 
 
-class ParseError(Exception):
+class ParseError(QopenError):
+    pass
+
+
+class SkipError(QopenError):
     pass
 
 
@@ -185,7 +189,7 @@ def observed_energy(stream, rho, df, fs=4, tolerance=1):
     if max(Ns) - min(Ns) > tolerance:
         msg = ('traces for one stream have different lengths %s. Tolerance '
                ' is %d samples') % (Ns, tolerance)
-        raise CustomError(msg)
+        raise SkipError(msg)
     elif max(Ns) - min(Ns) > 0:
         data = [d[:min(Ns)] for d in data]
     data = np.sum(data, axis=0)
@@ -269,8 +273,12 @@ def get_picks(arrivals, station):
         seedid = pick.waveform_id.get_seed_string()
         if station == get_station(seedid):
             if phase in picks:
-                msg = '%s, %s-onset: multiple picks'
-                raise CustomError(msg % (station, phase))
+                msg = '%s-onset has multiple picks'
+                if phase == 'P':
+                    msg = '%s, ' + msg + ' -> select arbitrary'
+                    log.warning(msg, station, phase)
+                else:
+                    raise SkipError(msg % phase)
             picks[phase] = pick.time
     return picks
 
@@ -513,12 +521,13 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
                 fs = fs[0]
         try:
             energies.append(observed_energy(stream, rho0, df, fs=fs))
-        except CustomError as ex:
-            msg = '%s %s: cannot calculate ernergy (%s)'
-            log.warning(msg, pair[0], pair[1], str(ex))
-        except Exception as ex:
-            msg = '%s %s: cannot calculate ernergy (%s)'
-            log.error(msg, pair[0], pair[1], str(ex))
+        except SkipError as ex:
+            msg = '%s: cannot calculate ernergy (%s)'
+            log.warning(msg, pair, str(ex))
+        except:
+            msg = '%s: cannot calculate ernergy'
+            log.exception(msg, pair)
+
     bulkw = {}
     codaw = {}
     time_adjustments = []
@@ -621,15 +630,13 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         msg = '%s: %scoda window %s'
         log.debug(msg, pair, s, _tw_utc2s(codaw[pair], otime))
         # Optionally skip some stations if specified conditions are met
-        if skip and skip.get('coda_window'):
-            cw = codaw[pair]
-            val = skip['coda_window']
-            if val and cw[1] - cw[0] < val:
-                msg = ('%s: coda window of length %.1fs shorter than '
-                       '%.1f -> skip pair')
-                log.debug(msg, pair, cw[1] - cw[0], val)
-                energies.remove(energy)
-                continue
+        cw = codaw[pair]
+        if cw[1] - cw[0] < skip['coda_window']:
+            msg = ('%s: coda window of length %.1fs shorter than '
+                   '%.1f -> skip pair')
+            log.debug(msg, pair, cw[1] - cw[0], skip['coda_window'])
+            energies.remove(energy)
+            continue
         # use only data before detected local minimum in coda
         if cut_coda:
             if cut_coda is True:
@@ -647,14 +654,12 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
                 msg = '%s: cut coda at local minimum detected at %.2fs.'
                 log.debug(msg, pair, tmin - otime)
                 codaw[pair] = (min(codaw[pair][0], tmin), tmin)
-        # Optionally skip some stations if specified conditions are met
-        if skip and skip.get('coda_window') and cut_coda:
+            # Optionally skip some stations if specified conditions are met
             cw = codaw[pair]
-            val = skip['coda_window']
-            if val and cw[1] - cw[0] < val:
+            if cw[1] - cw[0] < skip['coda_window']:
                 msg = ('%s: coda window of length %.1fs shorter than '
                        '%.1f -> skip pair')
-                log.debug(msg, pair, cw[1] - cw[0], val)
+                log.debug(msg, pair, cw[1] - cw[0], skip['coda_window'])
                 energies.remove(energy)
                 continue
         if skip and skip.get('maximum'):
@@ -964,7 +969,7 @@ def invert(events, inventory, get_waveforms,
         try:
             c = _get_coordinates(sta, time=ori.time)
         except:
-            raise CustomError
+            raise SkipError('station not installed')
         args = (c['latitude'], c['longitude'], ori.latitude, ori.longitude)
         hdist = gps2dist_azimuth(*args)[0]
         vdist = (ori.depth + c['elevation'] * correct_for_elevation -
@@ -977,9 +982,9 @@ def invert(events, inventory, get_waveforms,
     for pair in event_station_pairs[:]:
         try:
             distances[pair] = dist = _get_distance(*pair)
-        except CustomError:
-            msg = '%s: station not installed -> skip pair'
-            log.debug(msg, pair)
+        except SkipError as ex:
+            msg = '%s: %s -> skip pair'
+            log.debug(msg, pair, str(ex))
             event_station_pairs.remove(pair)
             continue
         except:
@@ -1004,12 +1009,12 @@ def invert(events, inventory, get_waveforms,
     def _get_onsets(evid, sta):
         ori = origins[evid]
         if use_picks:
-            onsets = get_picks(arrivals[evid], sta)
+            ons = get_picks(arrivals[evid], sta)
         else:
-            onsets = {'S': ori.time + _get_distance(evid, sta) / vs}
-        if 'S' in onsets and 'P' not in onsets and vp is not None:
-            onsets['P'] = ori.time + _get_distance(evid, sta) / vp
-        return onsets
+            ons = {'S': ori.time + _get_distance(evid, sta) / vs}
+        if 'S' in ons and 'P' not in ons and vp is not None:
+            ons['P'] = ori.time + _get_distance(evid, sta) / vp
+        return ons
 
     try:
         onsets = {'P': {}, 'S': {}}
@@ -1021,7 +1026,7 @@ def invert(events, inventory, get_waveforms,
             except KeyError:
                 log.debug('%s: no pick/onset -> skip pair', pair)
                 event_station_pairs.remove(pair)
-    except CustomError as ex:
+    except SkipError as ex:
         msg = 'exception while determining onsets (%s) -> skip event'
         log.error(msg, str(ex))
         return
@@ -1453,7 +1458,9 @@ def init_data(data, client_options=None, plugin=None, cache_waveforms=False):
 
 
 class ConfigJSONDecoder(json.JSONDecoder):
+
     """Decode JSON config with comments stripped"""
+
     def decode(self, s):
         s = '\n'.join(l.split('#', 1)[0] for l in s.split('\n'))
         return super(ConfigJSONDecoder, self).decode(s)
@@ -1474,7 +1481,6 @@ def configure_logging(loggingc, verbose=0, loglevel=3, logfile=None):
             loggingc['handlers']['file']['filename'] = logfile
     logging.config.dictConfig(loggingc)
     logging.captureWarnings(loggingc.get('capture_warnings', False))
-    log.info('Qopen version %s - start logging', qopen.__version__)
 
 
 def run(conf=None, create_config=None, tutorial=False, eventid=None,
@@ -1559,6 +1565,7 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
           'loglevel': args.pop('loglevel', 3),
           'logfile': args.pop('logfile', None)}
     configure_logging(**kw)
+    log.info('Qopen version %s - start logging', qopen.__version__)
     if not calc_source_params:
         try:
             # Read inventory
