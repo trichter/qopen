@@ -1565,7 +1565,7 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
           'loglevel': args.pop('loglevel', 3),
           'logfile': args.pop('logfile', None)}
     configure_logging(**kw)
-    log.info('Qopen version %s - start logging', qopen.__version__)
+    log.info('Qopen version %s', qopen.__version__)
     if not calc_source_params:
         try:
             # Read inventory
