@@ -1296,10 +1296,16 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
         result = {'events': OrderedDict(), 'R': OrderedDict()}
         for i, event in enumerate(events):
             evid = get_eventid(event)
-            msg = 'event %s (no %d of %d): %s processing'
-            log.info(msg, evid, i + 1, len(events), 'start')
+            o = get_origin(event)
+            mag = get_magnitude(event)
+            mag = '%.1f' % mag if mag is not None else '?'
+            msg = ('event %s (no %d of %d | %+.3f %+.3f %.1fkm M%s | %.19s): '
+                   'start processing')
+            log.info(msg, evid, i + 1, len(events), o.latitude, o.longitude,
+                     o.depth / 1000, mag, o.time)
             res = invert([event], **kwargs)
-            log.info(msg, evid, i + 1, len(events), 'end')
+            msg = 'event %s (no %d of %d): end processing'
+            log.info(msg, evid, i + 1, len(events))
             if res:
                 result['freq'] = res.pop('freq')
                 res.update(res['events'].pop(evid))
