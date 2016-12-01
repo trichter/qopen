@@ -191,13 +191,14 @@ def calculate_source_properties(results, rh0=None, v0=None,
     smo = seismic_moment_options or conf.get('seismic_moment_options')
     freq = results.get('freq')
     if rho0:
-        for r in results['events'].values():
+        for r in dict(results['events']).values():  # dict from future.builtins
             v0 = r.get('v0') or v02
             r.pop('omM', None)
             r.pop('M0', None)
             r.pop('fc', None)
             r.pop('n', None)
             r.pop('gamma', None)
+            r.pop('fit_error', None)
             if v0:
                 insert_source_properties(freq, r, v0, rho0, smm, smo)
     return results
@@ -219,6 +220,8 @@ def insert_source_properties(freq, evresult, v0, rho0, seismic_moment_method,
         fitresult = fit_sds(freq, omM, method=seismic_moment_method,
                             **seismic_moment_options)
         if fitresult is not None:
+            if np.isnan(fitresult.get('fit_error', 1)):
+                fitresult['fit_error'] = None
             evresult.update(fitresult)
             evresult['Mw'] = moment_magnitude(fitresult['M0'])
             if catmag is not None:
