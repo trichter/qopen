@@ -1,3 +1,12 @@
+dev:
+  * core: report fit error for source displacement spectra
+  * imaging: labels for plots of source displacement spectra
+  * site:
+      - align sites now correctly alignes around the given response, before it
+        was shifted by a small value
+      - greatly enhance test suite
+  * fixed some minor bugs
+  * other small enhancements
 v1.4:
   * move some functions from core to new source and site modules
   * API documentation now available on readthedocs
