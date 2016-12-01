@@ -5,3 +5,4 @@ include qopen/example/conf.json
 include qopen/example/*.py
 include qopen/example/*.xml
 include qopen/example/*.mseed
+include qopen/tests/data/*.json
