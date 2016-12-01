@@ -22,6 +22,8 @@ from future.builtins import (  # analysis:ignore
 
 from collections import defaultdict
 import logging
+import warnings
+
 import numpy as np
 from obspy.geodetics import gps2dist_azimuth
 import scipy
@@ -55,7 +57,7 @@ def _get_number_of_freqs(results):
     return Nf
 
 
-def _rescale_results(results, factors):
+def _rescale_results(results, factors, use_only=None):
     log.debug('scale events and site responses')
     Nf = _get_number_of_freqs(results)
     for i in range(Nf):
@@ -70,10 +72,37 @@ def _rescale_results(results, factors):
                 if Rsta[i] is None or np.isnan(Rsta[i]):
                     continue
                 Rsta[i] *= factors[k, i]
+                if use_only and sta not in use_only:
+                    Rsta[i] = None
+            if all(Rsta[i] is None or np.isnan(Rsta[i])
+                   for Rsta in R.values()):
+                W[i] = None
 
 
-def _sum_residuals(results):
-    pass
+def _collectR(results, freqi=0, use_only=None):
+    R = defaultdict(list)
+    for evid, evres in results['events'].items():
+        for sta, Rval in evres['R'].items():
+            if use_only and sta not in use_only:
+                continue
+            R[sta].append(Rval[freqi])
+    return R
+
+
+def _Rmean(R):
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore')
+        Rm = [np.nanmean(np.log(np.array(x, dtype=np.float)))
+              for x in R.values()]
+    return np.nanmean(Rm)
+
+
+def _Rstd(R):
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore')
+        Rstd = [np.nanstd(np.log(np.array(x, dtype=np.float)))
+                for x in R.values()]
+    return np.nanmean(Rstd)
 
 
 # http://stackoverflow.com/a/9400562
@@ -218,8 +247,9 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
 
     # calculate best factors for each freq band with OLS A*factor=b
     factors = np.empty((Ne, Nf))
+    std_before = []
     for i in range(Nf):
-        log.info('align sites for freq no. %d', i)
+        log.debug('align sites for freq no. %d', i)
         # find unconnected areas
         areas = _find_unconnected_areas(results, i)
         if join_unconnected:
@@ -229,7 +259,8 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         msg = 'use largest area %s with %d stations'
         log.info(msg, largest_area, len(areas[largest_area]))
         largest_area = areas[largest_area]
-
+        R = _collectR(results, freqi=i, use_only=largest_area)
+        std_before.append(_Rstd(R))
         row = [0]
         b = []
         if use_sparse:
@@ -237,7 +268,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         else:
             Arepr = []
         norm_row_A = defaultdict(float)
-        norm_row_b = 0.
+        norm_row_b = np.log(response)
         first = {}
         last = {}
         # add pairs of site responses for one station and different events
@@ -245,21 +276,22 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
             evid, eres = item
             for sta, Rsta in eres['R'].items():
                 Rsta = Rsta[i]
-                if Rsta is None or np.isnan(Rsta):
-                    continue
                 if sta not in largest_area:
+                    continue
+                if Rsta is None or np.isnan(Rsta):
                     continue
                 if station is None:
                     # collect information if product of station site responses
                     # is to be normalized
-                    fac = 1. / Nstations[i][sta] / len(Nstations[i])
+                    fac = 1. / Nstations[i][sta] / len(largest_area)
                     norm_row_A[k] += fac
                     norm_row_b -= np.log(Rsta) * fac
-                if sta == station:
+                elif station == sta:
                     # pin site response of specific station
-                    b_val = np.log(response) - np.log(Rsta)
-                    construct_ols(((k, 1),), b_val)
-                elif sta in last:
+                    fac = 1. / Nstations[i][sta]
+                    norm_row_A[k] += fac
+                    norm_row_b -= np.log(Rsta) * fac
+                if sta in last:
                     # add pairs of site responses for one station
                     # and two different events
                     kl, Rstal = last[sta]
@@ -277,29 +309,30 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                     last[sta] = k, Rsta
                 else:
                     last[sta] = first[sta] = (k, Rsta)
-        if station is None:
-            # pin product of station site responses
-            norm_row_b += np.log(response)
-            construct_ols(norm_row_A.items(), norm_row_b)
+        # pin mean site response or site response of specific station
+        construct_ols(norm_row_A.items(), norm_row_b)
         msg = 'constructed %scoefficient matrix with shape (%d, %d)'
         log.debug(msg, 'sparse ' * use_sparse, row[0], Ne)
         # solve least squares system
         b = np.array(b)
         if use_sparse:
             A = scipy.sparse.csr_matrix(tuple(Arepr), shape=(row[0], Ne))
-#            import matplotlib.pyplot as plt
-#            plt.spy(A)
-#            plt.show()
-#            1/0
-            res = scipy.sparse.linalg.lsmr(A, b)
+            res = scipy.sparse.linalg.lsmr(A, b, atol=1e-8)
         else:
             A = np.array(Arepr)
             res = scipy.linalg.lstsq(A, b, overwrite_a=True, overwrite_b=True)
         factors[:, i] = np.exp(res[0])
     # Scale W and R
-    _rescale_results(results, factors)
+    _rescale_results(results, factors, use_only=largest_area)
     # Calculate omM, M0 and m again
     calculate_source_properties(
         results, seismic_moment_method=seismic_moment_method,
         seismic_moment_options=seismic_moment_options)
+    std_after = []
+    for i in range(Nf):
+        R = _collectR(results, freqi=i)
+        std_after.append(_Rstd(R))
+    msg = ('aligned sites for all frequencies, reduction of mean stdev: ' +
+           ', '.join(Nf * ['%.2g']) + ' -> ' + ', '.join(Nf * ['%.2g']))
+    log.info(msg, *(std_before + std_after))
     return results
