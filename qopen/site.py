@@ -20,7 +20,7 @@ from future.builtins import (  # analysis:ignore
     pow, round, super,
     filter, map, zip)
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import logging
 import warnings
 
@@ -207,9 +207,10 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         parameters.
     :return: corrected result dictionary
     """
-    # Ignore not existing event results
-    results['events'] = {evid: eres for (evid, eres) in
-                         results['events'].items() if eres is not None}
+    # Ignore not existing event results, sort dict by event id
+    results['events'] = OrderedDict(sorted([
+        (evid, eres) for (evid, eres) in results['events'].items()
+        if eres is not None], key=lambda x: x[0]))
     join_unconnected = None
     if join_unconnected:
         inventory = None
