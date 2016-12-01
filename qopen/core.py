@@ -81,7 +81,8 @@ DUMP_CONFIG = ['invert_events_simultaniously', 'mean',
 
 DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma',
               'freq', 'g0', 'b', 'error',
-              'W', 'omM', 'sds_error', 'R', 'events', 'v0', 'config']
+              'W', 'omM', 'sds_error', 'fit_error',
+              'R', 'events', 'v0', 'config']
 
 DUMP_PKL = False
 

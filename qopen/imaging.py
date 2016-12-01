@@ -393,7 +393,7 @@ def plot_sds(freq, result, ax=None, fname=None,
                           ('fc', r'f$_{\rm{c}}$=%.1f Hz'),
                           ('n', 'n=%.1f'),
                           ('gamma', r'$\gamma$=%.2f'),
-                          ('sds_error', 'err=%.2f')))
+                          ('fit_error', 'err=%.2f')))
     labels = [labels[key] % result[key] for key in labels if key in result]
     if len(labels) > 0 and annotate:
         va = annotate if annotate in ('top', 'bottom') else 'top'

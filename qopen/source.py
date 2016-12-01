@@ -88,7 +88,7 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
             return
         if len(M0) > 0:
             mean, err = gstat(M0, unbiased=False)
-            return {'M0': np.exp(mean), 'sds_error': err}
+            return {'M0': np.exp(mean), 'fit_error': err}
     elif method in ('fit', 'robust_fit'):
         omM = np.array(omM, dtype=float)
         freq = np.array(freq)[~np.isnan(omM)]
@@ -109,7 +109,7 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
             err = np.mean(res.resid ** 2)
             if opt:
                 return err
-            return {'M0': np.exp(res.params[0]), 'sds_error': err ** 0.5}
+            return {'M0': np.exp(res.params[0]), 'fit_error': err ** 0.5}
 
         def lstsqab(fc, a, opt=False):
             # Inversion for M0 and b
@@ -193,6 +193,7 @@ def calculate_source_properties(results, rh0=None, v0=None,
     if rho0:
         for r in results['events'].values():
             v0 = r.get('v0') or v02
+            r.pop('omM', None)
             r.pop('M0', None)
             r.pop('fc', None)
             r.pop('n', None)
