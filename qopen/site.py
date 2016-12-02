@@ -29,6 +29,7 @@ from obspy.geodetics import gps2dist_azimuth
 import scipy
 
 from qopen.source import calculate_source_properties
+from qopen.util import gmean
 
 
 log = logging.getLogger('qopen.site')
@@ -333,8 +334,11 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
     calculate_source_properties(
         results, seismic_moment_method=seismic_moment_method,
         seismic_moment_options=seismic_moment_options)
-    # TODO: mean R aka results['R'] should be recalculated
-    # TODO: put some effort into reorganizing collect
+    # Calculate mean Rs again, use robust mean here
+    results.setdefault('R', {})
+    for st, Rst in _collectR(results, freqi=None).items():
+        if not np.all(np.isnan(Rst)):
+            results['R'][st] = gmean(Rst, axis=0, robust=True).tolist()
     std_after = []
     for i in range(Nf):
         R = _collectR(results, freqi=i)

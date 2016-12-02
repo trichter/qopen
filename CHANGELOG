@@ -3,6 +3,7 @@ dev:
   * core: collect_results returns dict instead of list
   * imaging: labels for plots of source displacement spectra
   * site: align sites now correctly alignes around the given response, before it was shifted by a small value
+  * site: recalculate mean site amplifications after alignment
   * site: greatly enhance test suite
   * fixed some minor bugs
   * other small enhancements

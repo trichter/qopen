@@ -1365,7 +1365,7 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
         result['b'] = gmean(col['b'], **kw).tolist()
         result['error'] = gmean(col['error'], **kw).tolist()
         for st, Rst in col['R'].items():
-            result['R'][st] = gmean(Rst, axis=0).tolist()
+            result['R'][st] = gmean(Rst, **kw).tolist()
     result['config'] = {k: kwargs[k] for k in DUMP_CONFIG if k in kwargs}
     result['config'][
         'invert_events_simultaniously'] = invert_events_simultaniously
