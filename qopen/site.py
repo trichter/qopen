@@ -47,6 +47,20 @@ def _collect_station_coordinates(inventory):
     return coords
 
 
+def _collectR(results, freqi=0, only=None):
+    from qopen.core import collect_results
+    col = collect_results(results, freqi=freqi, only=['R'])
+    R = col['R']
+    if only is not None:
+        R = {sta: R[sta] for sta in only}
+#    for evid, evres in results['events'].items():
+#        for sta, Rval in evres['R'].items():
+#            if use_only and sta not in use_only:
+#                continue
+#            R[sta].append(Rval[freqi])
+    return R
+
+
 def _get_number_of_freqs(results):
     Nf = None
     for evid, eres in results['events'].items():
@@ -57,7 +71,7 @@ def _get_number_of_freqs(results):
     return Nf
 
 
-def _rescale_results(results, factors, use_only=None):
+def _rescale_results(results, factors, only=None):
     log.debug('scale events and site responses')
     Nf = _get_number_of_freqs(results)
     for i in range(Nf):
@@ -72,21 +86,11 @@ def _rescale_results(results, factors, use_only=None):
                 if Rsta[i] is None or np.isnan(Rsta[i]):
                     continue
                 Rsta[i] *= factors[k, i]
-                if use_only and sta not in use_only:
+                if only and sta not in only:
                     Rsta[i] = None
             if all(Rsta[i] is None or np.isnan(Rsta[i])
                    for Rsta in R.values()):
                 W[i] = None
-
-
-def _collectR(results, freqi=0, use_only=None):
-    R = defaultdict(list)
-    for evid, evres in results['events'].items():
-        for sta, Rval in evres['R'].items():
-            if use_only and sta not in use_only:
-                continue
-            R[sta].append(Rval[freqi])
-    return R
 
 
 def _Rmean(R):
@@ -260,7 +264,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         msg = 'use largest area %s with %d stations'
         log.info(msg, largest_area, len(areas[largest_area]))
         largest_area = areas[largest_area]
-        R = _collectR(results, freqi=i, use_only=largest_area)
+        R = _collectR(results, freqi=i, only=largest_area)
         std_before.append(_Rstd(R))
         row = [0]
         b = []
@@ -324,11 +328,13 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
             res = scipy.linalg.lstsq(A, b, overwrite_a=True, overwrite_b=True)
         factors[:, i] = np.exp(res[0])
     # Scale W and R
-    _rescale_results(results, factors, use_only=largest_area)
+    _rescale_results(results, factors, only=largest_area)
     # Calculate omM, M0 and m again
     calculate_source_properties(
         results, seismic_moment_method=seismic_moment_method,
         seismic_moment_options=seismic_moment_options)
+    # TODO: mean R aka results['R'] should be recalculated
+    # TODO: put some effort into reorganizing collect
     std_after = []
     for i in range(Nf):
         R = _collectR(results, freqi=i)

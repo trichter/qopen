@@ -354,46 +354,85 @@ def tw2utc(tw, trace):
     return starttime, t
 
 
-def collect_results(results):
+def collect_results(results, only=None, freqi=None):
     """
     Collect g0, b, error, R, W, eventids and v0 from results of multiple events
 
     :param results: result dictionary returned by :func:`run`
-    :return: lists of g0, b, error, R, W, eventids, v0
+    :param only: return only some of the above mentioned keys
+    :param freqi: return only values at a single frequency
+    :return: dictionary
     """
-    if 'g0' not in list(results['events'].items())[0][1]:
-        g0 = [results['g0']]
-        b = [results['b']]
-        error = [results['error']]
-        v0 = [results.get['v0']]
-        R = {sta: [Rsta] for sta, Rsta in results['R'].items()}
-        W, eventids = [], []
-        for eventid, res in results['events'].items():
-            W.append(res['W'])
-            eventids.append(eventid)
+    def freq_getter(r, c):
+        if freqi == None or c in ('eventid', 'v0'):
+            return r
+        else:
+            return r[freqi]
+
+    if only is None:
+        collect = ('g0', 'b', 'error', 'R', 'W', 'eventid', 'v0')
     else:
-        g0, b, error, R, W, eventids = [], [], [], defaultdict(list), [], []
-        v0 = []
-        for eventid, res in results['events'].items():
-            if res is None:
-                continue
-            g0.append(res['g0'])
-            b.append(res['b'])
-            error.append(res['error'])
-            W.append(res['W'])
-            eventids.append(eventid)
-            v0.append(res.get('v0'))
-            for sta, Rsta in res['R'].items():
-                R[sta].append(Rsta)
-        R = dict(R)
-    g0 = np.array(g0, dtype=np.float)
-    b = np.array(b, dtype=np.float)
-    error = np.array(error, dtype=np.float)
-    W = np.array(W, dtype=np.float)
-    v0 = np.array(b, dtype=np.float)
-    for sta in R:
-        R[sta] = np.array(R[sta], dtype=np.float)
-    return g0, b, error, R, W, eventids, v0
+        collect = only
+    col = defaultdict(list)
+    if 'R' in collect:
+        col['R'] = defaultdict(list)
+    for eventid, res in results['events'].items():
+        if res is None:
+            continue
+        for c in collect:
+            if c == 'eventid':
+                col[c].append(eventid)
+            elif c == 'R':
+                for sta, Rsta in res['R'].items():
+                    col['R'][sta].append(freq_getter(Rsta, 'R'))
+            else:
+                col[c].append(freq_getter(res[c], c))
+    if 'R' in collect:
+        col['R'] = dict(col['R'])
+    col = dict(col)
+    for c in collect:
+        if c == 'eventid':
+            pass
+        elif c == 'R':
+            for sta in col['R']:
+                col['R'][sta] = np.array(col['R'][sta], dtype=np.float)
+        else:
+            col[c] = np.array(col[c], dtype=np.float)
+    return col
+#    # old implementation returns list
+#    if 'g0' not in list(results['events'].items())[0][1]:
+#        g0 = [results['g0']]
+#        b = [results['b']]
+#        error = [results['error']]
+#        v0 = [results.get['v0']]
+#        R = {sta: [Rsta] for sta, Rsta in results['R'].items()}
+#        W, eventids = [], []
+#        for eventid, res in results['events'].items():
+#            W.append(res['W'])
+#            eventids.append(eventid)
+#    else:
+#        g0, b, error, R, W, eventids = [], [], [], defaultdict(list), [], []
+#        v0 = []
+#        for eventid, res in results['events'].items():
+#            if res is None:
+#                continue
+#            g0.append(res['g0'])
+#            b.append(res['b'])
+#            error.append(res['error'])
+#            W.append(res['W'])
+#            eventids.append(eventid)
+#            v0.append(res.get('v0'))
+#            for sta, Rsta in res['R'].items():
+#                R[sta].append(Rsta)
+#        R = dict(R)
+#    g0 = np.array(g0, dtype=np.float)
+#    b = np.array(b, dtype=np.float)
+#    error = np.array(error, dtype=np.float)
+#    W = np.array(W, dtype=np.float)
+#    v0 = np.array(v0, dtype=np.float)
+#    for sta in R:
+#        R[sta] = np.array(R[sta], dtype=np.float)
+#    return g0, b, error, R, W, eventids, v0
 
 
 def _check_times(tr, tw, tol=0.5):
@@ -1315,16 +1354,17 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
         if len(result['events']) == 0:
             log.warning('invert_wrapper: no result')
             return
-        g0, b, error, R, _, _, _ = collect_results(result)
-        if np.all(np.isnan(g0)):
+        col = collect_results(result, only=('g0', 'b', 'error', 'R'))
+        if np.all(np.isnan(col['g0'])):
             log.warning('invert_wrapper: no result')
             return
         kw = {'axis': 0, 'robust': mean == 'robust',
-              'weights': 1 / np.array(error) if mean == 'weighted' else None}
-        result['g0'] = gmean(g0, **kw).tolist()
-        result['b'] = gmean(b, **kw).tolist()
-        result['error'] = gmean(error, **kw).tolist()
-        for st, Rst in R.items():
+              'weights': (1 / np.array(col['error']) if mean == 'weighted'
+                          else None)}
+        result['g0'] = gmean(col['g0'], **kw).tolist()
+        result['b'] = gmean(col['b'], **kw).tolist()
+        result['error'] = gmean(col['error'], **kw).tolist()
+        for st, Rst in col['R'].items():
             result['R'][st] = gmean(Rst, axis=0).tolist()
     result['config'] = {k: kwargs[k] for k in DUMP_CONFIG if k in kwargs}
     result['config'][

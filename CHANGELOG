@@ -1,10 +1,9 @@
 dev:
   * core: report fit error for source displacement spectra
+  * core: collect_results returns dict instead of list
   * imaging: labels for plots of source displacement spectra
-  * site:
-      - align sites now correctly alignes around the given response, before it
-        was shifted by a small value
-      - greatly enhance test suite
+  * site: align sites now correctly alignes around the given response, before it was shifted by a small value
+  * site: greatly enhance test suite
   * fixed some minor bugs
   * other small enhancements
 v1.4:

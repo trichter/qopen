@@ -10,7 +10,7 @@ import unittest
 
 import numpy as np
 
-from qopen.site import align_site_responses, _collectR, _Rmean, _Rstd
+from qopen.site import align_site_responses, _Rmean, _Rstd, _collectR
 
 
 class TestCase(unittest.TestCase):
@@ -132,7 +132,7 @@ class TestCase(unittest.TestCase):
         std1 = _Rstd(_collectR(r))
         r2 = align_site_responses(deepcopy(r), station=sta, response=rsp)
         std2 = _Rstd(_collectR(r2))
-        Rm = _Rmean(_collectR(r2, use_only={sta}))
+        Rm = _Rmean(_collectR(r2, only={sta}))
         self.assertLess(abs(Rm - np.log(rsp)), eps)
         rsp = 100
         align_site_responses(r, response=rsp)

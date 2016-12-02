@@ -479,15 +479,16 @@ def plot_results(result, v0=None, fname=None, title=None,
     fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(n, n)
     share = None
-    g0, b, error, R, _, _, v02 = collect_results(result)
-    v0 = v0 or result['config'].get('v0') or v02
-    result = {'g0': g0, 'b': b, 'error': error, 'R': R}
-    weights = 1 / np.array(error) if mean == 'weighted' else None
+    col = collect_results(result, only=('g0', 'b', 'error', 'v0'))
+    v0 = v0 or result['config'].get('v0') or col['v0']
+    result = col
+    result.pop('v0', None)
+    weights = 1 / np.array(result['error']) if mean == 'weighted' else None
     robust = mean == 'robust'
     for i, q in enumerate(quantities):
         ax = plt.subplot(gs[i // n, i % n], sharex=share)
         if q == 'nobs':
-            nobs = np.sum(~np.isnan(g0), axis=0)
+            nobs = np.sum(~np.isnan(result['g0']), axis=0)
             ax.bar(freq, nobs, width=0.1 * freq, color='gray')
         else:
             value = result[DEPMAP[q]]
@@ -516,8 +517,9 @@ def plot_sites(result, fname=None, title=None, mean=None,
                xlim=None, ylim=(1e-2, 1e2), nx=None, figsize=None):
     """Plot site amplification factors"""
     freq = np.array(result['freq'])
-    g0, b, error, R, _, _, _ = collect_results(result)
-    weights = 1 / np.array(error) if mean == 'weighted' else None
+    col = collect_results(result, only=['R', 'error'])
+    R = col['R']
+    weights = 1 / np.array(col['error']) if mean == 'weighted' else None
     robust = mean == 'robust'
     max_nobs = np.max([np.sum(~np.isnan(r), axis=0) for r in R.values()])
     N = max_nobs > 1
