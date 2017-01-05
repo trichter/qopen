@@ -24,9 +24,9 @@ ENTRY_POINTS = {
                         'qopen = qopen.core:run_cmdline',
                         'qopen-rt = qopen.rt:main']}
 
-DEPS = ['future', 'matplotlib>=1.3', 'numpy>=1.8', 'scipy>=0.12',
+DEPS = ['future', 'matplotlib>=1.3', 'numpy>=1.8', 'scipy>=0.14',
         'setuptools', 'obspy>=1.0',
-        'joblib', 'statsmodels']
+        'joblib>=0.7', 'statsmodels>=0.5']
 
 CLASSIFIERS = [
     'Environment :: Console',
