@@ -26,7 +26,7 @@ ENTRY_POINTS = {
 
 DEPS = ['future', 'matplotlib>=1.3', 'numpy>=1.8', 'scipy>=0.14',
         'setuptools', 'obspy>=1.0',
-        'joblib>=0.7', 'statsmodels>=0.5']
+        'joblib', 'statsmodels']
 
 CLASSIFIERS = [
     'Environment :: Console',
