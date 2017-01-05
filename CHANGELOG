@@ -1,4 +1,4 @@
-dev:
+v1.5:
   * core: report fit error for source displacement spectra
   * core: collect_results returns dict instead of list
   * imaging: labels for plots of source displacement spectra
