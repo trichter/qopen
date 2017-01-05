@@ -116,6 +116,8 @@ def robust_stat(data, axis=None, fall_back=5):
 
 def gstat(data, axis=None, weights=None, unbiased=True, robust=False):
     """Weighted or robust geometric mean and error (log scale)"""
+    # warnings may pop up due to a bug in numpy
+    # https://github.com/numpy/numpy/issues/4959
     data = np.log(np.ma.masked_invalid(data))
     if robust and weights is not None:
         raise NotImplementedError
