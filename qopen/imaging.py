@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Tom Eulenfeld, MIT license
+# Copyright 2015-2017 Tom Eulenfeld, MIT license
 """Plotting functions"""
 
 # The following lines are for Py2/Py3 support with the future module.
@@ -394,7 +394,8 @@ def plot_sds(freq, result, ax=None, fname=None,
                           ('n', 'n=%.1f'),
                           ('gamma', r'$\gamma$=%.2f'),
                           ('fit_error', 'err=%.2f')))
-    labels = [labels[key] % result[key] for key in labels if key in result]
+    labels = [labels[key] % np.float32(result[key])
+              for key in labels if key in result]
     if len(labels) > 0 and annotate:
         va = annotate if annotate in ('top', 'bottom') else 'top'
         ypos = 1 if annotate == 'top' else 0
