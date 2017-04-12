@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Tom Eulenfeld, MIT license
+# Copyright 2015-2017 Tom Eulenfeld, MIT license
 """Some utility functions"""
 # The following lines are for Py2/Py3 support with the future module.
 from __future__ import (absolute_import, division,
@@ -15,19 +15,17 @@ import numpy as np
 from statsmodels.regression.linear_model import OLS
 from statsmodels.robust.robust_linear_model import RLM
 
-try:
-    cache = functools.lru_cache(maxsize=512)
-except AttributeError:
-    def cache(f):
-        cache = f.cache = {}
 
-        @functools.wraps(f)
-        def _f(*args, **kwargs):
-            key = str(args) + str(kwargs)
-            if key not in cache:
-                cache[key] = f(*args, **kwargs)
-            return cache[key]
-        return _f
+def cache(f):
+    cache = f.cache = {}
+
+    @functools.wraps(f)
+    def _f(*args, **kwargs):
+        key = str(args) + str(kwargs)
+        if key not in cache:
+            cache[key] = f(*args, **kwargs)
+        return cache[key]
+    return _f
 
 
 LOGGING_DEFAULT_CONFIG = {
