@@ -1044,6 +1044,7 @@ def invert(events, inventory, get_waveforms,
         event_station_pairs, key=lambda p: (origins[p[0]].time, distances[p]))
     msg = '%s pairs after distance selection'
     log.info(msg, len(event_station_pairs))
+    log.debug('(%s)', event_station_pairs)
 
     # Calculate onsets
     def _get_onsets(evid, sta):
@@ -1076,8 +1077,9 @@ def invert(events, inventory, get_waveforms,
     log.debug('origin station distances: %s', distances)
     log.debug('onsets: %s', onsets)
     if len(borehole_stations) > 0:
-        msg = 'identified borehole stations: %s'
-        log.debug(msg, ' '.join(borehole_stations))
+        msg = 'identified %d borehole stations: %s'
+        borehole_stations = sorted(borehole_stations)
+        log.debug(msg, len(borehole_stations), ' '.join(borehole_stations))
 
     # Check if enough pairs left
     if (len(event_station_pairs) == 0 or skip and
@@ -1086,6 +1088,7 @@ def invert(events, inventory, get_waveforms,
         log.info(msg, len(event_station_pairs))
         return
     log.info('%s pairs with determined onsets/picks', len(event_station_pairs))
+    log.debug('(%s)', event_station_pairs)
 
     # Retrieve data
     streams = []
@@ -1134,6 +1137,7 @@ def invert(events, inventory, get_waveforms,
             streams.append(stream)
     msg = 'succesfully fetched %d streams for %d stations and %d events'
     log.info(msg, len(streams), len(stations), len(origins))
+    log.debug('(%s)', event_station_pairs)
 
     # Optionally remove instrument response
     if remove_response:
@@ -1452,35 +1456,38 @@ def _load_func(modulename, funcname):
     return func
 
 
-def init_data(data, client_options=None, plugin=None, cache_waveforms=False):
+def init_data(data, client_options=None, plugin=None, cache_waveforms=False,
+              get_waveforms=None):
     """Return appropriate get_waveforms function
 
     See example configuration file for a description of the options"""
-    if client_options is None:
-        client_options = {}
-    try:
-        client_module = import_module('obspy.clients.%s' % data)
-    except ImportError:
-        client_module = None
-    if client_module:
-        Client = getattr(client_module, 'Client')
-        client = Client(**client_options)
+    client_module = None
+    if get_waveforms is None:
+        if client_options is None:
+            client_options = {}
+        try:
+            client_module = import_module('obspy.clients.%s' % data)
+        except ImportError:
+            pass
+        if client_module:
+            Client = getattr(client_module, 'Client')
+            client = Client(**client_options)
 
-        def get_waveforms(event=None, **args):
-            return client.get_waveforms(**args)
-    elif data == 'plugin':
-        modulename, funcname = plugin.split(':')
-        get_waveforms = _load_func(modulename.strip(), funcname.strip())
-    else:
-        from obspy import read
-        stream = read(data)
+            def get_waveforms(event=None, **args):
+                return client.get_waveforms(**args)
+        elif data == 'plugin':
+            modulename, funcname = plugin.split(':')
+            get_waveforms = _load_func(modulename.strip(), funcname.strip())
+        else:
+            from obspy import read
+            stream = read(data)
 
-        def get_waveforms(network, station, location, channel,
-                          starttime, endtime, event=None):
-            st = stream.select(network=network, station=station,
-                               location=location, channel=channel)
-            st = st.slice(starttime, endtime)
-            return st
+            def get_waveforms(network, station, location, channel,
+                              starttime, endtime, event=None):
+                st = stream.select(network=network, station=station,
+                                   location=location, channel=channel)
+                st = st.slice(starttime, endtime)
+                return st
 
     def wrapper(**kwargs):
         try:
@@ -1641,13 +1648,13 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
                     events, format_ = events
                     events = obspy.read_events(events, format_)
                     log.info('read %d events', len(events))
-            # Initialize get_waveforms
-                keys = ['client_options', 'plugin', 'cache_waveforms']
+                # Initialize get_waveforms
+                keys = ['data', 'client_options', 'plugin', 'cache_waveforms']
                 tkwargs = {k: args.pop(k, None) for k in keys}
-                if get_waveforms is None:
-                    data = args.pop('data')
-                    get_waveforms = init_data(data, **tkwargs)
-                    log.info('init data from %s', data)
+                get_waveforms = init_data(get_waveforms=get_waveforms,
+                                          **tkwargs)
+                if tkwargs['data'] is not None:
+                    log.info('init data from %s', tkwargs['data'])
         except (KeyboardInterrupt, SystemExit):
             raise
         except:
