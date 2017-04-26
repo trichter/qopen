@@ -125,12 +125,13 @@ def _merge_sets(sets):
     return newsets
 
 
-def _find_unconnected_areas(results, freqi):
+def _find_unconnected_areas(results, freqi, ignore_stations=None):
     areas = []
     for evid in results['events']:
         R = results['events'][evid]['R']
         area = {sta for sta, Rsta in R.items()
-                if Rsta[freqi] is not None and not np.isnan(Rsta[freqi])}
+                if Rsta[freqi] is not None and not np.isnan(Rsta[freqi]) and
+                (ignore_stations is None or sta not in ignore_stations)}
         if len(area) > 0:
             areas.append(area)
     areas = _merge_sets(areas)
@@ -200,7 +201,8 @@ def _join_unconnected_areas(areas, max_distance, inventory):
 
 def align_site_responses(results, station=None, response=1., use_sparse=True,
                          seismic_moment_method=None,
-                         seismic_moment_options=None):
+                         seismic_moment_options=None,
+                         ignore_stations=None):
     """
     Align station site responses and correct source parameters (experimental)
 
@@ -257,7 +259,8 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
     for i in range(Nf):
         log.debug('align sites for freq no. %d', i)
         # find unconnected areas
-        areas = _find_unconnected_areas(results, i)
+        areas = _find_unconnected_areas(results, i,
+                                        ingore_stations=ignore_stations)
         if join_unconnected:
             areas, near_stations = _join_unconnected_areas(
                 areas, join_unconnected, inventory)
