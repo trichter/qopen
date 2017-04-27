@@ -260,7 +260,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         log.debug('align sites for freq no. %d', i)
         # find unconnected areas
         areas = _find_unconnected_areas(results, i,
-                                        ingore_stations=ignore_stations)
+                                        ignore_stations=ignore_stations)
         if join_unconnected:
             areas, near_stations = _join_unconnected_areas(
                 areas, join_unconnected, inventory)
