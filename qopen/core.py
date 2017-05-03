@@ -84,8 +84,6 @@ DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma',
               'W', 'omM', 'sds_error', 'fit_error',
               'R', 'events', 'v0', 'config']
 
-DUMP_PKL = False
-
 
 class QopenError(Exception):
     pass
@@ -501,6 +499,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
               ignore_network_code=False, borehole_stations=(),
               G_module='qopen.rt',
               fix=False, fix_params=None,
+              dump_optpkl=None, dump_fitpkl=None,
               **kwargs):
     """
     Inverst streams in a specific frequency band for attenuation parameters
@@ -887,17 +886,19 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     msg = 'freq band (%.2fHz, %.2fHz): optimization result is %s'
     log.debug(msg, freq_band[0], freq_band[1], json.dumps(result))
     # Dump pkl files for external plotting
-    if DUMP_PKL:
-        import cPickle as pickle
-        with open('opt.pkl', 'wb') as f:
-            pickle.dump((record, record_g0), f, 2)
-        with open('fit.pkl', 'wb') as f:
-            t = (energies, g0, b, W, R, v0, info, smooth, smooth_window)
-            pickle.dump(t, f, 2)
-
+    if dump_optpkl or dump_fitpkl:
+        import pickle
+        eventid = energies[0].stats.eventid
+        l = '%s_%05.2fHz-%05.2fHz' % (eventid, freq_band[0], freq_band[1])
+        if dump_optpkl:
+            with open(dump_optpkl % l, 'wb') as f:
+                pickle.dump((record, record_g0), f, 2)
+        if dump_fitpkl:
+            with open(dump_fitpkl % l, 'wb') as f:
+                t = (energies, g0, b, W, R, v0, info, smooth, smooth_window)
+                pickle.dump(t, f, 2)
     # Optionally plot result of optimization routine
     label_eventid = (len(eventids) == 1)
-
     def fname_and_title(fname, evtotitle=False):
         part1 = '%05.2fHz-%05.2fHz' % freq_band
         title = 'filter: (%.2fHz, %.2fHz)' % freq_band
