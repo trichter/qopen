@@ -87,7 +87,7 @@ def _rescale_results(results, factors, only=None):
                 if Rsta[i] is None or np.isnan(Rsta[i]):
                     continue
                 Rsta[i] *= factors[k, i]
-                if only and sta not in only:
+                if only and sta not in only[i]:
                     Rsta[i] = None
             if all(Rsta[i] is None or np.isnan(Rsta[i])
                    for Rsta in R.values()):
@@ -256,6 +256,8 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
     # calculate best factors for each freq band with OLS A*factor=b
     factors = np.empty((Ne, Nf))
     std_before = []
+    # one for each freq
+    largest_areas = []
     for i in range(Nf):
         log.debug('align sites for freq no. %d', i)
         # find unconnected areas
@@ -268,6 +270,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         msg = 'use largest area %s with %d stations'
         log.info(msg, largest_area, len(areas[largest_area]))
         largest_area = areas[largest_area]
+        largest_areas.append(largest_area)
         R = _collectR(results, freqi=i, only=largest_area)
         std_before.append(_Rstd(R))
         row = [0]
@@ -277,9 +280,10 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         else:
             Arepr = []
         norm_row_A = defaultdict(float)
-        norm_row_b = np.log(response)
+        norm_row_b = 0
         first = {}
         last = {}
+        stations_used_norm = set()
         # add pairs of site responses for one station and different events
         for k, item in enumerate(results['events'].items()):
             evid, eres = item
@@ -289,14 +293,9 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                     continue
                 if Rsta is None or np.isnan(Rsta):
                     continue
-                if station is None:
-                    # collect information if product of station site responses
-                    # is to be normalized
-                    fac = 1. / Nstations[i][sta] / len(largest_area)
-                    norm_row_A[k] += fac
-                    norm_row_b -= np.log(Rsta) * fac
-                elif station == sta:
-                    # pin site response of specific station
+                if station is None or sta == station or sta in station:
+                    # collect information for normalization
+                    stations_used_norm.add(sta)
                     fac = 1. / Nstations[i][sta]
                     norm_row_A[k] += fac
                     norm_row_b -= np.log(Rsta) * fac
@@ -318,7 +317,10 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                     last[sta] = k, Rsta
                 else:
                     last[sta] = first[sta] = (k, Rsta)
-        # pin mean site response or site response of specific station
+        # pin mean site response or site response of specific station(s)
+        norm_row_b = norm_row_b / len(stations_used_norm) + np.log(response)
+        for k in norm_row_A:
+            norm_row_A[k] /= len(stations_used_norm)
         construct_ols(norm_row_A.items(), norm_row_b)
         msg = 'constructed %scoefficient matrix with shape (%d, %d)'
         log.debug(msg, 'sparse ' * use_sparse, row[0], Ne)
@@ -326,13 +328,14 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         b = np.array(b)
         if use_sparse:
             A = scipy.sparse.csr_matrix(tuple(Arepr), shape=(row[0], Ne))
-            res = scipy.sparse.linalg.lsmr(A, b, atol=1e-8)
+            res = scipy.sparse.linalg.lsmr(A, b, atol=1e-9)
         else:
             A = np.array(Arepr)
             res = scipy.linalg.lstsq(A, b, overwrite_a=True, overwrite_b=True)
         factors[:, i] = np.exp(res[0])
+
     # Scale W and R
-    _rescale_results(results, factors, only=largest_area)
+    _rescale_results(results, factors, only=largest_areas)
     # Calculate omM, M0 and m again
     calculate_source_properties(
         results, seismic_moment_method=seismic_moment_method,
