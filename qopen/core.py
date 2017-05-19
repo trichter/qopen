@@ -81,7 +81,7 @@ DUMP_CONFIG = ['invert_events_simultaniously', 'mean',
 
 DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma',
               'freq', 'g0', 'b', 'error',
-              'W', 'omM', 'sds_error', 'fit_error',
+              'W', 'sds', 'sds_error', 'fit_error',
               'R', 'events', 'v0', 'config']
 
 
@@ -1266,12 +1266,9 @@ def invert(events, inventory, get_waveforms,
             evid = get_eventid(event)
             if W is None:
                 result['events'][evid]['W'].append(None)
-#                result['events'][evid]['omM'].append(None)
             else:
                 result['events'][evid]['W'].append(W.get(evid))
-#                omM = sds(W.get(evid), cfreq, kwargs.get('v0'), rho0)
-#                result['events'][evid]['omM'].append(omM)
-    # Calculate source properties omM, M0 and Mw
+    # Calculate source properties sds, M0 and Mw
     for event in events:
         evid = get_eventid(event)
         args = (result['freq'], result['events'][evid], result['v0'], rho0,

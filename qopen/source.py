@@ -193,7 +193,7 @@ def calculate_source_properties(results, rh0=None, v0=None,
     if rho0:
         for r in dict(results['events']).values():  # dict from future.builtins
             v0 = r.get('v0') or v02
-            r.pop('omM', None)
+            r.pop('sds', None)
             r.pop('M0', None)
             r.pop('fc', None)
             r.pop('n', None)
@@ -206,17 +206,17 @@ def calculate_source_properties(results, rh0=None, v0=None,
 
 def insert_source_properties(freq, evresult, v0, rho0, seismic_moment_method,
                              seismic_moment_options, catmag=None):
-    """Insert omM, Mw and possibly Mcat in evresult dictionary"""
+    """Insert sds, Mw and possibly Mcat in evresult dictionary"""
     from qopen.core import sort_dict
     if evresult['W'] and rho0 and v0:
-        evresult['omM'] = []
+        evresult['sds'] = []
     for i, f in enumerate(freq):
         if evresult['W'][i] and rho0 and v0:
-            evresult['omM'].append(sds(evresult['W'][i], f, v0, rho0))
+            evresult['sds'].append(sds(evresult['W'][i], f, v0, rho0))
         else:
-            evresult['omM'].append(None)
+            evresult['sds'].append(None)
     if seismic_moment_method:
-        omM = evresult['omM']
+        omM = evresult['sds']
         fitresult = fit_sds(freq, omM, method=seismic_moment_method,
                             **seismic_moment_options)
         if fitresult is not None:

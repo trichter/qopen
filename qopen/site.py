@@ -336,7 +336,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
 
     # Scale W and R
     _rescale_results(results, factors, only=largest_areas)
-    # Calculate omM, M0 and m again
+    # Calculate sds, M0 and m again
     calculate_source_properties(
         results, seismic_moment_method=seismic_moment_method,
         seismic_moment_options=seismic_moment_options)

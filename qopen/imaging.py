@@ -41,7 +41,7 @@ QLABELS = {'g0': r'g0 (m$^{-1}$)',
 
 DEPMAP = {'g0': 'g0', 'lsc': 'g0', 'Qsc': 'g0',
           'b': 'b', 'li': 'b', 'Qi': 'b',
-          'W': 'W', 'omM': 'omM', 'sds': 'omM', 'error': 'error'}
+          'W': 'W', 'omM': 'sds', 'sds': 'sds', 'error': 'error'}
 
 
 def calc_dependent(quantity, value, freq=None, v0=None):
@@ -54,7 +54,7 @@ def calc_dependent(quantity, value, freq=None, v0=None):
     :return: value of quantity"""
     q = quantity
     val = np.array(value, dtype=float)
-    if q in ('g0', 'b', 'W', 'omM', 'error'):
+    if q in ('g0', 'b', 'W', '', 'error'):
         return val
     elif q == 'lsc':
         return 1 / val / 1000
@@ -362,7 +362,7 @@ def plot_sds(freq, result, ax=None, fname=None,
              seismic_moment_method=None, seismic_moment_options={}):
     """Plot source displacement spectrum and fitted source model"""
     freq = np.array(freq)
-    omM = np.array(result['omM'], dtype=np.float)
+    omM = np.array(result['sds'], dtype=np.float)
     if all(np.isnan(omM)):
         return
     fig = None
