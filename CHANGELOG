@@ -1,5 +1,8 @@
 dev:
   * rename omM to sds (sorce displacment spectrum)
+  * site: add option to ignore some stations when aligning site responses
+  * allow to pin site response of a set of stations (previously only a single station or all stations)
+  * minor bugfixes
 v1.5:
   * core: report fit error for source displacement spectra
   * core: collect_results returns dict instead of list
