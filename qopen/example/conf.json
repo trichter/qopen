@@ -227,7 +227,7 @@
 # are compared to previous local minima. If the ratio between a maximum and
 # the lowest minimum before the maximum is above a threshold the coda window
 # will end at time of the minimum.
-# Coda can optionally be smoothed with a flat window before this operation.
+# Coda can optionally be smoothed before this operation.
 # Example:
 # "cut_coda": {"smooth": 5, "ratio": 5},
 "cut_coda": null,
