@@ -1,4 +1,4 @@
-dev:
+v1.6:
   * rename omM to sds (sorce displacment spectrum)
   * site: add option to ignore some stations when aligning site responses
   * allow to pin site response of a set of stations (previously only a single station or all stations)
