@@ -33,7 +33,7 @@ Alternatively, have a look at our poster_ presented at the 2015 Annual Meeting o
 
 .. __: https://dx.doi.org/10.1093/gji/ggw035
 
-.. _`[pdf]`: https://www.researchgate.net/profile/Tom_Eulenfeld/publication/297661773_Measurement_of_intrinsic_and_scattering_attenuation_of_shear_waves_in_two_sedimentary_basins_and_comparison_to_crystalline_sites_in_Germany
+.. _`[pdf]`: https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00038348/Eulenfeld_Wegler_2016_Intrinsic_and_scattering_attenuation_a.pdf
 
 .. _poster: https://dx.doi.org/10.6084/m9.figshare.2074693
 
