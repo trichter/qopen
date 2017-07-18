@@ -99,4 +99,4 @@ Please also consult the `API documentation`_.
 Get help and discuss
 ....................
 
-at the `seistools <https://lserv.uni-jena.de/mailman/listinfo/seistools>`_ mailing list!
+The `seistools <https://lserv.uni-jena.de/mailman/listinfo/seistools>`_ mailing list can be used to contact other users and developers.
