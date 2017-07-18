@@ -96,9 +96,7 @@ Please also consult the `API documentation`_.
 
 .. _`API documentation`: https://qopen.readthedocs.io
 
-Get help
---------
+Get help and discuss
+....................
 
- - `Subscribe <mailto:seistools-join@listserv.uni-jena.de?subject=Join>`_ to `seistools <https://lserv.uni-jena.de/mailman/listinfo/seistools>`_ mailing list
- - `Browse <https://lserv.uni-jena.de/pipermail/seistools/>`_ the archive
- - `Post <mailto:seistools@listserv.uni-jena.de?subject=[qopen]>`_ a message and ensure the subject contains `[qopen]`
+at the `seistools <https://lserv.uni-jena.de/mailman/listinfo/seistools>`_ mailing list!
