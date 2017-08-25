@@ -475,7 +475,7 @@ def _get_slice(energy, tw, pair, energies, bulk=False):
 def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
               R0=1, free_surface=4,
               noise_windows=None, bulk_window=None, weight=None,
-              optimize={}, g0_bounds=(1e-8, 1e-3), b_bounds=(1e-5, 10),
+              optimize=None, g0_bounds=(1e-8, 1e-3), b_bounds=(1e-5, 10),
               num_points_integration=1000,
               smooth=None, smooth_window='flat',
               remove_noise=False, cut_coda=None, skip=None,
@@ -852,6 +852,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
 
     else:
         # Optimize g0, so that inversion yields minimal error
+        if optimize is None:
+            optimize = {}
         optimize.setdefault('method', 'golden')
         optimize.setdefault('tol', 1e-8)
         if optimize['method'] in ('brent', 'golden'):

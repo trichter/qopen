@@ -23,12 +23,6 @@ class TestCase(unittest.TestCase):
         self.delete = '-d' in args
         self.all_tests = '-a' in args
 
-
-    def run(self, result=None):
-        """ Stop after first error """
-        if not result.errors:
-            super(TestCase, self).run(result)
-
     def test_entry_point(self):
         script = load_entry_point('qopen', 'console_scripts', 'qopen')
         with quiet():
