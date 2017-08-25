@@ -103,6 +103,8 @@ Please also consult the `API documentation`_.
 .. _`API documentation`: https://qopen.readthedocs.io
 
 Get help and discuss
-....................
+--------------------
 
 The `seistools <https://lserv.uni-jena.de/mailman/listinfo/seistools>`_ mailing list can be used to contact other users and developers.
+
+A somewhat advanced example using the Qopen package: `USAttenuation <https://github.com/trichter/usattenuation>`_.
