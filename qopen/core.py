@@ -854,6 +854,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         # Optimize g0, so that inversion yields minimal error
         if optimize is None:
             optimize = {}
+        optimize = copy(optimize)
         optimize.setdefault('method', 'golden')
         optimize.setdefault('tol', 1e-8)
         if optimize['method'] in ('brent', 'golden'):
