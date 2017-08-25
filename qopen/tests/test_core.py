@@ -46,7 +46,7 @@ class TestCase(unittest.TestCase):
                '%s')
         args = []
         if os.getenv('TRAVIS'):
-            args.append('--njobs 2')
+            args.extend(['--njobs', '2'])
         if self.verbose:
             args.append('-vvv')
         with tempdir():

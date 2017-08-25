@@ -1,13 +1,14 @@
 """
 Tests for the qopen package.
 
-qopen-runtests [-h] [-v] [-a] [-p] [-d]
+qopen-runtests [-h] [-v] [-a] [-p] [-d] [-f]
 
 -h    short help
 -v    be verbose
 -a    run all tests
 -d    use a permanent tempdir
 -d    empty permanent tempdir at start
+-f    fail fast
 """
 
 from pkg_resources import resource_filename
@@ -19,12 +20,13 @@ matplotlib.use('agg')
 
 
 def run():
-    if '-h' in sys.argv[1:]:
+    args = sys.argv[1:]
+    if '-h' in args:
         print(__doc__)
         return
     loader = unittest.TestLoader()
     test_dir = resource_filename('qopen', 'tests')
     suite = loader.discover(test_dir)
-    runner = unittest.runner.TextTestRunner()
+    runner = unittest.runner.TextTestRunner(failfast='-f' in args)
     ret = not runner.run(suite).wasSuccessful()
     sys.exit(ret)
