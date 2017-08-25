@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Tom Eulenfeld, MIT license
+# Copyright 2015-2017 Tom Eulenfeld, MIT license
 import os
 import re
 
@@ -24,17 +24,14 @@ ENTRY_POINTS = {
                         'qopen = qopen.core:run_cmdline',
                         'qopen-rt = qopen.rt:main']}
 
-DEPS = ['future', 'matplotlib>=1.3', 'numpy>=1.8', 'scipy>=0.14',
-        'setuptools', 'obspy>=1.0',
-        'joblib', 'statsmodels']
+DEPS = ['joblib', 'matplotlib>=1.3', 'numpy>=1.8', 'scipy>=0.14',
+        'setuptools', 'obspy>=1.0', 'statsmodels']
 
 CLASSIFIERS = [
     'Environment :: Console',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',

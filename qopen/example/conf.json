@@ -53,6 +53,7 @@
 # This works only if the waveforms are requested with the exact same
 # parameters (start and end time) i.e. if options
 # events and request_window are left untouched
+# This feature needs the joblib library
 "cache_waveforms": null,
 
 # Output results as json on stdout or in a file
@@ -74,12 +75,9 @@
 # The higher the log level the more verbose is the logging to the file (1-3)
 "loglevel": 3,
 
-# Use multiple processes for calculating the results
-# for different frequencies parallel.
-# joblib must be installed for this feature
-"parallel": true,
-
-# Number of cores: 1, 2, ..., -1 (all cores), -2 (all cores except 1), ...
+# Use multiple cores for calculating the results
+# 1 -> sequentuell processing
+# -1 -> all available cores, -2 -> all available minus 1 core
 "njobs": -1,
 
 

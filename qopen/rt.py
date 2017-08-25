@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Tom Eulenfeld, MIT license
+# Copyright 2015-2017 Tom Eulenfeld, MIT license
 """
 Radiative Transfer: Approximative interpolation solution of Paasschens (1997)
 
@@ -24,15 +24,6 @@ Used variables::
     ``g*=g0`` is a reasonable assumption under these conditions (see paper).
 
 """
-
-# The following lines are for Py2/Py3 support with the future module.
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from future.builtins import (  # analysis:ignore
-    bytes, dict, int, list, object, range, str,
-    ascii, chr, hex, input, next, oct, open,
-    pow, round, super,
-    filter, map, zip)
 
 import argparse
 import numpy as np
@@ -119,13 +110,13 @@ def G(r, t, c, g0, eps=None, include_direct=True):
     return G_
 
 
-def plot_t(c, g0, r, t=None, N=100, log=False):
+def plot_t(c, g0, r, t=None, N=100, log=False, include_direct=False):
     """Plot Green's function as a function of time"""
     import matplotlib.pyplot as plt
     if t is None:
         t = 10 * r / c
     ts = r / c + np.logspace(-3, np.log10(t - r / c), N)
-    G_ = G(r, ts, c, g0)
+    G_ = G(r, ts, c, g0, include_direct=include_direct)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     if log:
@@ -138,13 +129,13 @@ def plot_t(c, g0, r, t=None, N=100, log=False):
     plt.show()
 
 
-def plot_r(c, g0, t, r=None, N=100, log=False):
+def plot_r(c, g0, t, r=None, N=100, log=False, include_direct=False):
     """Plot Green's function as a function of distance"""
     import matplotlib.pyplot as plt
     if r is None:
         r = 10 * c * t
     rs = np.linspace(0, c * t - 0.1, N)
-    G_ = G(rs, t, c, g0)
+    G_ = G(rs, t, c, g0, include_direct=include_direct)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     if log:
@@ -168,7 +159,8 @@ def main(args=None):
     p.add_argument('--log', help='log plot', action='store_true')
     msg = 'absorption length'
     p.add_argument('-a', '--absorption', help=msg, type=float)
-    msg = 'calculate direct wave term, ignore argument -r and -a'
+    msg = ('calculate direct wave term, ignore argument -r and -a, '
+           'for plots: include direct wave term')
     p.add_argument('-d', '--direct-wave', help=msg, action='store_true')
     args = p.parse_args(args)
     r, t, c, l, la = args.r, args.t, args.c, args.l, args.absorption
@@ -182,9 +174,9 @@ def main(args=None):
                 res = res * np.exp(-c * t / la)
             print(res)
     elif com == 'plot-t':
-        plot_t(c, 1/l, r, t=t, log=args.log)
+        plot_t(c, 1/l, r, t=t, log=args.log, include_direct=args.direct_wave)
     elif com == 'plot-r':
-        plot_r(c, 1/l, t, r=r, log=args.log)
+        plot_r(c, 1/l, t, r=r, log=args.log, include_direct=args.direct_wave)
 
 
 if __name__ == '__main__':

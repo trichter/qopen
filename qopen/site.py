@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Tom Eulenfeld, MIT license
+# Copyright 2015-2017 Tom Eulenfeld, MIT license
 """
 Align site responses of different runs of Qopen
 
@@ -10,15 +10,6 @@ to correct source power and site amplification factors afterwards.
 In the above case site responses and source powers will be adjusted such that
 the site response of station B is the same for both runs.
 """
-
-# The following lines are for Py2/Py3 support with the future module.
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from future.builtins import (  # analysis:ignore
-    bytes, dict, int, list, object, range, str,
-    ascii, chr, hex, input, next, oct, open,
-    pow, round, super,
-    filter, map, zip)
 
 from collections import defaultdict, OrderedDict
 import logging

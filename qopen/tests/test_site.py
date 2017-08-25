@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Tom Eulenfeld, MIT license
+# Copyright 2015-2017 Tom Eulenfeld, MIT license
 """
 Tests for site module.
 """

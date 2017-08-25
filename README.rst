@@ -43,18 +43,24 @@ How to use it
 Installation
 ............
 
+Since version 2, Qopen runs on Python3 only. If you want to use Qopen with Python2
+use a version 1.x.
+
 Dependencies of Qopen are:
 
 * ObsPy>=1.0
-* future, NumPy>=1.7, SciPy>=0.11 and matplotlib>=1.3 (itself dependencies of ObsPy)
-* statsmodels
-* joblib (for multi-core support)
+* NumPy, SciPy and matplotlib (itself dependencies of ObsPy)
+* statsmodels, joblib
 
+Installation with conda ::
 It's probably best to install ObsPy first and then let pip take care of the rest. Install Qopen and its dependencies with ::
 
+    conda --add channels conda-forge
+    conda create -n qopen python=3 obspy statsmodels
+    source activate qopen
     pip install qopen
 
-Qopen provides the two scripts `qopen` and `qopen-runtests`.
+Qopen provides the scripts `qopen`, `qopen-rt` and `qopen-runtests`.
 The installation can be tested with the second script::
 
     qopen-runtests

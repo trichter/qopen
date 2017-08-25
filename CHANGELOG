@@ -1,3 +1,6 @@
+v2.0:
+  * Qopen is now Python3-only, if you need support for Python2 use the 1.x releases
+  * remove parallel option, set njobs to 1 for sequential processing
 v1.6:
   * rename omM to sds (sorce displacment spectrum)
   * site: add option to ignore some stations when aligning site responses

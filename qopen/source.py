@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 Tom Eulenfeld, MIT license
+# Copyright 2015-2017 Tom Eulenfeld, MIT license
 """
 Fit source displacement spectrum with source model
 
@@ -8,15 +8,6 @@ Fit source displacement spectrum with source model
 If you want to fit source displacement spectra on the command line again
 use the ``qopen --calc-source-params`` option.
 """
-
-# The following lines are for Py2/Py3 support with the future module.
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from future.builtins import (  # analysis:ignore
-    bytes, dict, int, list, object, range, str,
-    ascii, chr, hex, input, next, oct, open,
-    pow, round, super,
-    filter, map, zip)
 
 import logging
 import numpy as np

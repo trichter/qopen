@@ -1,21 +1,14 @@
-# Copyright 2015-2016 Tom Eulenfeld, MIT license
+# Copyright 2015-2017 Tom Eulenfeld, MIT license
 """
 Tests for rt module.
 """
 
-# The following lines are for Py2/Py3 support with the future module.
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from future.builtins import (  # analysis:ignore
-    bytes, dict, int, list, object, range, str,
-    ascii, chr, hex, input, next, oct, open,
-    pow, round, super,
-    filter, map, zip)
-
 import numpy as np
 import unittest
+from pkg_resources import load_entry_point
 
 from qopen.rt import G, Gcoda_red, Gdirect
+from qopen.tests.util import tempdir, quiet
 
 
 class TestCase(unittest.TestCase):
@@ -53,6 +46,20 @@ class TestCase(unittest.TestCase):
         # right side of figure
         self.assertLess(abs(Gcoda_red(1, 1.92) - 0.04), 0.004)
         self.assertLess(abs(Gcoda_red(2, 7.68) - 0.004), 0.0004)
+
+    def cmd(self, cmd):
+        self.script(cmd.split())
+
+    def test_script(self):
+        self.script = load_entry_point('qopen', 'console_scripts', 'qopen-rt')
+        with tempdir():
+            with quiet():
+                self.cmd('calc 1600 500 -t 5 -r 1000')
+                self.cmd('calc 1600 500 -t 5 -r 1000 -a 5000')
+                self.cmd('calc 1600 500 -t 5 -d')
+                self.cmd('plot-t 1600 500 -r 1000')
+                self.cmd('plot-t 1600 500 -r 1000 -d')
+                self.cmd('plot-r 1600 500 -t 0.5')
 
 
 if __name__ == '__main__':

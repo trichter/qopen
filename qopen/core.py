@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Tom Eulenfeld, MIT license
+# Copyright 2015-2017 Tom Eulenfeld, MIT license
 """
 Qopen command line script and routines
 
@@ -21,13 +21,6 @@ Qopen will run the following functions top-down:
 
 |
 """
-# The following lines are for Py2/Py3 support with the future module.
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from future.builtins import (  # analysis:ignore
-    bytes, dict, int, list, object, range, str,
-    ascii, chr, hex, input, next, oct, open,
-    pow, round, super, map, zip)
 
 import argparse
 from argparse import SUPPRESS
@@ -55,12 +48,6 @@ from qopen.site import align_site_responses
 from qopen.source import calculate_source_properties, insert_source_properties
 from qopen.util import (cache, gmean, smooth as smooth_, smooth_func,
                         LOGGING_DEFAULT_CONFIG)
-
-try:
-    import joblib
-    from joblib import Parallel, delayed
-except ImportError:
-    joblib = None
 
 IS_PY3 = sys.version_info.major == 3
 
@@ -952,7 +939,7 @@ def invert(events, inventory, get_waveforms,
            rho0, vp=None, vs=None,
            remove_response=None, skip=None, use_picks=False,
            correct_for_elevation=False,
-           parallel=False, njobs=1,
+           njobs=-1,
            seismic_moment_method=None, seismic_moment_options={},
            plot_eventresult=False, plot_eventresult_options={},
            plot_eventsites=False, plot_eventsites_options={},
@@ -970,10 +957,7 @@ def invert(events, inventory, get_waveforms,
         All other options are described in the example configuration file.
     :return: result dictionary
     """
-    if joblib and parallel:
-        log.debug('use %d cores for parallel computation', njobs)
-    elif parallel:
-        log.warning('install joblib to use parallel option')
+    log.debug('use %d cores for parallel computation', njobs)
     # Get origins and arrivals of event
     origins = {}
     event_dict = {}
@@ -1221,17 +1205,21 @@ def invert(events, inventory, get_waveforms,
         kw['fix'] = False
         fix_params = defaultdict(lambda: None)
     # Start invert_fb function
-    if joblib and parallel:
-        rlist = Parallel(n_jobs=njobs, pre_dispatch='1.5*n_jobs')(
-            delayed(invert_fb)(fb, deepcopy(streams),
-                               fix_params=fix_params[fb], **kw)
-            for fb in freq_bands.values())
-    else:
+    if njobs == 1:
         # deepcopy only necessary for more than one freq band
         cond = len(freq_bands) > 1
         rlist = [invert_fb(fb, deepcopy(streams) if cond else streams,
                            fix_params=fix_params[fb], **kw)
                  for fb in freq_bands.values()]
+    else:
+        try:
+            from joblib import Parallel, delayed
+        except ImportError:
+            raise ImportError('joblib is needed for parallel processing')
+        rlist = Parallel(n_jobs=njobs, pre_dispatch='1.5*n_jobs')(
+            delayed(invert_fb)(fb, deepcopy(streams),
+                               fix_params=fix_params[fb], **kw)
+            for fb in freq_bands.values())
 
     # Check if any result
     if all([r is None for r in rlist]):
@@ -1500,10 +1488,15 @@ def init_data(data, client_options=None, plugin=None, cache_waveforms=False,
 
     use_cache = client_module is not None or data == 'plugin'
     use_cache = use_cache and cache_waveforms
-    if use_cache and joblib:
-        log.info('use waveform cache in %s', cache_waveforms)
-        memory = joblib.Memory(cachedir=cache_waveforms, verbose=0)
-        return memory.cache(wrapper)
+    if use_cache:
+        try:
+            import joblib
+        except ImportError:
+            log.warning('install joblib to use cache_waveforms option')
+        else:
+            log.info('use waveform cache in %s', cache_waveforms)
+            memory = joblib.Memory(cachedir=cache_waveforms, verbose=0)
+            return memory.cache(wrapper)
     elif use_cache:
         log.warning('install joblib to use cache_waveforms option')
     return wrapper
@@ -1784,7 +1777,7 @@ def run_cmdline(args=None):
     features_str = ('events', 'inventory', 'data', 'output',
                     'seismic-moment-method')
     features_json = ('seismic-moment-options',)
-    features_bool = ('parallel', 'invert_events_simultaniously',
+    features_bool = ('invert_events_simultaniously',
                      'plot_energies', 'plot_optimization', 'plot_fits',
                      'plot_eventresult', 'plot_eventsites')
     for f in features_str:

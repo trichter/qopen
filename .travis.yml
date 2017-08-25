@@ -3,53 +3,36 @@ sudo: false
 matrix:
   include:
     - os: linux
-      env: PYTHON_VERSION=2.7 MINIMUM_DEPENDENCIES="true"
-    - os: linux
-      env: PYTHON_VERSION=2.7
-    - os: linux
-      env: PYTHON_VERSION=2.7 PARALLEL="false"
-    - os: linux
-      env: PYTHON_VERSION=3.4
-    - os: linux
       env: PYTHON_VERSION=3.5
     - os: linux
       env: PYTHON_VERSION=3.6
-    - os: linux
-      env: PYTHON_VERSION=3.6 PARALLEL="false"
     - os: osx
-      env: PYTHON_VERSION=2.7
-    - os: osx
-      env: PYTHON_VERSION=3.6
-
+      env: PYTHON_VERSION=3.5
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       export OS="MacOSX";
     else
       export OS="Linux";
     fi
-  - if [[ "$PYTHON_VERSION" == "2.7" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda2-latest-${OS}-x86_64.sh -O miniconda.sh;
-    else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-${OS}-x86_64.sh -O miniconda.sh;
-    fi
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-${OS}-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes
   - conda update -q conda
-  - conda info -a
   - conda config --add channels conda-forge
-  - if [[ "$MINIMUM_DEPENDENCIES" == 'true' ]]; then
-      conda install python=$PYTHON_VERSION coverage coverage joblib=0.7 matplotlib=1.4 nose numpy=1.10 obspy=1.0 scipy=0.17 statsmodels;
-    else
-      conda install python=$PYTHON_VERSION coverage joblib obspy nose statsmodels;
-    fi
+  - conda info -a
+
+  - conda create -q -n testenv python=$PYTHON_VERSION coverage obspy nose statsmodels
+  - source activate testenv
+  - conda list
 install:
   - pip install --no-deps .
 script:
-  - mkdir empty; cd empty
-  - travis_wait coverage run --include='*/qopen/*' -m qopen.tests
+  - mkdir empty; cd empty; cp ../.coveragerc ./
+  - coverage run -m qopen.tests -v -a
 after_success:
+  - coverage combine
   - bash <(curl -s https://codecov.io/bash)
 notifications:
     email: false
