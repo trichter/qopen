@@ -3,11 +3,13 @@ sudo: false
 matrix:
   include:
     - os: linux
-      env: PYTHON_VERSION=3.5
+      env: PYTHON_VERSION=3.5 ALL=""
     - os: linux
-      env: PYTHON_VERSION=3.6
+      env: PYTHON_VERSION=3.5 ALL="-a"
+    - os: linux
+      env: PYTHON_VERSION=3.6 ALL="-a"
     - os: osx
-      env: PYTHON_VERSION=3.5
+      env: PYTHON_VERSION=3.5 ALL="-a"
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       export OS="MacOSX";
@@ -30,7 +32,7 @@ install:
   - pip install --no-deps .
 script:
   - mkdir empty; cd empty; cp ../.coveragerc ./
-  - coverage run -m qopen.tests -v -a
+  - coverage run -m qopen.tests -v $ALL
 after_success:
   - coverage combine
   - bash <(curl -s https://codecov.io/bash)
