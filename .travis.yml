@@ -25,7 +25,7 @@ before_install:
   - conda config --add channels conda-forge
   - conda info -a
 
-  - conda create -q -n testenv python=$PYTHON_VERSION coverage obspy nose statsmodels
+  - conda create -q -n testenv python=$PYTHON_VERSION coverage joblib nose obspy statsmodels
   - source activate testenv
   - conda list
 install:
