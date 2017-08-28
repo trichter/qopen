@@ -44,7 +44,7 @@ Installation
 ............
 
 Since version 2, Qopen runs on Python3 only. If you want to use Qopen with Python2
-use a version 1.x.
+use version 1.x.
 
 Dependencies of Qopen are:
 

@@ -3,13 +3,13 @@ sudo: false
 matrix:
   include:
     - os: linux
-      env: PYTHON_VERSION=3.5 FLAGS="-v -f"
+      env: PYTHON_VERSION=3.5 FLAGS="-v -f -n 2"
     - os: linux
-      env: PYTHON_VERSION=3.5 FLAGS="-v -a"
+      env: PYTHON_VERSION=3.5 FLAGS="-v -a -n 2"
     - os: linux
-      env: PYTHON_VERSION=3.6 FLAGS="-v -a"
+      env: PYTHON_VERSION=3.6 FLAGS="-v -a -n 2"
     - os: osx
-      env: PYTHON_VERSION=3.5 FLAGS="-v -a"
+      env: PYTHON_VERSION=3.5 FLAGS="-v -a -n 2"
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       export OS="MacOSX";

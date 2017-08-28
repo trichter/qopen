@@ -22,6 +22,7 @@ class TestCase(unittest.TestCase):
         self.permanent_tempdir = '-p' in args
         self.delete = '-d' in args
         self.all_tests = '-a' in args
+        self.njobs = args[args.index('-n') + 1] if '-n'  in args else None
 
     def test_entry_point(self):
         script = load_entry_point('qopen', 'console_scripts', 'qopen')
@@ -39,8 +40,8 @@ class TestCase(unittest.TestCase):
                'Created files are:\n%s\n\n'
                '%s')
         args = []
-        if os.getenv('TRAVIS'):
-            args.extend(['--njobs', '2'])
+        if self.njobs:
+            args.extend(['--njobs', self.njobs])
         if self.verbose:
             args.append('-vvv')
         with tempdir():
@@ -76,8 +77,8 @@ class TestCase(unittest.TestCase):
             'plot_eventsites': plot, 'plot_results': plot,
             'plot_sites': plot, 'plot_sds': plot, 'plot_mags': plot,
         }
-        if os.getenv('TRAVIS'):
-            kwargs['njobs'] = 2
+        if self.njobs:
+            kwargs['njobs'] = int(self.njobs)
         if self.verbose:
             kwargs['verbose'] = 3
         ind = np.logical_and(freq > 0.3, freq < 10)
@@ -124,7 +125,7 @@ class TestCase(unittest.TestCase):
         np.testing.assert_array_less(np.abs(np.log10(M0_qopen / M0)), 0.51)
 
         # check if the same result for 1 core
-        if self.all_tests:
+        if self.njobs != '1' and self.all_tests:
             kwargs['njobs'] = 1
             with tempdir():
                 run(create_config='conf.json', tutorial=True)

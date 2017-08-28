@@ -1,7 +1,7 @@
 """
 Tests for the qopen package.
 
-qopen-runtests [-h] [-v] [-a] [-p] [-d] [-f]
+qopen-runtests [-h] [-v] [-a] [-p] [-d] [-f] [-n num]
 
 -h    short help
 -v    be verbose
@@ -9,6 +9,7 @@ qopen-runtests [-h] [-v] [-a] [-p] [-d] [-f]
 -d    use a permanent tempdir
 -d    empty permanent tempdir at start
 -f    fail fast
+-n num   maximal number of cores to use (default: all)
 """
 
 from pkg_resources import resource_filename
