@@ -1558,6 +1558,11 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
         file
     :return: result dictionary
     """
+    # use non-interactive backend to circumvent problems with
+    # parallel plotting on MacOS
+    # see https://lserv.uni-jena.de/pipermail/seistools/2018/000006.html
+    import matplotlib
+    matplotlib.use('agg')
     time_start = time.time()
     # Copy example files if create_config or tutorial
     if create_config or tutorial:
