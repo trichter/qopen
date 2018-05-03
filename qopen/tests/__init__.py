@@ -6,7 +6,7 @@ qopen-runtests [-h] [-v] [-a] [-p] [-d] [-f] [-n num]
 -h    short help
 -v    be verbose
 -a    run all tests
--d    use a permanent tempdir
+-p    use a permanent tempdir
 -d    empty permanent tempdir at start
 -f    fail fast
 -n num   maximal number of cores to use (default: all)
