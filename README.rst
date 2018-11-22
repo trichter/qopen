@@ -61,7 +61,7 @@ It's probably best to install ObsPy first and then let pip take care of the rest
     pip install qopen
 
 Qopen provides the scripts `qopen`, `qopen-rt` and `qopen-runtests`.
-The installation can be tested with the second script::
+The installation can be tested with::
 
     qopen-runtests
 
