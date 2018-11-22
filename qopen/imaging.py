@@ -45,6 +45,8 @@ def calc_dependent(quantity, value, freq=None, v0=None):
     :return: value of quantity"""
     q = quantity
     val = np.array(value, dtype=float)
+    if not np.isscalar(v0):
+        v0 = v0[:, np.newaxis]
     if q in ('g0', 'b', 'W', '', 'error'):
         return val
     elif q == 'lsc':
