@@ -23,6 +23,7 @@ def sds(W, f, v, rho):
     Calculate source displacement spectrum ωM from spectral source energy W
 
     according to Sato & Fehler (2012, p.188)
+
     :param W: spectral source energy (J/Hz)
     :param f, v, rho: frequency, mean velocity, mean density
     :return: source displacement spectrum (in Nm)"""
