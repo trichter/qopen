@@ -50,7 +50,7 @@ Dependencies of Qopen are:
 
 * ObsPy>=1.0
 * NumPy, SciPy and matplotlib (itself dependencies of ObsPy)
-* statsmodels, joblib
+* statsmodels
 
 Installation with conda ::
 It's probably best to install ObsPy first and then let pip take care of the rest. Install Qopen and its dependencies with ::

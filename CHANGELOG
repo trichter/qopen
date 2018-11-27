@@ -1,4 +1,8 @@
-dev:
+v2.2:
+  * use multiprocessing instead of joblib for parallel processing
+  * remove joblib as hard dependency, it is only needed for waveform caching
+  * fix: averaging did not work when v0 was determined by picks
+v2.1:
   * fix: use matplotlib agg backend by default to circumvent problems with parallel plotting on MacOS
 v2.0:
   * Qopen is now Python3-only, if you need support for Python2 use the 1.x releases
