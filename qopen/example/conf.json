@@ -77,8 +77,9 @@
 
 # Use multiple cores for calculating the results
 # 1 -> sequentuell processing
-# -1 -> all available cores, -2 -> all available minus 1 core
-"njobs": -1,
+# 2 -> use 2 cores
+# null -> use all available cores
+"njobs": null,
 
 
 ### Options for inversion ###

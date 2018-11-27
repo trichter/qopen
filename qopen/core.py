@@ -26,10 +26,12 @@ import argparse
 from argparse import SUPPRESS
 from collections import defaultdict, OrderedDict
 from copy import copy, deepcopy
+from functools import partial
 from importlib import import_module
 import json
 import logging
 import logging.config
+import multiprocessing
 import os.path
 from pkg_resources import resource_filename
 import shutil
@@ -843,7 +845,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
 
     if fix:
         # Invert with fixed g0 and b
-        g0_fix, b_fix = fix_params
+        g0_fix, b_fix = fix_params[freq_band]
         err, g0, b, W, R, info = lstsq(g0_fix, b_fix=b_fix)
         assert g0 == g0_fix
         assert b == b_fix
@@ -942,7 +944,7 @@ def invert(events, inventory, get_waveforms,
            rho0, vp=None, vs=None,
            remove_response=None, skip=None, use_picks=False,
            correct_for_elevation=False,
-           njobs=-1,
+           njobs=None,
            seismic_moment_method=None, seismic_moment_options={},
            plot_eventresult=False, plot_eventresult_options={},
            plot_eventsites=False, plot_eventsites_options={},
@@ -960,7 +962,8 @@ def invert(events, inventory, get_waveforms,
         All other options are described in the example configuration file.
     :return: result dictionary
     """
-    log.debug('use %d cores for parallel computation', njobs)
+    msg = 'use %s cores for parallel computation'
+    log.debug(msg, 'all available' if njobs is None else njobs)
     # Get origins and arrivals of event
     origins = {}
     event_dict = {}
@@ -1192,37 +1195,29 @@ def invert(events, inventory, get_waveforms,
     # Construct kwargs for invert_fb call
     kw = copy(kwargs)
     kw.update({'rho0': rho0, 'borehole_stations': borehole_stations,
-               'skip': skip, 'filter': filter})
-    if fix_params:
+               'skip': skip, 'filter': filter, 'fix': fix_params is not None})
+    if fix_params is not None:
         # if fix_params is used, the inversion for station site responses and
         # energy source terms are done for fixed g0 and b from previous results
-        kw['fix'] = True
         if set(fix_params['freq']) != set(freq_bands.keys()):
             msg = ('Frequencies for fixed inversion have to be the same '
                    'as in the original inversion')
             raise ValueError(msg)
         fp = fix_params
-        fix_params = {freq_bands[cfreq]: (g0f, bf) for cfreq, g0f, bf in
+        kw['fix_params'] = {freq_bands[cfreq]: (g0f, bf) for cfreq, g0f, bf in
                       zip(fp['freq'], fp['g0'], fp['b'])}
-    else:
-        kw['fix'] = False
-        fix_params = defaultdict(lambda: None)
     # Start invert_fb function
     if njobs == 1:
         # deepcopy only necessary for more than one freq band
         cond = len(freq_bands) > 1
-        rlist = [invert_fb(fb, deepcopy(streams) if cond else streams,
-                           fix_params=fix_params[fb], **kw)
+        rlist = [invert_fb(fb, deepcopy(streams) if cond else streams, **kw)
                  for fb in freq_bands.values()]
     else:
-        try:
-            from joblib import Parallel, delayed
-        except ImportError:
-            raise ImportError('joblib is needed for parallel processing')
-        rlist = Parallel(n_jobs=njobs, pre_dispatch='1.5*n_jobs')(
-            delayed(invert_fb)(fb, deepcopy(streams),
-                               fix_params=fix_params[fb], **kw)
-            for fb in freq_bands.values())
+        do_work = partial(invert_fb, streams=streams, **kw)
+        pool = multiprocessing.Pool(njobs)
+        rlist = pool.map(do_work, list(freq_bands.values()))
+        pool.close()
+        pool.join()
 
     # Check if any result
     if all([r is None for r in rlist]):

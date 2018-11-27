@@ -44,7 +44,8 @@ class TestCase(unittest.TestCase):
             args.extend(['--njobs', self.njobs])
         if self.verbose:
             args.append('-vvv')
-        with tempdir():
+        tempdirname = 'qopen_test1' if self.permanent_tempdir else None
+        with tempdir(tempdirname, self.delete):
             script(['--create-config', '--tutorial'])
             script(args)
             # check if pictures were created
@@ -85,7 +86,8 @@ class TestCase(unittest.TestCase):
         freq = freq[ind]
         g0 = np.array(g0)[ind]
         b = np.array(b)[ind]
-        with tempdir(self.permanent_tempdir, self.delete):
+        tempdirname = 'qopen_test2' if self.permanent_tempdir else None
+        with tempdir(tempdirname, self.delete):
             run(create_config='conf.json', tutorial=True)
             result = run(conf='conf.json', **kwargs)
             if plot:

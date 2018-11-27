@@ -32,15 +32,15 @@ def _replace_in_file(fname_src, fname_dest, str_src, str_dest):
 
 
 @contextlib.contextmanager
-def tempdir(permanent=False, delete=False):
-    if permanent:
-        tempdir = os.path.join(tempfile.gettempdir(), 'qopen_test')
+def tempdir(tempdirname=None, delete=False):
+    if tempdirname is None:
+        tempdir = tempfile.mkdtemp(prefix='qopen_test_')
+    else:
+        tempdir = os.path.join(tempfile.gettempdir(), tempdirname)
         if os.path.exists(tempdir) and delete:
             shutil.rmtree(tempdir)
         if not os.path.exists(tempdir):
             os.mkdir(tempdir)
-    else:
-        tempdir = tempfile.mkdtemp(prefix='qopen_test_')
     cwd = os.getcwd()
     os.chdir(tempdir)
     # for coverage put .coveragerc config file into tempdir
@@ -53,5 +53,5 @@ def tempdir(permanent=False, delete=False):
         yield tempdir
     finally:
         os.chdir(cwd)
-        if not permanent and os.path.exists(tempdir):
+        if tempdirname is None and os.path.exists(tempdir):
             shutil.rmtree(tempdir)
