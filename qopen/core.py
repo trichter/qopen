@@ -140,6 +140,7 @@ def get_freqs(max=None, min=None, step=None, width=None, cfreqs=None,
         fbands = OrderedDict((f, (f - d, f + d)) for d, f in zip(df, cfreqs))
     else:
         fbands = sorted(fbands)
+        cfreqs = [0.5 * (f1 + f2) for f1, f2 in fbands]
         fbands = OrderedDict((0.5 * (f1 + f2), (f1, f2)) for f1, f2 in fbands)
     msg = 'central frequencies: (' + '%s, ' * (len(cfreqs) - 1) + '%s)'
     log.info(msg, *cfreqs)
