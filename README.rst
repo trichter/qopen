@@ -56,8 +56,8 @@ Installation with conda ::
 It's probably best to install ObsPy first and then let pip take care of the rest. Install Qopen and its dependencies with ::
 
     conda --add channels conda-forge
-    conda create -n qopen python=3 obspy statsmodels
-    source activate qopen
+    conda create -n qenv matplotlib numpy scipy obspy statsmodels
+    source activate qenv
     pip install qopen
 
 Qopen provides the scripts `qopen`, `qopen-rt` and `qopen-runtests`.
