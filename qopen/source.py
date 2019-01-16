@@ -115,7 +115,7 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
             if opt:
                 return err
             return {'M0': np.exp(res.params[0]), 'b': res.params[1],
-                    'err': err ** 0.5}
+                    'fit_error': err ** 0.5}
 
         unknowns = ((fc is None) * ('fc',) +
                     (n is None) * ('n',) + (gamma is None) * ('gamma',))
