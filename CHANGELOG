@@ -1,6 +1,7 @@
 dev:
   * fix error when frequencies are given by fbands parameter
   * fix error when fitting source model to sds if gamma is not fixed
+  * fix annotation of sds plot
 v2.2:
   * use multiprocessing instead of joblib for parallel processing
   * remove joblib as hard dependency, it is only needed for waveform caching

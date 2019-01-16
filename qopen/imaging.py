@@ -351,7 +351,7 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
 
 
 def plot_sds(freq, result, ax=None, fname=None,
-             annotate=False,
+             annotate=False, va='bottom',
              seismic_moment_method=None, seismic_moment_options={}):
     """Plot source displacement spectrum and fitted source model"""
     freq = np.array(freq)
@@ -390,8 +390,7 @@ def plot_sds(freq, result, ax=None, fname=None,
     labels = [labels[key] % np.float32(result[key])
               for key in labels if key in result]
     if len(labels) > 0 and annotate:
-        va = annotate if annotate in ('top', 'bottom') else 'top'
-        ypos = 1 if annotate == 'top' else 0
+        ypos = 1 if va == 'top' else 0
         ax.annotate('\n'.join(labels), (1, ypos), (-5, 5 - 10 * ypos),
                     'axes fraction', 'offset points',
                     ha='right', va=va, size='x-small')
@@ -418,7 +417,7 @@ def plot_eventresult(result, v0=None, fname=None, title=None,
     for i, q in enumerate(quantities):
         ax = plt.subplot(gs[i // n, i % n], sharex=share)
         if q == 'sds':
-            plot_sds(freq, res, ax=ax, annotate='bottom',
+            plot_sds(freq, res, ax=ax,
                      seismic_moment_method=seismic_moment_method,
                      seismic_moment_options=seismic_moment_options)
         else:
@@ -578,7 +577,7 @@ def _get_grid(N, nx=None):
 def plot_all_sds(result, seismic_moment_method=None,
                  seismic_moment_options=None,
                  fname=None, title=None, xlim=None, ylim=None, nx=None,
-                 figsize=None):
+                 figsize=None, annotate=None, va='top'):
     """Plot all source displacement spectra with fitted source models"""
     freq = np.array(result['freq'])
     conf = result.get('config', {})
@@ -592,10 +591,12 @@ def plot_all_sds(result, seismic_moment_method=None,
 #    gs = gridspec.GridSpec(n, n)
     nx, ny, gs = _get_grid(N, nx=nx)
     share = None
+    if annotate is None:
+        annotate = nx < 7
     for i, evid in enumerate(sorted(result)):
         ax = plt.subplot(gs[i // nx, i % nx], sharex=share, sharey=share)
-        plot_sds(freq, result[evid], seismic_moment_method=smm,
-                 seismic_moment_options=smo, ax=ax, annotate=nx < 7)
+        plot_sds(freq, result[evid], seismic_moment_method=smm, va=va,
+                 seismic_moment_options=smo, ax=ax, annotate=annotate)
         ax.annotate(evid, (0, 0), (5, 5), 'axes fraction',
                     'offset points', ha='left', va='bottom', size='x-small')
         _set_gridlabels(ax, i, nx, ny, N, ylabel=r'$\omega$M (Nm)')
