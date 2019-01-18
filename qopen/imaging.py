@@ -577,7 +577,8 @@ def _get_grid(N, nx=None):
 def plot_all_sds(result, seismic_moment_method=None,
                  seismic_moment_options=None,
                  fname=None, title=None, xlim=None, ylim=None, nx=None,
-                 figsize=None, annotate=None, va='top'):
+                 figsize=None, annotate=None, va='top',
+                 plot_only_ids=None):
     """Plot all source displacement spectra with fitted source models"""
     freq = np.array(result['freq'])
     conf = result.get('config', {})
@@ -585,6 +586,8 @@ def plot_all_sds(result, seismic_moment_method=None,
     smo = seismic_moment_options or conf.get('seismic_moment_options', {})
 #    fc = seismic_moment_options.pop('fc', None)
     result = result['events']
+    if plot_only_ids:
+        result = {id_: r for id_, r in result.items() if id_ in plot_only_ids}
     N = len(result)
 #    n = int(np.ceil(np.sqrt(N)))
     fig = plt.figure(figsize=figsize)
@@ -610,12 +613,13 @@ def plot_all_sds(result, seismic_moment_method=None,
 
 
 def plot_mags(result, fname=None, title=None, xlim=None, ylim=None,
-              figsize=None):
+              figsize=None, plot_only_ids=None):
     """Plot Qopen moment magnitudes versus catalogue magnitudes"""
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
-    temp = [(r['Mcat'], r['Mw']) for r in result['events'].values()
-            if r.get('Mcat') is not None and r.get('Mw') is not None]
+    temp = [(r['Mcat'], r['Mw']) for id_, r in result['events'].items()
+            if r.get('Mcat') is not None and r.get('Mw') is not None and
+            (plot_only_ids is None or id_ in plot_only_ids)]
     if len(temp) == 0:
         return
     Mcat, Mw = zip(*temp)
@@ -626,13 +630,13 @@ def plot_mags(result, fname=None, title=None, xlim=None, ylim=None,
         mmin, mmax = np.min(Mcat), np.max(Mcat)
     m = np.linspace(mmin, mmax, 100)
 
-    if len(Mw) > 2:
+    if len(Mw) > 3:
         a, b = linear_fit(Mw, Mcat)
         ax.plot(m, a * m + b, '-m', label='%.2fM %+.2f' % (a, b))
+#    if len(Mw) > 3:
+#        _, b2 = linear_fit(Mw, Mcat, m=1)
+#        ax.plot(m, m + b2, '--m', label='M %+.2f' % (b2,))
     if len(Mw) > 3:
-        _, b2 = linear_fit(Mw, Mcat, m=1)
-        ax.plot(m, m + b2, '--m', label='M %+.2f' % (b2,))
-    if len(Mw) > 2:
         ax.legend(loc='lower right')
     if xlim:
         ax.set_xlim(xlim)
