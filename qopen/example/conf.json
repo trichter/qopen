@@ -17,14 +17,13 @@
 
 # Data can be
 #   1. a glob expression of files. All files are read at once. If you have
-#      a huge dataset think about setting up a local webservice and use 2.
-#      (Setting up a seishub service is not difficult.)
-#   2. one of the client modules supported by ObsPy (e.g "arclink", "fdsn")
+#      a huge dataset think about using option 3.
+#   2. one of the client modules supported by ObsPy (e.g "fdsn")
 #      for getting the data from a webservice.
 #      Option "client_options" is available.
-#   3. "plugin" for a 	heterogenous dataset. You have the freedom to get your
-#       data from different locations. In this case the option "plugin" is
-#       available
+#   3. "plugin" e.g. for a heterogenous dataset. You have to tell Qopen
+#       how to access the data. In this case the option "plugin" is
+#       available.
 "data": "example_data.mseed",
 
 # Options for the webservices which are passed to Client.__init__.
