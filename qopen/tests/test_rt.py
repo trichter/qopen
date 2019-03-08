@@ -47,6 +47,17 @@ class TestCase(unittest.TestCase):
             self.assertLess(abs(G_int - 1), 0.005)
 
 
+    def test_preservation_of_total_energy_1d(self):
+        """Integral over Green's function should be 1"""
+        c = 3000
+        g0 = 1e-5
+        for t in (1, 10, 100):
+            r = np.linspace(0, 1.1 * c * t, 1000)
+            G_ = G(r, t, c, g0, type='rt1d')
+            G_int = 2 * np.sum(G_) * (r[1] - r[0])
+            self.assertLess(abs(G_int - 1), 0.005)
+
+
     def test_reduced_Sato(self):
         """Test against exact solution in figure 8.4, page 256 of
            Sato, Fehler, Maeda, Second edition (2012) """
@@ -69,7 +80,7 @@ class TestCase(unittest.TestCase):
                 self.cmd('calc-direct 1600 500 -t 5')
                 self.cmd('plot-t 1600 500 -r 1000')
                 self.cmd('plot-t 1600 500 -r 1000 --no-direct')
-                self.cmd('plot-r 1600 500 -t 0.5')
+                self.cmd('plot-r 1600 500 -t 0.5 --type rt2d')
 
 
 if __name__ == '__main__':

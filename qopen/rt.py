@@ -27,10 +27,37 @@ Used variables::
 
 import argparse
 import numpy as np
+from scipy.special import iv
+
+
+def rt1d_direct(t, c, g0):
+    l = 1 / g0
+    return 1 / 2 * np.exp(-c * t / 2 / l)  # * delta(c * t - r)
+
+
+def rt1d_coda(r, t, c, g0):
+    l = 1 / g0
+    arg0 = np.sqrt(c ** 2 * t ** 2 - r ** 2)
+    arg1 = arg0 / 2 / l
+    t1 = 1 / 4 / l * np.exp(-c * t / 2 / l)
+    t2 = iv(0, arg1) + c * t * iv(1, arg1) / arg0
+    return t1 * t2  # * Heaviside(c * t - r)
+
+
+def rt2d_direct(t, c, g0):
+    l = 1 / g0
+    return np.exp(-c * t / l) / (2 * np.pi * c * t)  # * delta(c * t - r)
+
+
+def rt2d_coda(r, t, c, g0):
+    l = 1 / g0
+    t1 = 1 / (2 * np.pi * l * c * t)
+    t2 = (1 - r ** 2 / c ** 2 / t ** 2) ** (-1 / 2)
+    t3 = np.exp((np.sqrt(c ** 2 * t ** 2 - r ** 2) - c * t) / l)
+    return t1 * t2 * t3  # * Heaviside(c * t - r)
 
 
 def rt3d_direct(t, c, g0, var='t'):
-    """Direct wave term (3d)"""
     t1 = np.exp(-c * t * g0)
     t2 = (4 * np.pi * c ** 2 * t ** 2)
     return t1 / t2  # * delta(c * t - r)
@@ -41,7 +68,7 @@ def _F(x):
 
 
 def rt3d_coda_reduced(r, t):
-    """Coda term for ``r<t`` in reduced variables ``r'=rg0, t'=tg0c`` (3d)"""
+    # Coda term for r<t in reduced variables r'=rg0, t'=tg0c  (3d)
     a = 1 - r ** 2 / t ** 2
     t1 = a ** 0.125 / (4 * np.pi * t / 3) ** 1.5
     t2 = np.exp(t * (a ** 0.75 - 1)) * _F(t * a ** 0.75)
@@ -49,24 +76,8 @@ def rt3d_coda_reduced(r, t):
 
 
 def rt3d_coda(r, t, c, g0):
-    """Coda term for ``r < c * t`` (3d)"""
     # Heaviside(c * t - r) *
     return rt3d_coda_reduced(r * g0, t * c * g0) * g0 ** 3
-
-
-def rt2d_direct(t, c, g0):
-    """Direct wave term (2d)"""
-    l = 1 / g0
-    return np.exp(-c * t / l) / (2 * np.pi * c * t)  # * delta(c * t - r)
-
-
-def rt2d_coda(r, t, c, g0):
-    """Coda term for ``r < c * t`` (2d)"""
-    l = 1 / g0
-    t1 = 1 / (2 * np.pi * l * c * t)
-    t2 = (1 - r ** 2 / c ** 2 / t ** 2) ** (-1 / 2)
-    t3 = np.exp((np.sqrt(c ** 2 * t ** 2 - r ** 2) - c * t) / l)
-    return t1 * t2 * t3  # * Heaviside(c * t - r)
 
 
 def G(r, t, c, g0, type='rt3d', include_direct=True):
@@ -77,6 +88,9 @@ def G(r, t, c, g0, type='rt3d', include_direct=True):
     elif type == 'rt2d':
         Gcoda = rt2d_coda
         Gdirect = rt2d_direct
+    elif type == 'rt1d':
+        Gcoda = rt1d_coda
+        Gdirect = rt1d_direct
     else:
         NotImplementedError
     t_isarray = isinstance(t, np.ndarray)
@@ -119,6 +133,11 @@ def G_rt2d(r, t, c, g0):
     return G(r, t, c, g0, type='rt2d')
 
 
+def G_rt1d(r, t, c, g0):
+    """Full Green's function for 1d radiative transfer"""
+    return G(r, t, c, g0, type='rt1d')
+
+
 def plot_t(c, g0, r, t=None, N=1000, log=False, include_direct=False, la=None,
            type='rt3d', scale=False):
     """Plot Green's function as a function of time"""
@@ -128,6 +147,7 @@ def plot_t(c, g0, r, t=None, N=1000, log=False, include_direct=False, la=None,
                   scale=True)
         plot_t(c, g0, r, type='rt3d', **kw)
         plot_t(c, g0, r, type='rt2d', **kw)
+        plot_t(c, g0, r, type='rt1d', **kw)
         plt.legend()
         return
     if t is None:
@@ -157,6 +177,7 @@ def plot_r(c, g0, t, r=None, N=1000, log=False, include_direct=False, la=None,
                   scale=True)
         plot_r(c, g0, t, type='rt3d', **kw)
         plot_r(c, g0, t, type='rt2d', **kw)
+        plot_r(c, g0, t, type='rt1d', **kw)
         plt.legend()
         return
     if r is None:
