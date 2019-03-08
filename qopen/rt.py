@@ -5,7 +5,13 @@ Radiative Transfer: 3D approximative interpolation solution of Paasschens (1997)
 Use the ``qopen-rt`` command line script to calculate or plot the
 spectral energy densitiy Green's function.
 
-Used variables::
+This module also defines analytical Green's functions for 1D and 2D isotropic
+radiative transfer. The Green's function used by the ``qopen`` command
+line program can be switched with the "G_plugin" configuration option.
+
+Used variables:
+
+.. code-block:: none
 
     r ... Distance to source in m
     t ... Time after source in s
@@ -15,9 +21,8 @@ Used variables::
     g0 = 1/l ... (transport) scattering coefficient
 
 
-
 .. note::
-    The formula for the Green's function is valid for the
+    The formula for the 3D Green's function is valid for the
     scattering coefficient (g0) under assumption of isotropic scattering.
     However, g0 is used by `qopen.core` module as transport scattering
     coefficient (g*) under the assumption of non-isotropic scattering.
@@ -124,17 +129,29 @@ def G(r, t, c, g0, type='rt3d', include_direct=True):
 
 
 def G_rt3d(r, t, c, g0):
-    """Full Green's function for 3d radiative transfer (approximation)"""
+    """
+    Full Green's function for 3d radiative transfer (approximation).
+
+    See Paaschens (1997), equation 36.
+    """
     return G(r, t, c, g0, type='rt3d')
 
 
 def G_rt2d(r, t, c, g0):
-    """Full Green's function for 2d radiative transfer"""
+    """
+    Full Green's function for 2d radiative transfer.
+
+    See Paaschens (1997), equation 26.
+    """
     return G(r, t, c, g0, type='rt2d')
 
 
 def G_rt1d(r, t, c, g0):
-    """Full Green's function for 1d radiative transfer"""
+    """
+    Full Green's function for 1d radiative transfer
+
+    See Paaschens (1997), equation 2, originally from Hemmer (1961).
+    """
     return G(r, t, c, g0, type='rt1d')
 
 
