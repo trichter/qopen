@@ -25,7 +25,7 @@ def sds(W, f, v, rho):
     according to Sato & Fehler (2012, p.188)
 
     :param W: spectral source energy (J/Hz)
-    :param f, v, rho: frequency, mean velocity, mean density
+    :param f,v,rho: frequency, mean velocity, mean density
     :return: source displacement spectrum (in Nm)"""
     return np.sqrt(W * 2.5 / np.pi * rho * v ** 5 / f ** 2)
 

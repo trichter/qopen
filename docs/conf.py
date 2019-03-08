@@ -60,11 +60,12 @@ for i in range(20):
         import qopen.imaging
         import qopen.site
         import qopen.source
+        import qopen.rt
     except ImportError:
         exc_type, exc_value, tb = sys.exc_info()
         codeline = traceback.extract_tb(tb)[-1][-1]
         missing_module = codeline.split()[1]
-        if 'rf' in missing_module:
+        if 'qopen' in missing_module:
             raise
         # mock missing module and all parent modules
         for c in range(missing_module.count('.'), -1, -1):
@@ -211,7 +212,7 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied

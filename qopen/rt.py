@@ -1,6 +1,6 @@
 # Copyright 2015-2019 Tom Eulenfeld, MIT license
 """
-Radiative Transfer: 3D approximative interpolation solution of Paasschens(1997)
+Radiative Transfer: 3D approximative interpolation solution of Paasschens (1997)
 
 Use the ``qopen-rt`` command line script to calculate or plot the
 spectral energy densitiy Green's function.
@@ -27,7 +27,6 @@ Used variables::
 
 import argparse
 import numpy as np
-from scipy.special import iv
 
 
 def rt1d_direct(t, c, g0):
@@ -36,6 +35,7 @@ def rt1d_direct(t, c, g0):
 
 
 def rt1d_coda(r, t, c, g0):
+    from scipy.special import iv
     l = 1 / g0
     arg0 = np.sqrt(c ** 2 * t ** 2 - r ** 2)
     arg1 = arg0 / 2 / l
