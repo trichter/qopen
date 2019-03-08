@@ -1,6 +1,6 @@
-# Copyright 2015-2017 Tom Eulenfeld, MIT license
+# Copyright 2015-2019 Tom Eulenfeld, MIT license
 """
-Radiative Transfer: Approximative interpolation solution of Paasschens (1997)
+Radiative Transfer: 3D approximative interpolation solution of Paasschens(1997)
 
 Use the ``qopen-rt`` command line script to calculate or plot the
 spectral energy densitiy Green's function.
@@ -21,7 +21,7 @@ Used variables::
     scattering coefficient (g0) under assumption of isotropic scattering.
     However, g0 is used by `qopen.core` module as transport scattering
     coefficient (g*) under the assumption of non-isotropic scattering.
-    ``g*=g0`` is a reasonable assumption under these conditions (see paper).
+    ``g*=g0`` is a reasonable assumption under these conditions.
 
 """
 
@@ -29,154 +29,192 @@ import argparse
 import numpy as np
 
 
-def Gdirect(t, c, g0, var='t'):
-    """Direct wave term of radiative transfer solution"""
-    if var == 'r':
-        fac = 1  # * delta(r - c * t)
-    else:
-        fac = 1 / c  # * delta(t - r / c)
-    return fac * np.exp(-c * t * g0) / (4 * np.pi * c ** 2 * t ** 2)
+def rt3d_direct(t, c, g0, var='t'):
+    """Direct wave term (3d)"""
+    t1 = np.exp(-c * t * g0)
+    t2 = (4 * np.pi * c ** 2 * t ** 2)
+    return t1 / t2  # * delta(c * t - r)
 
 
-def F(x):
+def _F(x):
     return np.sqrt(1 + 2.026 / x)
 
 
-def Gcoda_red(r, t):
-    """Coda term for ``t>r`` in reduced coordinates ``r'=rg0, t'=tg0c``"""
+def rt3d_coda_reduced(r, t):
+    """Coda term for ``r<t`` in reduced variables ``r'=rg0, t'=tg0c`` (3d)"""
     a = 1 - r ** 2 / t ** 2
-    o = (a ** 0.125 / (4 * np.pi * t / 3) ** 1.5 *
-         np.exp(t * (a ** 0.75 - 1)) * F(t * a ** 0.75))
-    return o
+    t1 = a ** 0.125 / (4 * np.pi * t / 3) ** 1.5
+    t2 = np.exp(t * (a ** 0.75 - 1)) * _F(t * a ** 0.75)
+    return t1 * t2  # * Heaviside(t - r)
 
 
-def Gr_red(r, t, eps=0):
-    """
-    Coda term as a function of r in reduced coordinates  ``r'=rg0, t'=tcg0``
-
-    All values for ``r>t-eps`` will be 0"""
-    o1 = np.zeros(np.count_nonzero(t - r <= eps))
-    r = r[t - r > eps]
-    o2 = Gcoda_red(r, t)
-    return np.hstack((o2, o1))
+def rt3d_coda(r, t, c, g0):
+    """Coda term for ``r < c * t`` (3d)"""
+    # Heaviside(c * t - r) *
+    return rt3d_coda_reduced(r * g0, t * c * g0) * g0 ** 3
 
 
-def G_red(r, t, eps='dt'):
-    """Coda term as a function of t in reduced coordinates  ``r'=rg0, t'=tcg0``
-
-    All values for ``t<r+eps`` will be 0"""
-    if eps == 'dt':
-        eps = t[1] - t[0]
-    if isinstance(t, (int, float)):
-        if t - r <= eps:
-            return 0
-        else:
-            return Gcoda_red(r, t)
-    o1 = np.zeros(np.count_nonzero(t - r <= eps))
-    t = t[t - r > eps]
-    o2 = Gcoda_red(r, t)
-    return np.hstack((o1, o2))
+def rt2d_direct(t, c, g0):
+    """Direct wave term (2d)"""
+    l = 1 / g0
+    return np.exp(-c * t / l) / (2 * np.pi * c * t)  # * delta(c * t - r)
 
 
-def G(r, t, c, g0, eps=None, include_direct=True):
+def rt2d_coda(r, t, c, g0):
+    """Coda term for ``r < c * t`` (2d)"""
+    l = 1 / g0
+    t1 = 1 / (2 * np.pi * l * c * t)
+    t2 = (1 - r ** 2 / c ** 2 / t ** 2) ** (-1 / 2)
+    t3 = np.exp((np.sqrt(c ** 2 * t ** 2 - r ** 2) - c * t) / l)
+    return t1 * t2 * t3  # * Heaviside(c * t - r)
+
+
+def G(r, t, c, g0, type='rt3d', include_direct=True):
     """Full Green's function with direct wave term (optional)"""
+    if type == 'rt3d':
+        Gcoda = rt3d_coda
+        Gdirect = rt3d_direct
+    elif type == 'rt2d':
+        Gcoda = rt2d_coda
+        Gdirect = rt2d_direct
+    else:
+        NotImplementedError
     t_isarray = isinstance(t, np.ndarray)
     r_isarray = isinstance(r, np.ndarray)
-    if t_isarray and r_isarray:
-        raise ValueError('Only one of t or r are allowed to be numpy arrays')
-    elif eps is not None and (t_isarray or r_isarray):
-        raise ValueError('eps must be None if t or r is an array')
-    elif t_isarray:
+    if not t_isarray and not r_isarray:
+        if t - r / c < 0:
+            return 0
+        else:
+            return Gcoda(r, t, c, g0)
+    if t_isarray:
+        G_ = np.zeros(len(t))
         eps = float(t[1] - t[0])
-        eps_nodim = eps * c * g0
+        i = np.count_nonzero(c * t - r < 0)
+        G_[i+1:] = Gcoda(r, t[i+1:], c, g0)
+        if include_direct and 0 < i < len(G_):
+            # factor 1 / c due to conversion of Dirac delta from
+            # delta(r - c * t) to delta(t - r / c)
+            G_[i] = Gdirect(r / c, c, g0) / eps / c
     elif r_isarray:
+        G_ = np.zeros(len(r))
         eps = float(r[1] - r[0])
-        eps_nodim = eps * g0
+        i = -np.count_nonzero(c * t - r < 0)
+        if i == 0:
+            i = len(r)
+        G_[:i] = Gcoda(r[:i], t, c, g0)
+        if include_direct and i != len(G_):
+            G_[i] = Gdirect(t, c, g0) / eps
     else:
-        if eps is None:
-            eps = 0
-        eps_nodim = eps * c * g0
-    G_redfunc = Gr_red if r_isarray else G_red
-    G_ = G_redfunc(r * g0, t * c * g0, eps=eps_nodim) * g0 ** 3
-    if r_isarray and include_direct:
-        msg = 'include_direct=True is not implemented for G as a function of r'
-        raise NotImplementedError(msg)
-    elif t_isarray:
-        i = np.count_nonzero(t - r / c <= eps)
-        G_[:i] = 0
-        if include_direct and 0 < i < len(G_) and eps > 0:
-            b = Gdirect(r / c, c, g0, var='t') if include_direct else 0
-            G_[i - 1] = b / float(t[1] - t[0])
+        raise ValueError('Only one of t or r are allowed to be numpy arrays')
     return G_
 
 
-def plot_t(c, g0, r, t=None, N=100, log=False, include_direct=False):
+def G_rt3d(r, t, c, g0):
+    """Full Green's function for 3d radiative transfer (approximation)"""
+    return G(r, t, c, g0, type='rt3d')
+
+
+def G_rt2d(r, t, c, g0):
+    """Full Green's function for 2d radiative transfer"""
+    return G(r, t, c, g0, type='rt2d')
+
+
+def plot_t(c, g0, r, t=None, N=1000, log=False, include_direct=False, la=None,
+           type='rt3d', scale=False):
     """Plot Green's function as a function of time"""
     import matplotlib.pyplot as plt
+    if type == 'all':
+        kw = dict(t=t, N=N, log=log, include_direct=include_direct, la=la,
+                  scale=True)
+        plot_t(c, g0, r, type='rt3d', **kw)
+        plot_t(c, g0, r, type='rt2d', **kw)
+        plt.legend()
+        return
     if t is None:
         t = 10 * r / c
     ts = r / c + np.logspace(-3, np.log10(t - r / c), N)
-    G_ = G(r, ts, c, g0, include_direct=include_direct)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+    G_ = G(r, ts, c, g0, include_direct=include_direct, type=type)
+    if la is not None:
+        G_ = G_ * np.exp(-c * t / la)
+    if scale:
+        G_ = G_ / np.max(G_)
+    ax = plt.gca()
     if log:
-        ax.semilogy(ts, G_)
+        ax.semilogy(ts, G_, label=type)
     else:
-        ax.plot(ts, G_)
+        ax.plot(ts, G_, label=type)
     ax.set_xlim((0, t))
     ax.set_ylabel('G')
     ax.set_xlabel('t (s)')
-    plt.show()
 
 
-def plot_r(c, g0, t, r=None, N=100, log=False, include_direct=False):
+def plot_r(c, g0, t, r=None, N=1000, log=False, include_direct=False, la=None,
+           type='rt3d', scale=False):
     """Plot Green's function as a function of distance"""
     import matplotlib.pyplot as plt
+    if type == 'all':
+        kw = dict(r=r, N=N, log=log, include_direct=include_direct, la=la,
+                  scale=True)
+        plot_r(c, g0, t, type='rt3d', **kw)
+        plot_r(c, g0, t, type='rt2d', **kw)
+        plt.legend()
+        return
     if r is None:
-        r = 10 * c * t
-    rs = np.linspace(0, c * t - 0.1, N)
-    G_ = G(rs, t, c, g0, include_direct=include_direct)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+        r = 1.1 * c * t
+    rs = np.linspace(0, r, N)
+    G_ = G(rs, t, c, g0, include_direct=include_direct, type=type)
+    if la is not None:
+        G_ = G_ * np.exp(-c * t / la)
+    if scale:
+        G_ = G_ / np.max(G_)
+    ax = plt.gca()
     if log:
-        ax.semilogy(rs, G_)
+        ax.semilogy(rs, G_, label=type)
     else:
-        ax.plot(rs, G_)
+        ax.plot(rs, G_, label=type)
     ax.set_xlim((0, r))
     ax.set_ylabel('G')
     ax.set_xlabel('r (m)')
-    plt.show()
 
 
 def main(args=None):
     p = argparse.ArgumentParser(description=__doc__.split('\n')[1])
-    choices = ('calc', 'plot-t', 'plot-r')
+    choices = ('calc', 'calc-direct', 'plot-t', 'plot-r')
     p.add_argument('command', help='command', choices=choices)
     p.add_argument('c', help='velocity', type=float)
     p.add_argument('l', help='transport mean free path', type=float)
     p.add_argument('-r', help='distance from source', type=float)
     p.add_argument('-t', help='time after source', type=float)
-    p.add_argument('--log', help='log plot', action='store_true')
     msg = 'absorption length'
     p.add_argument('-a', '--absorption', help=msg, type=float)
-    msg = ('calculate direct wave term, ignore argument -r and -a, '
-           'for plots: include direct wave term')
-    p.add_argument('-d', '--direct-wave', help=msg, action='store_true')
+    p.add_argument('--log', help='log plot', action='store_true')
+    msg = 'do not include direct wave term in plots'
+    p.add_argument('--no-direct', help=msg, action='store_true')
+    msg = "type of Green's function to use"
+    p.add_argument('--type', help=msg, default='rt3d',
+                   choices=('rt3d', 'rt2d', 'all'))
     args = p.parse_args(args)
-    r, t, c, l, la = args.r, args.t, args.c, args.l, args.absorption
+    r, t, c, l, la, type = (args.r, args.t, args.c, args.l, args.absorption,
+                            args.type)
     com = args.command
-    if com == 'calc':
-        if args.direct_wave:
-            print(Gdirect(t, c, 1/l))
+    if 'calc' in com:
+        if com == 'calc':
+            G_ = G(r, t, c, 1/l, type=type)
         else:
-            res = G(r, t, c, 1/l)
-            if la:
-                res = res * np.exp(-c * t / la)
-            print(res)
-    elif com == 'plot-t':
-        plot_t(c, 1/l, r, t=t, log=args.log, include_direct=args.direct_wave)
-    elif com == 'plot-r':
-        plot_r(c, 1/l, t, r=r, log=args.log, include_direct=args.direct_wave)
+            Gdirect = rt2d_direct if type == 'rt2d' else rt3d_direct
+            G_ = Gdirect(t, c, 1/l)
+        if la is not None:
+            G_ = G_ * np.exp(-c * t / la)
+        print(G_)
+    else:
+        import matplotlib.pyplot as plt
+        kw = dict(log=args.log, include_direct=not args.no_direct,
+                  la=la, type=type)
+        if com == 'plot-t':
+            plot_t(c, 1/l, r, t=t, **kw)
+        elif com == 'plot-r':
+            plot_r(c, 1/l, t, r=r, **kw)
+        plt.show()
 
 
 if __name__ == '__main__':
