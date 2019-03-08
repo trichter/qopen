@@ -1,4 +1,6 @@
 dev:
+  * add Green's function for 2d radiative transfer
+  * changed "G_module" config option to "G_plugin"
   * fix error when frequencies are given by fbands parameter
   * fix error when fitting source model to sds if gamma is not fixed
   * fix annotation of sds plot
