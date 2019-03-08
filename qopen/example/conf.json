@@ -260,12 +260,12 @@
 "seismic_moment_options": {"fc": null, "n": null, "gamma": 2,
                            "fc_lim": [0.1, 10], "num_points": 4},
 
-# Optionally, a user defined module with alternative Green's function for scattering can be used.
-# The module has to define a function 'G' with the following arguments:
+# Optionally, a user defined alternative Green's function for scattering can be used.
+# The module has to define a function with the following arguments:
 # G(r, t, c, g0):
 #     return  Green's function
-# See qopen.rt for the provided isotropic, acoustic RT Green's function.
-#"G_module": "qopen.rt",
+# See qopen.rt for the provided isotropic, acoustic RT Green's function in 3D and 2D.
+#"G_plugin": "qopen.rt : G_rt3d",
 
 ### Plot options ###
 

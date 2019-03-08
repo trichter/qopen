@@ -487,7 +487,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
               plot_optimization=False, plot_optimization_options={},
               plot_fits=False, plot_fits_options={},
               ignore_network_code=False, borehole_stations=(),
-              G_module='qopen.rt',
+              G_plugin='qopen.rt : G_rt3d',
               fix=False, fix_params=None,
               dump_optpkl=None, dump_fitpkl=None,
               **kwargs):
@@ -780,7 +780,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     recorded_g0 = set()
     max_record = plot_optimization_options.get('num', 7)
     nonlocal_ = {'warn': True}
-    G_func = _load_func(G_module, 'G')
+    G_func = _load_func(G_plugin)
 
     def lstsq(g0, opt=False, b_fix=None):
         """Error for optimization of g0"""
@@ -1437,12 +1437,13 @@ def _plot(result, eventid=None, v0=None,
             log.debug('create eventsites plot at %s', fname)
 
 
-def _load_func(modulename, funcname):
+def _load_func(plugin):
     """Load and return function from Python module"""
     sys.path.append(os.path.curdir)
-    module = import_module(modulename)
+    modulename, funcname = plugin.split(':')
+    module = import_module(modulename.strip())
     sys.path.pop(-1)
-    func = getattr(module, funcname)
+    func = getattr(module, funcname.strip())
     return func
 
 
@@ -1466,8 +1467,7 @@ def init_data(data, client_options=None, plugin=None, cache_waveforms=False,
             def get_waveforms(event=None, **args):
                 return client.get_waveforms(**args)
         elif data == 'plugin':
-            modulename, funcname = plugin.split(':')
-            get_waveforms = _load_func(modulename.strip(), funcname.strip())
+            get_waveforms = _load_func(plugin)
         else:
             from obspy import read
             stream = read(data)
