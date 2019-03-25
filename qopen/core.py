@@ -892,6 +892,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
                 pickle.dump(t, f, 2)
     # Optionally plot result of optimization routine
     label_eventid = (len(eventids) == 1)
+
     def fname_and_title(fname, evtotitle=False):
         part1 = '%05.2fHz-%05.2fHz' % freq_band
         title = 'filter: (%.2fHz, %.2fHz)' % freq_band
@@ -1206,7 +1207,7 @@ def invert(events, inventory, get_waveforms,
             raise ValueError(msg)
         fp = fix_params
         kw['fix_params'] = {freq_bands[cfreq]: (g0f, bf) for cfreq, g0f, bf in
-                      zip(fp['freq'], fp['g0'], fp['b'])}
+                            zip(fp['freq'], fp['g0'], fp['b'])}
     # Start invert_fb function
     if njobs == 1:
         # deepcopy only necessary for more than one freq band
