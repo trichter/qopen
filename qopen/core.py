@@ -362,6 +362,7 @@ def collect_results(results, only=None, freqi=None):
     else:
         collect = only
     col = defaultdict(list)
+    invert_sim = results['config']['invert_events_simultaniously']
     if 'R' in collect:
         col['R'] = defaultdict(list)
     for eventid, res in results['events'].items():
@@ -374,7 +375,8 @@ def collect_results(results, only=None, freqi=None):
                 for sta, Rsta in res['R'].items():
                     col['R'][sta].append(freq_getter(Rsta, 'R'))
             else:
-                col[c].append(freq_getter(res[c], c))
+                if not invert_sim or c == 'W' or c == 'sds':
+                    col[c].append(freq_getter(res[c], c))
     if 'R' in collect:
         col['R'] = dict(col['R'])
     col = dict(col)
@@ -385,7 +387,10 @@ def collect_results(results, only=None, freqi=None):
             for sta in col['R']:
                 col['R'][sta] = np.array(col['R'][sta], dtype=np.float)
         else:
-            col[c] = np.array(col[c], dtype=np.float)
+            if invert_sim:
+                col[c] = np.array(results[c], dtype=np.float)
+            else:
+                col[c] = np.array(col[c], dtype=np.float)
     return col
 #    # old implementation returns list
 #    if 'g0' not in list(results['events'].items())[0][1]:

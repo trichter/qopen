@@ -467,6 +467,7 @@ def plot_results(result, v0=None, fname=None, title=None,
                  llim=None, Qlim=None, figsize=None):
     """Plot results"""
     freq = np.array(result['freq'])
+    invert_sim = result['config']['invert_events_simultaniously']
     N = len(quantities)
     n = int(np.ceil(np.sqrt(N)))
     fig = plt.figure(figsize=figsize)
@@ -486,13 +487,16 @@ def plot_results(result, v0=None, fname=None, title=None,
         else:
             value = result[DEPMAP[q]]
             value = calc_dependent(q, value, freq, v0)
-            freqs = np.repeat(freq[np.newaxis, :], value.shape[0], axis=0)
-            ax.loglog(freqs, value, 'o', ms=MS, color='gray', mec='gray')
-            means, err1, err2 = gerr(
-                value, axis=0, weights=weights, robust=robust)
-            errs = (err1, err2)
-            ax.errorbar(freq, means, yerr=errs, marker='o',
+            if not invert_sim:
+                freqs = np.repeat(freq[np.newaxis, :], value.shape[0], axis=0)
+                ax.loglog(freqs, value, 'o', ms=MS, color='gray', mec='gray')
+                means, err1, err2 = gerr(
+                        value, axis=0, weights=weights, robust=robust)
+                errs = (err1, err2)
+                ax.errorbar(freq, means, yerr=errs, marker='o',
                         mfc='k', mec='k', color='m', ecolor='m')
+            else:
+                ax.loglog(freq, value, 'o-', mfc='k',mec='k',color='m')
         ax.annotate(QLABELS[q], (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top')
         _set_gridlabels(ax, i, n, n, N, ylabel=None)
