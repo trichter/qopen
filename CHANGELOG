@@ -1,6 +1,8 @@
-dev:
-  * add Green's function for 2d radiative transfer
+v2.3:
+  * add Green's function for 2d and 1d radiative transfer
   * changed "G_module" config option to "G_plugin"
+  * changed default tolerance for "optimize" config option
+  * fix plotting error if events are inverted simultaniously
   * fix error when frequencies are given by fbands parameter
   * fix error when fitting source model to sds if gamma is not fixed
   * fix annotation of sds plot
