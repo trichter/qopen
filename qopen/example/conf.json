@@ -125,7 +125,7 @@
 # Values are passed to scipy.optimize.minimize_scalar.
 # 'method' can be one of 'brent', 'golden', 'bounded'
 # 'tol' defines the relative tolerance for finding the optimal solution
-"optimize": {"method": "brent", "tol": 1e-2},
+"optimize": {"method": "golden", "tol": 1e-3},
 
 # Bounds for optimization. Optimal parameters near the bounds will be
 # treated as unphysical and corresponding results will be discarded
