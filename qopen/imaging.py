@@ -472,27 +472,36 @@ def plot_results(result, v0=None, fname=None, title=None,
     fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(n, n)
     share = None
-    col = collect_results(result, only=('g0', 'b', 'error', 'v0'))
-    v0 = v0 or result['config'].get('v0') or col['v0']
-    result = col
-    result.pop('v0', None)
-    weights = 1 / np.array(result['error']) if mean == 'weighted' else None
+    single_inversion = 'g0' in result  # True for invert_events_simultaneously
+    if single_inversion:
+        colres = result
+    else:
+        colres = collect_results(result, only=('g0', 'b', 'error', 'v0'))
+    v0 = v0 or result['config'].get('v0') or colres['v0']
+    colres.pop('v0', None)
+    weights = 1 / np.array(colres['error']) if mean == 'weighted' else None
     robust = mean == 'robust'
     for i, q in enumerate(quantities):
         ax = plt.subplot(gs[i // n, i % n], sharex=share)
         if q == 'nobs':
-            nobs = np.sum(~np.isnan(result['g0']), axis=0)
+            if single_inversion:
+                nobs = 1
+            else:
+                nobs = np.sum(~np.isnan(colres['g0']), axis=0)
             ax.bar(freq, nobs, width=0.1 * freq, color='gray')
         else:
-            value = result[DEPMAP[q]]
+            value = colres[DEPMAP[q]]
             value = calc_dependent(q, value, freq, v0)
-            freqs = np.repeat(freq[np.newaxis, :], value.shape[0], axis=0)
-            ax.loglog(freqs, value, 'o', ms=MS, color='gray', mec='gray')
+            if not single_inversion:
+                freqs = np.repeat(freq[np.newaxis, :], value.shape[0], axis=0)
+                ax.plot(freqs, value, 'o', ms=MS, color='gray', mec='gray')
             means, err1, err2 = gerr(
                 value, axis=0, weights=weights, robust=robust)
             errs = (err1, err2)
             ax.errorbar(freq, means, yerr=errs, marker='o',
                         mfc='k', mec='k', color='m', ecolor='m')
+            ax.set_yscale('log')
+        ax.set_xscale('log')
         ax.annotate(QLABELS[q], (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top')
         _set_gridlabels(ax, i, n, n, N, ylabel=None)
@@ -510,11 +519,17 @@ def plot_sites(result, fname=None, title=None, mean=None,
                xlim=None, ylim=(1e-2, 1e2), nx=None, figsize=None):
     """Plot site amplification factors"""
     freq = np.array(result['freq'])
-    col = collect_results(result, only=['R', 'error'])
-    R = col['R']
-    weights = 1 / np.array(col['error']) if mean == 'weighted' else None
+    single_inversion = 'R' in result  # True for invert_events_simulateously
+    if single_inversion:
+        colres = result
+        R = colres['R']
+        max_nobs = 1
+    else:
+        colres = collect_results(result, only=['R', 'error'])
+        R = colres['R']
+        max_nobs = np.max([np.sum(~np.isnan(r), axis=0) for r in R.values()])
+    weights = 1 / np.array(colres['error']) if mean == 'weighted' else None
     robust = mean == 'robust'
-    max_nobs = np.max([np.sum(~np.isnan(r), axis=0) for r in R.values()])
     N = max_nobs > 1
     for station in sorted(R):
         if not np.all(np.isnan(R[station])):
@@ -533,21 +548,24 @@ def plot_sites(result, fname=None, title=None, mean=None,
         ax = plt.subplot(gs[i // nx, i % nx], sharex=share, sharey=share)
         means, err1, err2 = gerr(R[station], axis=0, weights=weights,
                                  robust=robust)
-        nobs = 1. * np.sum(~np.isnan(R[station]), axis=0)
         errs = (err1, err2)
-        freqs = np.repeat(freq[np.newaxis, :], R[station].shape[0], axis=0)
 #        if not np.all(np.isnan(R[station])):
         if max_nobs == 1:
             kwargs = {'c': 'k'}
         else:
+            nobs = 1. * np.sum(~np.isnan(R[station]), axis=0)
             kwargs = {'c': nobs, 'norm': norm, 'cmap': cmap}
-        ax.loglog(freqs, R[station], 'o', ms=MS, color='gray', mec='gray')
+        if not single_inversion:
+            freqs = np.repeat(freq[np.newaxis, :], R[station].shape[0], axis=0)
+            ax.plot(freqs, R[station], 'o', ms=MS, color='gray', mec='gray')
         ax.errorbar(freq, means, yerr=errs, marker=None,
                     color='m', ecolor='m')
         sc = ax.scatter(freq, means, s=4 * MS ** 2,
                         marker='o', zorder=10,
                         linewidth=0.5,
                         **kwargs)
+        ax.set_xscale('log')
+        ax.set_yscale('log')
         ax.annotate(station, (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top', size='x-small')
         _set_gridlabels(ax, i, nx, ny, N, ylabel='amplification factor')
