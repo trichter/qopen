@@ -423,6 +423,8 @@ def plot_eventresult(result, v0=None, fname=None, title=None,
         else:
             vals = calc_dependent(q, res[DEPMAP[q]], freq, v0)
             ax.loglog(freq, vals, 'o-k')
+            if q == 'error':
+                ax.set_yscale('linear')
         ax.annotate(QLABELS[q], (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top')
         _set_gridlabels(ax, i, n, n, N)
@@ -472,7 +474,8 @@ def plot_results(result, v0=None, fname=None, title=None,
     fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(n, n)
     share = None
-    single_inversion = 'g0' in result  # True for invert_events_simultaneously
+    # True for invert_events_simultaneously
+    single_inversion = 'g0' not in list(result['events'].values())[0]
     if single_inversion:
         colres = result
     else:
@@ -500,7 +503,8 @@ def plot_results(result, v0=None, fname=None, title=None,
             errs = (err1, err2)
             ax.errorbar(freq, means, yerr=errs, marker='o',
                         mfc='k', mec='k', color='m', ecolor='m')
-            ax.set_yscale('log')
+            if q != 'error':
+                ax.set_yscale('log')
         ax.set_xscale('log')
         ax.annotate(QLABELS[q], (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top')
@@ -519,7 +523,8 @@ def plot_sites(result, fname=None, title=None, mean=None,
                xlim=None, ylim=(1e-2, 1e2), nx=None, figsize=None):
     """Plot site amplification factors"""
     freq = np.array(result['freq'])
-    single_inversion = 'R' in result  # True for invert_events_simulateously
+    # True for invert_events_simultaneously
+    single_inversion = 'R' not in list(result['events'].values())[0]
     if single_inversion:
         colres = result
         R = colres['R']
