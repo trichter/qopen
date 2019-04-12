@@ -424,6 +424,13 @@ def collect_results(results, only=None, freqi=None):
 
 
 def _check_times(tr, tw, tol=0.5):
+    d1 = tw[0] - tr.stats.starttime
+    d2 = tr.stats.endtime - tw[1]
+    if d1 + tol > 0 and d2 + tol > 0:
+        return
+    else:
+        return (d1, d2)
+#    return (d1 + tol > 0 and d2 + tol > 0) or (d1, d2)
     return tr.stats.starttime > tw[0] + tol or tr.stats.endtime < tw[1] - tol
 
 
@@ -1108,17 +1115,19 @@ def invert(events, inventory, get_waveforms,
         # Check if data is complete
         if stream:
             for tr in stream:
-                if _check_times(tr, (t1, t2)):
+                ct = _check_times(tr, (t1, t2))
+                if ct:
                     msg = ('%s: data missing at one end of requested time '
-                           'window')
-                    log.warning(msg, pair)
+                           'window, difference in seconds %s')
+                    log.warning(msg, pair, ct)
                     stream = None
                     break
         if stream is None:
             event_station_pairs.remove(pair)
         elif len(stream) != 3:
-            msg = '%s: number of traces with channel %s is not 3 -> skip pair'
-            log.warning(msg, pair, seedid)
+            msg = ('%s: number of traces with channel %s is %s, '
+                   'it should be 3 -> skip pair')
+            log.warning(msg, pair, seedid, len(stream))
             event_station_pairs.remove(pair)
         else:
             for tr in stream:
