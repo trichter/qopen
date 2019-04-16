@@ -560,7 +560,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         except SkipError as ex:
             msg = '%s: cannot calculate ernergy (%s)'
             log.warning(msg, pair, str(ex))
-        except:
+        except Exception:
             msg = '%s: cannot calculate ernergy'
             log.exception(msg, pair)
 
@@ -936,9 +936,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
                       smooth=smooth, smooth_window=smooth_window,
                       title=title, fname=fname, **pkwargs)
             log.debug('create fits plot at %s', fname)
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except:
+    except Exception:
         log.exception('error while creating a plot (invert_fb)')
     if (b_bounds and not 1.01 * b_bounds[0] < b < 0.99 * b_bounds[1] or
             g0_bounds and not 1.01 * g0_bounds[0] < g0 < 0.99 * g0_bounds[1]):
@@ -1008,7 +1006,7 @@ def invert(events, inventory, get_waveforms,
         ori = origins[evid]
         try:
             c = _get_coordinates(sta, time=ori.time)
-        except:
+        except Exception:
             raise SkipError('station not installed')
         args = (c['latitude'], c['longitude'], ori.latitude, ori.longitude)
         hdist = gps2dist_azimuth(*args)[0]
@@ -1027,7 +1025,7 @@ def invert(events, inventory, get_waveforms,
             log.debug(msg, pair, str(ex))
             event_station_pairs.remove(pair)
             continue
-        except:
+        except Exception:
             msg = '%s: exception while determining distances -> skip pair'
             log.exception(msg, pair)
             event_station_pairs.remove(pair)
@@ -1071,7 +1069,7 @@ def invert(events, inventory, get_waveforms,
         msg = 'exception while determining onsets (%s) -> skip event'
         log.error(msg, str(ex))
         return
-    except:
+    except Exception:
         log.exception('exception while determining onsets -> skip event')
         return
     log.debug('origin station distances: %s', distances)
@@ -1293,9 +1291,7 @@ def invert(events, inventory, get_waveforms,
                   plot_eventresult_options=plot_eventresult_options,
                   plot_eventsites=plot_eventsites,
                   plot_eventsites_options=plot_eventsites_options)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except:
+        except Exception:
             log.exception('error while creating a plot (invert)')
     return result
 
@@ -1383,9 +1379,7 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
               plot_sites=plot_sites, plot_sites_options=plot_sites_options,
               plot_sds=plot_sds, plot_sds_options=plot_sds_options,
               plot_mags=plot_mags, plot_mags_options=plot_mags_options)
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except:
+    except Exception:
         log.exception('error while creating a plot (invert_wrapper)')
     return result
 
@@ -1660,9 +1654,7 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
                                           **tkwargs)
                 if tkwargs['data'] is not None:
                     log.info('init data from %s', tkwargs['data'])
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except:
+        except Exception:
             log.exception('cannot read events/stations or initalize data')
             return
     # Optionally select event

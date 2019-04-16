@@ -26,7 +26,7 @@ def get_events():
     print('Read event file')
     try:
         return read_events(evname)
-    except:
+    except Exception:
         pass
     client = FSDNClient('NERIES')
     events = client.get_events(**event_kwargs)
@@ -39,7 +39,7 @@ def get_inventory():
     print('Read inventory file')
     try:
         return read_inventory(invname, 'STATIONXML')
-    except:
+    except Exception:
         pass
     print('Create inventory file...')
     client = FSDNClient('ORFEUS')
@@ -63,7 +63,7 @@ def get_waveforms():
             args = (net, sta, loc, cha, t - 10, t + 220)
             try:
                 stream = client.getWaveform(*args)
-            except:
+            except Exception:
                 print('no data for %s' % (args,))
                 continue
             sr = stream[0].stats.sampling_rate
