@@ -1,3 +1,5 @@
+v2.4:
+  * Qopen can now be used on Windows, tests are passing, but multirpoccesing is probably not yet working (see issue #3)
 v2.3:
   * add Green's function for 2d and 1d radiative transfer
   * changed "G_module" config option to "G_plugin"
