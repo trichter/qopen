@@ -1,3 +1,5 @@
+v2.5:
+  * add official support for python 3.7 and 3.8
 v2.4:
   * Qopen can now be used on Windows, tests are passing, but multirpoccesing is probably not yet working (see issue #3)
 v2.3:
