@@ -2,4 +2,4 @@
 
 from qopen.core import run
 
-__version__ = '2.4'
+__version__ = '2.5-dev'
