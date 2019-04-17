@@ -95,7 +95,7 @@
 
 # Mean shear wave velocity in m/s for calculating the Green's function.
 # Has also impact on the calculation of the source displacement spectrum
-# ωM: ωM ∝ v0^(5/2)
+# ωM: ωM ~ v0^(5/2)
 # Furthermore, necessary for calculating Qsc from g0 and li from b
 # This parameter can also be calculated from picks. If you want to
 # use this feature set "v0": null and "use_picks": true.
@@ -103,14 +103,14 @@
 
 # Mean density in kg/m**3.
 # Important for calculating the correct observed energy and therefore
-# scales the spectral source energy W: W ∝ rho0 and the
-# source displacement spectrum ωM ∝ rho0
+# scales the spectral source energy W: W ~ rho0 and the
+# source displacement spectrum ωM ~ rho0
 "rho0": 2700,
 
 # Geometric mean of station amplification factors for energy,
 # can be assumed as 1.
 # Important for calculating the correct modeled energy and therefore
-# scales W: W ∝ 1/R0, ωM ∝ 1/R0^(1/2)
+# scales W: W ~ 1/R0, ωM ~ 1/R0^(1/2)
 "R0": 1,
 
 # Correction factor for free surface.
