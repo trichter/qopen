@@ -54,4 +54,7 @@ def tempdir(tempdirname=None, delete=False):
     finally:
         os.chdir(cwd)
         if tempdirname is None and os.path.exists(tempdir):
-            shutil.rmtree(tempdir)
+            try:
+                shutil.rmtree(tempdir)
+            except PermissionError as ex:
+                print('Cannot remove temporary directory: %s' % ex)
