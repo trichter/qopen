@@ -3,32 +3,26 @@ sudo: false
 matrix:
   include:
     - os: linux
-      env: PYTHON_VERSION=3.5 FLAGS="-v -f -n 2"
+      env: PYTHON_VERSION=3.7 FLAGS="-v -f -n 2"
     - os: linux
       env: PYTHON_VERSION=3.5 FLAGS="-v -a -n 2"
     - os: linux
       env: PYTHON_VERSION=3.6 FLAGS="-v -a -n 2"
+    - os: linux
+      env: PYTHON_VERSION=3.7 FLAGS="-v -a -n 2"
     - os: osx
-      env: PYTHON_VERSION=3.5 FLAGS="-v -a -n 2"
+      env: PYTHON_VERSION=3.7 FLAGS="-v -a -n 2"
+    - os: windows
+      env: PYTHON_VERSION=3.7 FLAGS="-v -a -n 2"
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      export OS="MacOSX";
-    else
-      export OS="Linux";
-    fi
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-${OS}-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes
-  - conda update -q conda
+  - wget https://raw.githubusercontent.com/trichter/conda4travis/latest/conda4travis.sh -O conda4travis.sh
+  - source conda4travis.sh
   - conda config --add channels conda-forge
-  - conda info -a
   - conda create -q -n testenv python=$PYTHON_VERSION coverage matplotlib numpy scipy obspy statsmodels
-  - source activate testenv
+  - conda activate testenv
   - conda list
 install:
-  - pip install --no-deps .
+  - pip install -v --no-deps .
 script:
   - mkdir empty; cd empty; cp ../.coveragerc ./
   - coverage run -m qopen.tests $FLAGS
