@@ -57,7 +57,7 @@ It's probably best to install ObsPy first and then let pip take care of the rest
 
     conda --add channels conda-forge
     conda create -n qenv matplotlib numpy scipy obspy statsmodels
-    source activate qenv
+    conda activate qenv
     pip install qopen
 
 Qopen provides the scripts `qopen`, `qopen-rt` and `qopen-runtests`.
