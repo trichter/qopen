@@ -5,6 +5,8 @@ matrix:
     - os: linux
       env: PYTHON_VERSION=3.7 FLAGS="-v -f -n 2"
     - os: linux
+      env: PYTHON_VERSION=3.7 FLAGS="-v -f -n 1"
+    - os: linux
       env: PYTHON_VERSION=3.5 FLAGS="-v -a -n 2"
     - os: linux
       env: PYTHON_VERSION=3.6 FLAGS="-v -a -n 2"
@@ -13,7 +15,7 @@ matrix:
     - os: osx
       env: PYTHON_VERSION=3.7 FLAGS="-v -a -n 2"
     - os: windows
-      env: PYTHON_VERSION=3.7 FLAGS="-v -a -n 2"
+      env: PYTHON_VERSION=3.7 FLAGS="-v -a -n 1"
 before_install:
   - wget https://raw.githubusercontent.com/trichter/conda4travis/latest/conda4travis.sh -O conda4travis.sh
   - source conda4travis.sh
@@ -25,7 +27,7 @@ install:
   - pip install -v --no-deps .
 script:
   - mkdir empty; cd empty; cp ../.coveragerc ./
-  - coverage run -m qopen.tests $FLAGS
+  - travis_wait coverage run -m qopen.tests $FLAGS
 after_success:
   - coverage combine
   - bash <(curl -s https://codecov.io/bash)
