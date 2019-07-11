@@ -527,7 +527,9 @@ def plot_sites(result, fname=None, title=None, mean=None,
     single_inversion = 'R' not in list(result['events'].values())[0]
     if single_inversion:
         colres = result
-        R = colres['R']
+        R = copy(colres['R'])
+        for sta in R:
+            R[sta] = np.array(R[sta], dtype=float)
         max_nobs = 1
     else:
         colres = collect_results(result, only=['R', 'error'])
@@ -540,7 +542,6 @@ def plot_sites(result, fname=None, title=None, mean=None,
         if not np.all(np.isnan(R[station])):
             N = N + 1
 #    N = len(R) + (max_nobs > 1)
-#    for i
     fig = plt.figure(figsize=figsize)
     nx, ny, gs = _get_grid(N, nx=nx)
     cmap = plt.get_cmap('hot_r', max_nobs)
