@@ -58,7 +58,7 @@ log.addHandler(logging.NullHandler())
 
 LOGLEVELS = {0: 'CRITICAL', 1: 'WARNING', 2: 'INFO', 3: 'DEBUG'}
 
-DUMP_CONFIG = ['invert_events_simultaniously', 'mean',
+DUMP_CONFIG = ['invert_events_simultaneously', 'mean',
                'v0', 'rho0', 'R0', 'free_surface',
                'freqs', 'filter', 'optimize', 'g0_bounds', 'b_bounds',
                'seismic_moment_method', 'seismic_moment_options',
@@ -1300,11 +1300,11 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
                    plot_sites=False, plot_sites_options={},
                    plot_sds=False, plot_sds_options={},
                    plot_mags=False, plot_mags_options={},
-                   invert_events_simultaniously=False,
+                   invert_events_simultaneously=False,
                    mean=None, **kwargs):
     """Qopen function for a list or Catalog of events
 
-    Depending on 'invert_events_simultaniously' flag the function
+    Depending on 'invert_events_simultaneously' flag the function
     calls :func:`invert` for each event seperately or for all events once.
     In the first case mean results are calculated.
 
@@ -1330,7 +1330,7 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
         time_event_pairs.append((origin.time, event))
     events = list(zip(*sorted(time_event_pairs)))[1]
     # Start processing
-    if invert_events_simultaniously:
+    if invert_events_simultaneously:
         result = invert(events, **kwargs)
     else:
         result = {'events': OrderedDict(), 'R': OrderedDict()}
@@ -1368,7 +1368,7 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
             result['R'][st] = gmean(Rst, **kw).tolist()
     result['config'] = {k: kwargs[k] for k in DUMP_CONFIG if k in kwargs}
     result['config'][
-        'invert_events_simultaniously'] = invert_events_simultaniously
+        'invert_events_simultaneously'] = invert_events_simultaneously
     result['config']['mean'] = mean
     result['config'] = sort_dict(result['config'], order=DUMP_CONFIG)
     result = sort_dict(result)
@@ -1783,7 +1783,7 @@ def run_cmdline(args=None):
     features_str = ('events', 'inventory', 'data', 'output',
                     'seismic-moment-method')
     features_json = ('seismic-moment-options',)
-    features_bool = ('invert_events_simultaniously',
+    features_bool = ('invert_events_simultaneously',
                      'plot_energies', 'plot_optimization', 'plot_fits',
                      'plot_eventresult', 'plot_eventsites')
     for f in features_str:

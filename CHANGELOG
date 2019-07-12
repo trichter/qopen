@@ -1,4 +1,5 @@
 dev:
+  * fix spelling error in invert_events_simultaneously (has to be fixed in old configuration files if these are used with new qopen version)
   * fix error when plotting site effects for simultaneously inverted events and present None values
 v2.5:
   * add official support for python 3.7 and 3.8

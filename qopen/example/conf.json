@@ -85,7 +85,7 @@
 
 # If true: all events are inverted together for one b and g0
 # If false: events are inverted independently for b and g0
-"invert_events_simultaniously": false,
+"invert_events_simultaneously": false,
 
 # If previous option is false, the results are determined as a mean
 # of the inversions for individual events. "mean" can take the values
@@ -252,7 +252,7 @@
 # The model is defined in qopen.source.source_model()
 # The options passed to qopen.source.fit_sds() (see documentation there) are
 # defined in the seismic_moment_options dictionary. It is for example possible
-# to invert the source displacement spectrum for fc, n and gamma simultaniously
+# to invert the source displacement spectrum for fc, n and gamma simultaneously
 # or to fix a subset of the parameters and invert for the others.
 #"seismic_moment_method": "mean",
 #"seismic_moment_options": {"fc": 1.5},

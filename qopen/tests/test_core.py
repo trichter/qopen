@@ -74,14 +74,14 @@ class TestCase(unittest.TestCase):
             self.assertEqual(len(files), 4, msg=msg2)
             with open('results.json') as f:
                 result1 = json.load(f)
-        # now check for "invert_events_simultaniously": true
+        # now check for "invert_events_simultaneously": true
         tempdirname = 'qopen_test2' if self.permanent_tempdir else None
         with tempdir(tempdirname, self.delete):
             script(['--create-config', '--tutorial'])
             _replace_in_file(
                 'conf.json', 'conf2.json',
-                '"invert_events_simultaniously": false',
-                '"invert_events_simultaniously": true')
+                '"invert_events_simultaneously": false',
+                '"invert_events_simultaneously": true')
             args.extend(['-c', 'conf2.json'])
             script(args)
             # check if pictures were created
@@ -99,7 +99,7 @@ class TestCase(unittest.TestCase):
             self.assertEqual(len(files), 4, msg=msg2)
             with open('results.json') as f:
                 result2 = json.load(f)
-        # check similarity of results for invert_events_simultaniously
+        # check similarity of results for invert_events_simultaneously
         np.testing.assert_allclose(result2['freq'], result1['freq'])
         np.testing.assert_allclose(result2['g0'], result1['g0'], rtol=0.3)
         np.testing.assert_allclose(result2['b'], result1['b'], rtol=0.6)
