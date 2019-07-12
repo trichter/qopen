@@ -809,7 +809,6 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         E = np.hstack(Ecoda + Ebulk)
         G = np.hstack(Gcoda + Gbulk)
         B = np.log(E) - np.log(G)
-#        B = np.log(E) - np.log(G)
         if b_fix:
             B = B + b_fix * np.hstack(tcoda + tbulk)
         if bulk_window:
@@ -892,7 +891,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         l = '%s_%05.2fHz-%05.2fHz' % (eventid, freq_band[0], freq_band[1])
         if dump_optpkl:
             with open(dump_optpkl % l, 'wb') as f:
-                pickle.dump((record, record_g0), f, 2)
+                pickle.dump((record, record_g0, event_station_pairs), f, 2)
         if dump_fitpkl:
             with open(dump_fitpkl % l, 'wb') as f:
                 t = (energies, g0, b, W, R, v0, info, smooth, smooth_window)
