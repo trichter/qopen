@@ -5,12 +5,12 @@ dev:
 v2.5:
   * add official support for python 3.7 and 3.8
 v2.4:
-  * Qopen can now be used on Windows, tests are passing, but multirpoccesing is probably not yet working (see issue #3)
+  * Qopen can now be used on Windows, tests are passing, but multiprocessing is probably not yet working (see issue #3)
 v2.3:
   * add Green's function for 2d and 1d radiative transfer
   * changed "G_module" config option to "G_plugin"
   * changed default tolerance for "optimize" config option
-  * fix plotting error if events are inverted simultaniously
+  * fix plotting error if events are inverted simultaneously
   * fix error when frequencies are given by fbands parameter
   * fix error when fitting source model to sds if gamma is not fixed
   * fix annotation of sds plot
@@ -24,7 +24,7 @@ v2.0:
   * Qopen is now Python3-only, if you need support for Python2 use the 1.x releases
   * remove parallel option, set njobs to 1 for sequential processing
 v1.6:
-  * rename omM to sds (sorce displacment spectrum)
+  * rename omM to sds (source displacement spectrum)
   * site: add option to ignore some stations when aligning site responses
   * allow to pin site response of a set of stations (previously only a single station or all stations)
   * minor bugfixes
@@ -32,7 +32,7 @@ v1.5:
   * core: report fit error for source displacement spectra
   * core: collect_results returns dict instead of list
   * imaging: labels for plots of source displacement spectra
-  * site: align sites now correctly alignes around the given response, before it was shifted by a small value
+  * site: align sites now correctly aligns around the given response, before it was shifted by a small value
   * site: recalculate mean site amplifications after alignment
   * site: greatly enhance test suite
   * fixed some minor bugs
