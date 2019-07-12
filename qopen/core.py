@@ -924,8 +924,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             fname = pkwargs.pop('fname', 'optimization_%s.png')
             fname, title = fname_and_title(fname)
             from qopen.imaging import plot_optimization
-            plot_optimization(record, record_g0, fname=fname, title=title,
-                              **pkwargs)
+            plot_optimization(record, record_g0, event_station_pairs,
+                              fname=fname, title=title, **pkwargs)
             log.debug('create optimization plot at %s', fname)
         if plot_fits:
             pkwargs = copy(plot_fits_options)

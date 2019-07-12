@@ -158,8 +158,11 @@ def plot_energies(energies,
     _savefig(fig, **kwargs)
 
 
-def plot_lstsq(rec, ax=None, fname=None, base=np.e):
+def plot_lstsq(rec,  event_station_pairs, ax=None, fname=None, base=np.e):
     """Plot solution of weighted least squares inversion"""
+    eventids, stations = zip(*event_station_pairs)
+    eventids = list(OrderedDict.fromkeys(eventids))
+    stations = list(OrderedDict.fromkeys(stations))
     err, g0, b, W, R, info = rec
     tcoda, tbulk, Ecoda, Ebulk, Gcoda, Gbulk = info
     fig = None
@@ -169,13 +172,15 @@ def plot_lstsq(rec, ax=None, fname=None, base=np.e):
     tmin = min(tcoda[i][0] for i in range(len(tcoda)))
     tmax = max(tcoda[i][-1] for i in range(len(tcoda)))
     for i in range(len(tcoda)):
-        offset = R[i % len(R)] * W[i // len(R)] / W[0]
+        ev, sta = event_station_pairs[i]
+        offset = R[stations.index(sta)] * W[eventids.index(ev)] / W[0]
 #        offset = R[i] if len(W) == 1 else C[i]
 #        Bci = np.log(Ecoda[i]) - np.log(FS * Gcoda[i]) - np.log(offset)
         Bci = np.log(Ecoda[i]) - np.log(Gcoda[i]) - np.log(offset)
         ax.plot(tcoda[i], Bci / np.log(base), color='0.7')
     for i in range(len(tbulk)):
-        offset = R[i % len(R)] * W[i // len(R)] / W[0]
+        ev, sta = event_station_pairs[i]
+        offset = R[stations.index(sta)] * W[eventids.index(ev)] / W[0]
 #        offset = R[i] if len(W) == 1 else C[i]
 #        Bbi = np.log(Ebulk[i]) - np.log(FS * Gbulk[i]) - np.log(offset)
         Bbi = np.log(Ebulk[i]) - np.log(Gbulk[i]) - np.log(offset)
@@ -189,7 +194,8 @@ def plot_lstsq(rec, ax=None, fname=None, base=np.e):
         _savefig(fig, fname=fname)
 
 
-def plot_optimization(record, record_g0, num=7, fname=None, title=None,
+def plot_optimization(record, record_g0, event_station_pairs,
+                      num=7, fname=None, title=None,
                       figsize=None, **kwargs):
     """Plot some steps of optimization"""
     fig = plt.figure(figsize=figsize)
@@ -229,7 +235,7 @@ def plot_optimization(record, record_g0, num=7, fname=None, title=None,
                 gsp = gs[n - 1, -1]
                 l = 'best'
             ax2 = plt.subplot(gsp, sharex=share, sharey=share)
-            plot_lstsq(rec, ax=ax2)
+            plot_lstsq(rec, event_station_pairs, ax=ax2)
             ax2.annotate(l, (0, 1), (5, -5), 'axes fraction',
                          'offset points', ha='left', va='top')
             l2 = 'g$_0$=%.1e\nb=%.1e' % (g0, b)
