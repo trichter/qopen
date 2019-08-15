@@ -108,3 +108,5 @@ Get help and discuss
 The `seistools <https://lserv.uni-jena.de/mailman/listinfo/seistools>`_ mailing list can be used to contact other users and developers.
 
 A somewhat advanced example using the Qopen package: `USAttenuation <https://github.com/trichter/usattenuation>`_.
+
+These studies make use of Qopen: `Google Scholar Link <https://scholar.google.com/scholar?cites=2976023441381045818&scipsc=1&q=Qopen>`_.
