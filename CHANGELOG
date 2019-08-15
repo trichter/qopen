@@ -1,4 +1,5 @@
 dev:
+  * add dpi and figsize options for all plots (alternatively use a matplotlibrc file)
   * fix spelling error in invert_events_simultaneously (has to be fixed in old configuration files if these are used with new qopen version)
   * fix error when plotting site effects for simultaneously inverted events and present None values
   * fix wrong offset in optimization plots for simultaneously inverted events
