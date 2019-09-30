@@ -1,4 +1,4 @@
-dev:
+v2.6:
   * add dpi and figsize options for all plots (alternatively use a matplotlibrc file)
   * fix spelling error in invert_events_simultaneously (has to be fixed in old configuration files
     if these are used with new qopen version)
