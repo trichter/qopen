@@ -1,12 +1,14 @@
 dev:
   * add dpi and figsize options for all plots (alternatively use a matplotlibrc file)
-  * fix spelling error in invert_events_simultaneously (has to be fixed in old configuration files if these are used with new qopen version)
+  * fix spelling error in invert_events_simultaneously (has to be fixed in old configuration files
+    if these are used with new qopen version)
   * fix error when plotting site effects for simultaneously inverted events and present None values
   * fix wrong offset in optimization plots for simultaneously inverted events
 v2.5:
   * add official support for python 3.7 and 3.8
 v2.4:
-  * Qopen can now be used on Windows, tests are passing, but multiprocessing is probably not yet working (see issue #3)
+  * Qopen can now be used on Windows, tests are passing,
+    but multiprocessing is probably not yet working (see issue #3)
 v2.3:
   * add Green's function for 2d and 1d radiative transfer
   * changed "G_module" config option to "G_plugin"
@@ -33,7 +35,8 @@ v1.5:
   * core: report fit error for source displacement spectra
   * core: collect_results returns dict instead of list
   * imaging: labels for plots of source displacement spectra
-  * site: align sites now correctly aligns around the given response, before it was shifted by a small value
+  * site: align sites now correctly aligns around the given response,
+          before it was shifted by a small value
   * site: recalculate mean site amplifications after alignment
   * site: greatly enhance test suite
   * fixed some minor bugs
@@ -54,7 +57,8 @@ v1.2:
   * core: move free surface correction term from qopen.rt module to the calculation of observed energy
   * core: free surface correction is configurable
   * core: new command line option "--calc-source-params" for re-calculating source parameters
-  * core: use source model of Abercrombie 2015 to fit source displacement spectra and allow to invert for M0, fc, n, and gamma
+  * core: use source model of Abercrombie 2015 to fit source displacement spectra and
+          allow to invert for M0, fc, n, and gamma
   * core: add possibility to filter Inventory with Inventory.select
   * core: other new, not very important, but useful command line options
 v1.1:
