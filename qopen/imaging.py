@@ -80,7 +80,9 @@ def freqlim(freq):
     return x1, x2
 
 
-def _savefig(fig, title=None, fname=None, dpi=None):
+def _savefig(fig, title=None, fname=None, dpi=None, figsize=None):
+    if figsize is not None:
+        fig.set_size_inches(*figsize)
     if title:
         extra = (fig.suptitle(title),)
     else:
@@ -89,7 +91,7 @@ def _savefig(fig, title=None, fname=None, dpi=None):
         path = os.path.dirname(fname)
         if path != '' and not os.path.isdir(path):
             os.makedirs(path)
-        plt.savefig(fname, bbox_inches='tight', bbox_extra_artists=extra,
+        fig.savefig(fname, bbox_inches='tight', bbox_extra_artists=extra,
                     dpi=dpi)
         plt.close(fig)
 
@@ -113,7 +115,7 @@ def plot_energies(energies,
     """
     gs = gridspec.GridSpec(2 * len(energies), 2)
     gs.update(wspace=0.05)
-    fig = plt.figure(figsize=kwargs.get('figsize'))
+    fig = plt.figure()
     sax1 = sax3 = None
     for i, tr in enumerate(energies):
         pair = get_pair(tr)
@@ -207,7 +209,7 @@ def plot_lstsq(rec,  event_station_pairs, ax=None, base=np.e, **kwargs):
 
 def plot_optimization(record, record_g0, event_station_pairs, num=7, **kwargs):
     """Plot some steps of optimization"""
-    fig = plt.figure(figsize=kwargs.get('figsize'))
+    fig = plt.figure()
     if num > 1:
         n = (num + 1) // 2
         gs = gridspec.GridSpec(n, n)
@@ -290,7 +292,7 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
     tcoda, tbulk, Ecoda, Ebulk, Gcoda, Gbulk = info
     N = len(energies)
     n = int(np.ceil(np.sqrt(N)))
-    fig = plt.figure(figsize=kwargs.get('figsize'))
+    fig = plt.figure()
     gs = gridspec.GridSpec(n, n)
     share = None
     if b is None:
@@ -426,7 +428,7 @@ def plot_eventresult(result, v0=None, quantities=QUANTITIES_EVENT,
     res.update((list(_values_view))[0])
     N = len(quantities)
     n = int(np.ceil(np.sqrt(N)))
-    fig = plt.figure(figsize=kwargs.get('figsize'))
+    fig = plt.figure()
     gs = gridspec.GridSpec(n, n)
     share = None
     for i, q in enumerate(quantities):
@@ -455,7 +457,7 @@ def plot_eventsites(result, **kwargs):
     R = result['R']
     N = len(R)
     n = int(np.ceil(np.sqrt(N)))
-    fig = plt.figure(figsize=kwargs.get('figsize'))
+    fig = plt.figure()
     gs = gridspec.GridSpec(n, n)
     share = None
     allR = []
@@ -485,7 +487,7 @@ def plot_results(result, v0=None, quantities=QUANTITIES, mean=None,
     freq = np.array(result['freq'])
     N = len(quantities)
     n = int(np.ceil(np.sqrt(N)))
-    fig = plt.figure(figsize=kwargs.get('figsize'))
+    fig = plt.figure()
     gs = gridspec.GridSpec(n, n)
     share = None
     # True for invert_events_simultaneously
@@ -557,7 +559,7 @@ def plot_sites(result, mean=None,
         if not np.all(np.isnan(R[station])):
             N = N + 1
 #    N = len(R) + (max_nobs > 1)
-    fig = plt.figure(figsize=kwargs.get('figsize'))
+    fig = plt.figure()
     nx, ny, gs = _get_grid(N, nx=nx)
     cmap = plt.get_cmap('hot_r', max_nobs)
     norm = mpl.colors.Normalize(vmin=0.5, vmax=max_nobs + 0.5)
@@ -629,7 +631,7 @@ def plot_all_sds(result, seismic_moment_method=None,
         result = {id_: r for id_, r in result.items() if id_ in plot_only_ids}
     N = len(result)
 #    n = int(np.ceil(np.sqrt(N)))
-    fig = plt.figure(figsize=kwargs.get('figsize'))
+    fig = plt.figure()
 #    gs = gridspec.GridSpec(n, n)
     nx, ny, gs = _get_grid(N, nx=nx)
     share = None
@@ -653,7 +655,7 @@ def plot_all_sds(result, seismic_moment_method=None,
 
 def plot_mags(result, xlim=None, ylim=None, plot_only_ids=None, **kwargs):
     """Plot Qopen moment magnitudes versus catalogue magnitudes"""
-    fig = plt.figure(figsize=kwargs.get('figsize'))
+    fig = plt.figure()
     ax = fig.add_subplot(111)
     temp = [(r['Mcat'], r['Mw']) for id_, r in result['events'].items()
             if r.get('Mcat') is not None and r.get('Mw') is not None and

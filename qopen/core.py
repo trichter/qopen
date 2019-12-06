@@ -1425,7 +1425,8 @@ def _plot(result, eventid=None, v0=None,
         if plot_eventresult:
             pkwargs = copy(plot_eventresult_options)
             fname = pkwargs.pop('fname', 'eventresult_%s.pdf')
-            fname = fname % (eventid,)
+            if '%s' in fname:
+                fname = fname % (eventid,)
             title = 'event %s' % (eventid,)
             from qopen.imaging import plot_eventresult
             plot_eventresult(result, title=title, fname=fname, **pkwargs)
@@ -1433,10 +1434,11 @@ def _plot(result, eventid=None, v0=None,
         if plot_eventsites:
             pkwargs = copy(plot_eventsites_options)
             fname = pkwargs.pop('fname', 'eventsites_%s.pdf')
-            fname = fname % (eventid,)
+            if '%s' in fname:
+                fname = fname % (eventid,)
             title = 'event %s' % (eventid,)
             from qopen.imaging import plot_eventsites
-            plot_eventsites(result, title=title, fname=fname)
+            plot_eventsites(result, title=title, fname=fname, **pkwargs)
             log.debug('create eventsites plot at %s', fname)
 
 

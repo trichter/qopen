@@ -1,3 +1,5 @@
+dev:
+  * fix bug when using newly introduced figsize and dpi options
 v2.6:
   * add dpi and figsize options for all plots (alternatively use a matplotlibrc file)
   * fix spelling error in invert_events_simultaneously (has to be fixed in old configuration files
