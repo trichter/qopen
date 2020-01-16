@@ -170,8 +170,8 @@
 "vs": 3400,
 
 
-# Determine the S-onset again. This does not make much sense for events with
-# picks.
+# Determine the S-onset again. This option is for testing purposes when
+# no picks are available. It should be prefered to use picks.
 # Possible values: null, "maximum" (take maximum in given window as new
 # S-onset)
 # Example:
