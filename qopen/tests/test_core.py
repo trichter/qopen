@@ -182,22 +182,53 @@ class TestCase(unittest.TestCase):
                 result2 = run(conf='conf.json', **kwargs)
             self.assertEqual(result, result2)
 
+    def test_tutorial_codaQ(self):
+        if not self.all_tests:
+            raise unittest.SkipTest('save time')
+        plot = self.all_tests
+        freq = np.array([0.375, 0.75, 1.5, 3.0, 6.0])
+        b = np.array([0.012, 0.019, 0.029, 0.038, 0.047])
+        kwargs = {
+            "optimize": False,
+            "weight" : [0, "bulkwindow"],
+            "G_plugin": "qopen.rt : G_diffapprox3d",
+            'plot_energies': plot, 'plot_fits': plot,
+            'plot_eventresult': plot, 'plot_eventsites': plot,
+            'plot_results': plot,
+            'plot_sites': plot, 'plot_sds': plot, 'plot_mags': plot,
+        }
+        if self.njobs:
+            kwargs['njobs'] = int(self.njobs)
+        if self.verbose:
+            kwargs['verbose'] = 3
+        tempdirname = 'qopen_test3' if self.permanent_tempdir else None
+        with tempdir(tempdirname, self.delete):
+            run(create_config='conf.json', tutorial=True)
+            result = run(conf='conf.json', **kwargs)
+            if plot:
+                plot_comparison(result['freq'], freq, None, None,
+                                result['b'], b)
+        np.testing.assert_equal(result['freq'], freq)
+        np.testing.assert_array_less(np.abs(np.log10(result['b'] / b)), 0.5)
+
     def test_plugin_option(self):
         f = init_data('plugin', plugin='qopen.tests.test_core : gw_test')
         self.assertEqual(f(nework=4, station=2), 42)
 
 
 def plot_comparison(freq1, freq2, g1, g2, b1, b2):
-    from pylab import subplot, loglog, savefig, legend
-    subplot(121)
-    loglog(freq1, g1, label='g0')
-    loglog(freq2, g2, label='g0 GJI')
-    legend()
-    subplot(122)
-    loglog(freq1, b1, label='b')
-    loglog(freq2, b2, label='b GJI')
-    legend()
-    savefig('comparison.pdf')
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+    ax1 = fig.add_subplot(121)
+    if g1:
+        ax1.loglog(freq1, g1, label='g0')
+        ax1.loglog(freq2, g2, label='g0 GJI')
+        ax1.legend()
+    ax2 = fig.add_subplot(122)
+    ax2.loglog(freq1, b1, label='b')
+    ax2.loglog(freq2, b2, label='b GJI')
+    ax2.legend()
+    fig.savefig('comparison.pdf')
 
 
 def gw_test(**kwargs):
