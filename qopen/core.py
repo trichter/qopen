@@ -1537,7 +1537,7 @@ def configure_logging(loggingc, verbose=0, loglevel=3, logfile=None):
     logging.captureWarnings(loggingc.get('capture_warnings', False))
 
 
-def run(conf=None, create_config=None, tutorial=False, eventid=None,
+def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
         get_waveforms=None, prefix=None, plot=None, fix_params=None,
         align_sites=None, align_sites_station=None, align_sites_value=1.,
         calc_source_params=None,
@@ -1565,6 +1565,16 @@ def run(conf=None, create_config=None, tutorial=False, eventid=None,
     :return: result dictionary
     """
     time_start = time.time()
+    if pdb:
+        import traceback, pdb
+
+        def info(type, value, tb):
+            traceback.print_exception(type, value, tb)
+            print
+            # ...then start the debugger in post-mortem mode.
+            pdb.pm()
+
+        sys.excepthook = info
     # Copy example files if create_config or tutorial
     if create_config or tutorial:
         if create_config is None:
@@ -1741,6 +1751,8 @@ def run_cmdline(args=None):
     msg = 'Set chattiness on command line. Up to 3 -v flags are possible'
     p.add_argument('-v', '--verbose', help=msg, action='count',
                    default=SUPPRESS)
+    msg = 'if an exception occurs start the debugger'
+    p.add_argument('--pdb', action='store_true', help=msg)
     msg = ('Add prefix for all output files defined in config '
            '(useful for options operating on JSON files)')
     p.add_argument('--prefix', help=msg)
