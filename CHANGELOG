@@ -1,4 +1,7 @@
 dev:
+  * add option to not perform optimization, but only invert for b ("optimize": false)
+  * add 2 Greens functions for 3d diffusion approximation, one for exact diffusion and one usable for determining coda Q within Qopen
+  * add debug option (--pdb)
   * fix bug when using newly introduced figsize and dpi options
 v2.6:
   * add dpi and figsize options for all plots (alternatively use a matplotlibrc file)
