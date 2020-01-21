@@ -264,7 +264,12 @@
 # The module has to define a function with the following arguments:
 # G(r, t, c, g0):
 #     return  Green's function
-# See qopen.rt for the provided isotropic, acoustic RT Green's function in 3D and 2D.
+# Some Green's functions are provided in qopen.rt module:
+# G_rt3d, G_rt2d, G_rt1d  (radiative transfer 3d, 2d, 1d)
+# G_diff3d  (diffusion 3d)
+# G_diffapprox3d  (diffusion approximation 3d, can be used with
+#                  "optimize": null, "weight" : [0, "bulkwindow"]
+#                  to invert envelopes for coda Q)
 #"G_plugin": "qopen.rt : G_rt3d",
 
 ### Plot options ###
