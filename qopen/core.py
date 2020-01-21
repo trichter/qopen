@@ -858,10 +858,15 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         assert b == b_fix
         msg = 'solved WLS with %d equations and %d unknowns, error: %.1e'
         log.debug(msg, A.shape[0], A.shape[1], err)
-
+    elif optimize is None or optimize is False:
+        g0_fix = np.mean(g0_bounds)
+        err, g0, b, W, R, info = lstsq(g0_fix)
+        msg = ('no optimization - solved WLS with %d equations and %d unknowns'
+               ', error: %.1e')
+        log.debug(msg, A.shape[0], A.shape[1], err)
     else:
         # Optimize g0, so that inversion yields minimal error
-        if optimize is None:
+        if optimize is True:
             optimize = {}
         optimize = copy(optimize)
         optimize.setdefault('method', 'golden')
