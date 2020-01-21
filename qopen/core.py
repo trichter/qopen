@@ -923,7 +923,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             from qopen.imaging import plot_energies
             plot_energies(energies, fname=fname, title=title, **pkwargs)
             log.debug('create energies plot at %s', fname)
-        if plot_optimization and not fix:
+        if plot_optimization and not fix and optimize:
             pkwargs = copy(plot_optimization_options)
             fname = pkwargs.pop('fname', 'optimization_%s.png')
             fname, title = fname_and_title(fname)
