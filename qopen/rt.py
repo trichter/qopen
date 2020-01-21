@@ -85,6 +85,19 @@ def rt3d_coda(r, t, c, g0):
     return rt3d_coda_reduced(r * g0, t * c * g0) * g0 ** 3
 
 
+def diff(r, t, c, g0, dim=3):
+    D = c / (dim * g0)
+    t1 = (4 * np.pi * D * t) ** (-dim / 2)
+    t2 = np.exp(-r ** 2 / (4 * D * t))
+    return t1 * t2  # * Heaviside(c * t - r)
+
+
+def diffapprox(r, t, c, g0, dim=3):
+    D = c / (dim * g0)
+    t1 = (4 * np.pi * D * t) ** (-dim / 2)
+    return t1  # * Heaviside(c * t - r)
+
+
 def G(r, t, c, g0, type='rt3d', include_direct=True):
     """Full Green's function with direct wave term (optional)"""
     if type == 'rt3d':
@@ -96,6 +109,14 @@ def G(r, t, c, g0, type='rt3d', include_direct=True):
     elif type == 'rt1d':
         Gcoda = rt1d_coda
         Gdirect = rt1d_direct
+    elif type in ('diff1d', 'diff2d', 'diff3d'):
+        dim = int(type[-2])
+        Gcoda = lambda r, t, c, g0: diff(r, t, c, g0, dim=dim)
+        Gdirect = lambda t, c, g0: np.zeros_like(t)
+    elif type in ('diffapprox1d', 'diffapprox2d', 'diffapprox3d'):
+        dim = int(type[-2])
+        Gcoda = lambda r, t, c, g0: diffapprox(r, t, c, g0, dim=dim)
+        Gdirect = lambda t, c, g0: np.zeros_like(t)
     else:
         NotImplementedError
     t_isarray = isinstance(t, np.ndarray)
@@ -155,6 +176,26 @@ def G_rt1d(r, t, c, g0):
     return G(r, t, c, g0, type='rt1d')
 
 
+def G_diff3d(r, t, c, g0):
+    """
+    Green's function for 3d diffusion
+
+    See Paaschens (1997), equation 1.
+    """
+    return G(r, t, c, g0, type='diff3d')
+
+
+def G_diffapprox3d(r, t, c, g0):
+    """
+    Green's function for 3d diffusion, discarding second term.
+
+    Often used to determine Qcoda
+
+    See Paaschens (1997), equation 1.
+    """
+    return G(r, t, c, g0, type='diffapprox3d')
+
+
 def plot_t(c, g0, r, t=None, N=1000, log=False, include_direct=False, la=None,
            type='rt3d', scale=False):
     """Plot Green's function as a function of time"""
@@ -165,6 +206,8 @@ def plot_t(c, g0, r, t=None, N=1000, log=False, include_direct=False, la=None,
         plot_t(c, g0, r, type='rt3d', **kw)
         plot_t(c, g0, r, type='rt2d', **kw)
         plot_t(c, g0, r, type='rt1d', **kw)
+        plot_t(c, g0, r, type='diff3d', **kw)
+        plot_t(c, g0, r, type='diffapprox3d', **kw)
         plt.legend()
         return
     if t is None:
@@ -195,6 +238,8 @@ def plot_r(c, g0, t, r=None, N=1000, log=False, include_direct=False, la=None,
         plot_r(c, g0, t, type='rt3d', **kw)
         plot_r(c, g0, t, type='rt2d', **kw)
         plot_r(c, g0, t, type='rt1d', **kw)
+        plot_r(c, g0, t, type='diff3d', **kw)
+        plot_r(c, g0, t, type='diffapprox3d', **kw)
         plt.legend()
         return
     if r is None:
