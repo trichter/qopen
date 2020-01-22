@@ -123,10 +123,21 @@ def G(r, t, c, g0, type='rt3d', include_direct=True):
     r_isarray = isinstance(r, np.ndarray)
     if not t_isarray and not r_isarray:
         if t - r / c < 0:
-            return 0
+            G_ = 0
         else:
-            return Gcoda(r, t, c, g0)
-    if t_isarray:
+            G_ = Gcoda(r, t, c, g0)
+    elif t_isarray and r_isarray:
+        if len(t) != len(r):
+            msg = ('If t and r are numpy arrays,'
+                   'they need to have the same length')
+            raise ValueError(msg)
+        if include_direct:
+            msg = 'If t and r are numpy arrays, include_direct not supported'
+            raise NotImplementedError(msg)
+        G_ = np.zeros(np.shape(t))
+        ind = c * t - r >= 0
+        G_[ind] = Gcoda(r[ind], t[ind], c, g0)
+    elif t_isarray:
         G_ = np.zeros(len(t))
         eps = float(t[1] - t[0])
         i = np.count_nonzero(c * t - r < 0)
@@ -144,8 +155,6 @@ def G(r, t, c, g0, type='rt3d', include_direct=True):
         G_[:i] = Gcoda(r[:i], t, c, g0)
         if include_direct and i != len(G_):
             G_[i] = Gdirect(t, c, g0) / eps
-    else:
-        raise ValueError('Only one of t or r are allowed to be numpy arrays')
     return G_
 
 
@@ -260,22 +269,56 @@ def plot_r(c, g0, t, r=None, N=1000, log=False, include_direct=False, la=None,
     ax.set_xlabel('r (m)')
 
 
+def plot_rt(c, g0, t=None, r=None, N=1000, log=False, include_direct=False, la=None,
+           type='rt3d'):
+    """Plot Green's function as a function of distance"""
+    import matplotlib.pyplot as plt
+    if t is None and r is None:
+        r = 10 / g0
+    if t is None:
+        t = 10 * r / c
+    if r is None:
+        r = 1.1 * c * t
+    ts = np.linspace(0, t, N)
+    rs = np.linspace(0, r, N)
+    mesh = np.meshgrid(rs, ts)
+    # ingnore include direct
+    if include_direct:
+        from warnings import warn
+        warn('ignore direct wave for rt plot')
+    G_ = G(*mesh, c, g0, include_direct=False, type=type)
+    if la is not None:
+        G_ = G_ * np.exp(-c * mesh[1] / la)
+    G_[np.isnan(G_)] = 0
+    ax = plt.gca()
+    if log:
+        G_ = np.log(G_)
+    im = ax.pcolormesh(*mesh, G_, label=type, cmap='jet')
+    ax.contour(*mesh, G_, colors='k', levels=50, linewidths=1)
+    ax.set_ylabel('t (s)')
+    ax.set_xlabel('r (m)')
+    plt.colorbar(im)
+
+
 def main(args=None):
     p = argparse.ArgumentParser(description=__doc__.split('\n')[1])
-    choices = ('calc', 'calc-direct', 'plot-t', 'plot-r')
+    choices = ('calc', 'calc-direct', 'plot-t', 'plot-r', 'plot-rt')
     p.add_argument('command', help='command', choices=choices)
-    p.add_argument('c', help='velocity', type=float)
-    p.add_argument('l', help='transport mean free path', type=float)
-    p.add_argument('-r', help='distance from source', type=float)
-    p.add_argument('-t', help='time after source', type=float)
-    msg = 'absorption length'
+    p.add_argument('c', help='velocity (m/s)', type=float)
+    p.add_argument('l', help='transport mean free path (m)', type=float)
+    p.add_argument('-r', help='distance from source (m)', type=float)
+    p.add_argument('-t', help='time after source (s)', type=float)
+    msg = 'absorption length (m)'
     p.add_argument('-a', '--absorption', help=msg, type=float)
     p.add_argument('--log', help='log plot', action='store_true')
     msg = 'do not include direct wave term in plots'
     p.add_argument('--no-direct', help=msg, action='store_true')
     msg = "type of Green's function to use"
     p.add_argument('--type', help=msg, default='rt3d',
-                   choices=('rt3d', 'rt2d', 'all'))
+                   choices=('rt3d', 'rt2d', 'rt1d',
+                            'diff3d', 'diff2d', 'diff1d',
+                            'diffapprox3d', 'diffapprox2d', 'diffapprox1d',
+                            'all'))
     args = p.parse_args(args)
     r, t, c, l, la, type = (args.r, args.t, args.c, args.l, args.absorption,
                             args.type)
@@ -297,6 +340,8 @@ def main(args=None):
             plot_t(c, 1/l, r, t=t, **kw)
         elif com == 'plot-r':
             plot_r(c, 1/l, t, r=r, **kw)
+        elif com == 'plot-rt':
+            plot_rt(c, 1/l, t=t, r=r, **kw)
         plt.show()
 
 
