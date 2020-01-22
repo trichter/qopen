@@ -268,7 +268,7 @@
 # G_rt3d, G_rt2d, G_rt1d  (radiative transfer 3d, 2d, 1d)
 # G_diff3d  (diffusion 3d)
 # G_diffapprox3d  (diffusion approximation 3d, can be used with
-#                  "optimize": null, "weight" : [0, "bulkwindow"]
+#                  "optimize": null, "bulk_window": null
 #                  to invert envelopes for coda Q)
 #"G_plugin": "qopen.rt : G_rt3d",
 

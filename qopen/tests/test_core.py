@@ -190,7 +190,7 @@ class TestCase(unittest.TestCase):
         b = np.array([0.012, 0.019, 0.029, 0.038, 0.047])
         kwargs = {
             "optimize": False,
-            "weight" : [0, "bulkwindow"],
+            "bulkwindow": None,
             "G_plugin": "qopen.rt : G_diffapprox3d",
             'plot_energies': plot, 'plot_fits': plot,
             'plot_eventresult': plot, 'plot_eventsites': plot,
