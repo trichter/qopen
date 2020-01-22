@@ -327,7 +327,11 @@ def main(args=None):
         if com == 'calc':
             G_ = G(r, t, c, 1/l, type=type)
         else:
-            Gdirect = rt2d_direct if type == 'rt2d' else rt3d_direct
+            Gdirect = (rt1d_direct if type == 'rt1d' else
+                       rt2d_direct if type == 'rt2d' else
+                       rt3d_direct if type == 'rt3d' else None)
+            if Gdirect is None:
+                raise ValueError('No direct term for this Greens function.')
             G_ = Gdirect(t, c, 1/l)
         if la is not None:
             G_ = G_ * np.exp(-c * t / la)
