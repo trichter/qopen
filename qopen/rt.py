@@ -111,12 +111,12 @@ def G(r, t, c, g0, type='rt3d', include_direct=True):
         Gdirect = rt1d_direct
     elif type in ('diff1d', 'diff2d', 'diff3d'):
         dim = int(type[-2])
-        Gcoda = lambda r, t, c, g0: diff(r, t, c, g0, dim=dim)
-        Gdirect = lambda t, c, g0: np.zeros_like(t)
+        def Gcoda(r, t, c, g0): return diff(r, t, c, g0, dim=dim)
+        def Gdirect(t, c, g0): return np.zeros_like(t)
     elif type in ('diffapprox1d', 'diffapprox2d', 'diffapprox3d'):
         dim = int(type[-2])
-        Gcoda = lambda r, t, c, g0: diffapprox(r, t, c, g0, dim=dim)
-        Gdirect = lambda t, c, g0: np.zeros_like(t)
+        def Gcoda(r, t, c, g0): return diffapprox(r, t, c, g0, dim=dim)
+        def Gdirect(t, c, g0): return np.zeros_like(t)
     else:
         NotImplementedError
     t_isarray = isinstance(t, np.ndarray)
@@ -209,16 +209,9 @@ def plot_t(c, g0, r, t=None, N=1000, log=False, include_direct=False, la=None,
            type='rt3d', scale=False):
     """Plot Green's function as a function of time"""
     import matplotlib.pyplot as plt
-    if type == 'all':
-        kw = dict(t=t, N=N, log=log, include_direct=include_direct, la=la,
-                  scale=True)
-        plot_t(c, g0, r, type='rt3d', **kw)
-        plot_t(c, g0, r, type='rt2d', **kw)
-        plot_t(c, g0, r, type='rt1d', **kw)
-        plot_t(c, g0, r, type='diff3d', **kw)
-        plot_t(c, g0, r, type='diffapprox3d', **kw)
-        plt.legend()
-        return
+    if r is None:
+        r = 10 / g0
+        print('set r to %dm' % r)
     if t is None:
         t = 10 * r / c
     ts = r / c + np.logspace(-3, np.log10(t - r / c), N)
@@ -241,17 +234,11 @@ def plot_r(c, g0, t, r=None, N=1000, log=False, include_direct=False, la=None,
            type='rt3d', scale=False):
     """Plot Green's function as a function of distance"""
     import matplotlib.pyplot as plt
-    if type == 'all':
-        kw = dict(r=r, N=N, log=log, include_direct=include_direct, la=la,
-                  scale=True)
-        plot_r(c, g0, t, type='rt3d', **kw)
-        plot_r(c, g0, t, type='rt2d', **kw)
-        plot_r(c, g0, t, type='rt1d', **kw)
-        plot_r(c, g0, t, type='diff3d', **kw)
-        plot_r(c, g0, t, type='diffapprox3d', **kw)
-        plt.legend()
-        return
-    if r is None:
+    if r is None and t is None:
+        r = 10 / g0
+        t = r / 1.1 / c
+        print('set t to %.1fs' % t)
+    elif r is None:
         r = 1.1 * c * t
     rs = np.linspace(0, r, N)
     G_ = G(rs, t, c, g0, include_direct=include_direct, type=type)
@@ -269,16 +256,19 @@ def plot_r(c, g0, t, r=None, N=1000, log=False, include_direct=False, la=None,
     ax.set_xlabel('r (m)')
 
 
-def plot_rt(c, g0, t=None, r=None, N=1000, log=False, include_direct=False, la=None,
-           type='rt3d'):
+def plot_rt(c, g0, t=None, r=None, N=1000, log=False, include_direct=False,
+            la=None, type='rt3d'):
     """Plot Green's function as a function of distance"""
     import matplotlib.pyplot as plt
     if t is None and r is None:
         r = 10 / g0
+        print('set r to %dm' % r)
     if t is None:
         t = 10 * r / c
+        print('set t to %.1fs' % t)
     if r is None:
         r = 1.1 * c * t
+        print('set r to %dm' % r)
     ts = np.linspace(0, t, N)
     rs = np.linspace(0, r, N)
     mesh = np.meshgrid(rs, ts)
@@ -300,6 +290,10 @@ def plot_rt(c, g0, t=None, r=None, N=1000, log=False, include_direct=False, la=N
     plt.colorbar(im)
 
 
+CHOICES_TYPE = ('rt3d', 'rt2d', 'rt1d', 'diff3d', 'diff2d', 'diff1d',
+                'diffapprox3d', 'diffapprox2d', 'diffapprox1d')
+
+
 def main(args=None):
     p = argparse.ArgumentParser(description=__doc__.split('\n')[1])
     choices = ('calc', 'calc-direct', 'plot-t', 'plot-r', 'plot-rt')
@@ -314,16 +308,16 @@ def main(args=None):
     msg = 'do not include direct wave term in plots'
     p.add_argument('--no-direct', help=msg, action='store_true')
     msg = "type of Green's function to use"
-    p.add_argument('--type', help=msg, default='rt3d',
-                   choices=('rt3d', 'rt2d', 'rt1d',
-                            'diff3d', 'diff2d', 'diff1d',
-                            'diffapprox3d', 'diffapprox2d', 'diffapprox1d',
-                            'all'))
+    p.add_argument('--type', help=msg, default=[CHOICES_TYPE[0]],
+                   choices=CHOICES_TYPE, nargs='+')
     args = p.parse_args(args)
     r, t, c, l, la, type = (args.r, args.t, args.c, args.l, args.absorption,
                             args.type)
     com = args.command
+    if com in ('calc', 'plot-rt') and len(type) != 1:
+        raise ValueError('More than one type not allowed for that command')
     if 'calc' in com:
+        type = type[0]
         if com == 'calc':
             G_ = G(r, t, c, 1/l, type=type)
         else:
@@ -338,14 +332,17 @@ def main(args=None):
         print(G_)
     else:
         import matplotlib.pyplot as plt
-        kw = dict(log=args.log, include_direct=not args.no_direct,
-                  la=la, type=type)
-        if com == 'plot-t':
-            plot_t(c, 1/l, r, t=t, **kw)
-        elif com == 'plot-r':
-            plot_r(c, 1/l, t, r=r, **kw)
-        elif com == 'plot-rt':
-            plot_rt(c, 1/l, t=t, r=r, **kw)
+        kw = dict(log=args.log, include_direct=not args.no_direct, la=la)
+        for typ in type:
+            kw['type'] = typ
+            if com == 'plot-t':
+                plot_t(c, 1/l, r, t=t, **kw)
+            elif com == 'plot-r':
+                plot_r(c, 1/l, t, r=r, **kw)
+            elif com == 'plot-rt':
+                plot_rt(c, 1/l, t=t, r=r, **kw)
+        if len(type) > 1:
+            plt.legend()
         plt.show()
 
 
