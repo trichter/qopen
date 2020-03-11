@@ -1,0 +1,307 @@
+<?xml version='1.0' encoding='utf-8'?>
+<q:quakeml xmlns:q="http://quakeml.org/xmlns/quakeml/1.2" xmlns="http://quakeml.org/xmlns/bed/1.2">
+  <eventParameters publicID="smi:eu.emsc/unid">
+    <event publicID="quakeml:eu.emsc/event/20010623_0000004">
+      <preferredOriginID>quakeml:eu.emsc/event/20010623_0000004/origin/1535795</preferredOriginID>
+      <preferredMagnitudeID>quakeml:eu.emsc/event/20010623_0000004/origin/1535795/mag/2</preferredMagnitudeID>
+      <description>
+        <text>THE NETHERLANDS</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <creationInfo>
+        <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+        <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        <creationTime>2014-12-03T11:33:12.184919Z</creationTime>
+      </creationInfo>
+      <origin publicID="quakeml:eu.emsc/event/20010623_0000004/origin/1535795">
+        <time>
+          <value>2001-06-23T01:40:02.600000Z</value>
+          <uncertainty>0.13</uncertainty>
+        </time>
+        <latitude>
+          <value>50.8781</value>
+          <uncertainty>2.9</uncertainty>
+        </latitude>
+        <longitude>
+          <value>5.8543</value>
+          <uncertainty>2.0</uncertainty>
+        </longitude>
+        <depth>
+          <value>2000.0</value>
+        </depth>
+        <depthType>from location</depthType>
+        <methodID>smi:eu.emsc-csem/origin_method/NA</methodID>
+        <quality>
+          <usedPhaseCount>253</usedPhaseCount>
+          <usedStationCount>169</usedStationCount>
+          <standardError>1.11</standardError>
+          <azimuthalGap>122.0</azimuthalGap>
+          <minimumDistance>0.12</minimumDistance>
+          <maximumDistance>9.68</maximumDistance>
+        </quality>
+        <evaluationMode>manual</evaluationMode>
+        <creationInfo>
+          <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+          <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        </creationInfo>
+        <originUncertainty>
+          <azimuthMaxHorizontalUncertainty>156.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+      <magnitude publicID="quakeml:eu.emsc/event/20010623_0000004/origin/1535795/mag/2">
+        <mag>
+          <value>4.6</value>
+          <uncertainty>0.3</uncertainty>
+        </mag>
+        <type>ML</type>
+        <originID>quakeml:eu.emsc/event/20010623_0000004/origin/1535795</originID>
+        <stationCount>13</stationCount>
+        <creationInfo>
+          <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+          <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="quakeml:eu.emsc/event/20020722_0000003">
+      <preferredOriginID>quakeml:eu.emsc/event/20020722_0000003/origin/1565240</preferredOriginID>
+      <preferredMagnitudeID>quakeml:eu.emsc/event/20020722_0000003/origin/1565240/mag/2</preferredMagnitudeID>
+      <description>
+        <text>GERMANY</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <creationInfo>
+        <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+        <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        <creationTime>2014-12-03T12:10:31.135360Z</creationTime>
+      </creationInfo>
+      <origin publicID="quakeml:eu.emsc/event/20020722_0000003/origin/1565240">
+        <time>
+          <value>2002-07-22T05:45:04.600000Z</value>
+          <uncertainty>0.06</uncertainty>
+        </time>
+        <latitude>
+          <value>50.8761</value>
+          <uncertainty>1.9</uncertainty>
+        </latitude>
+        <longitude>
+          <value>6.1493</value>
+          <uncertainty>1.6</uncertainty>
+        </longitude>
+        <depth>
+          <value>17600.0</value>
+        </depth>
+        <depthType>from location</depthType>
+        <methodID>smi:eu.emsc-csem/origin_method/NA</methodID>
+        <quality>
+          <usedPhaseCount>382</usedPhaseCount>
+          <usedStationCount>301</usedStationCount>
+          <standardError>1.03</standardError>
+          <azimuthalGap>23.0</azimuthalGap>
+          <minimumDistance>0.17</minimumDistance>
+          <maximumDistance>151.74</maximumDistance>
+        </quality>
+        <evaluationMode>manual</evaluationMode>
+        <creationInfo>
+          <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+          <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        </creationInfo>
+        <originUncertainty>
+          <azimuthMaxHorizontalUncertainty>71.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+      <magnitude publicID="quakeml:eu.emsc/event/20020722_0000003/origin/1565240/mag/2">
+        <mag>
+          <value>5.7</value>
+          <uncertainty>0.3</uncertainty>
+        </mag>
+        <type>ML</type>
+        <originID>quakeml:eu.emsc/event/20020722_0000003/origin/1565240</originID>
+        <stationCount>9</stationCount>
+        <creationInfo>
+          <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+          <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="quakeml:eu.emsc/event/20030222_0000013">
+      <preferredOriginID>quakeml:eu.emsc/event/20030222_0000013/origin/2117512</preferredOriginID>
+      <preferredMagnitudeID>quakeml:eu.emsc/event/20030222_0000013/origin/2117512/mag/1</preferredMagnitudeID>
+      <description>
+        <text>FRANCE</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <creationInfo>
+        <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+        <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        <creationTime>2014-12-03T11:35:05.228125Z</creationTime>
+      </creationInfo>
+      <origin publicID="quakeml:eu.emsc/event/20030222_0000013/origin/2117512">
+        <time>
+          <value>2003-02-22T20:41:04.500000Z</value>
+          <uncertainty>0.06</uncertainty>
+        </time>
+        <latitude>
+          <value>48.343</value>
+          <uncertainty>1.7</uncertainty>
+        </latitude>
+        <longitude>
+          <value>6.6209</value>
+          <uncertainty>1.4</uncertainty>
+        </longitude>
+        <depth>
+          <value>10000.0</value>
+        </depth>
+        <depthType>from location</depthType>
+        <methodID>smi:eu.emsc-csem/origin_method/NA</methodID>
+        <quality>
+          <usedPhaseCount>350</usedPhaseCount>
+          <usedStationCount>232</usedStationCount>
+          <standardError>1.15</standardError>
+          <azimuthalGap>27.0</azimuthalGap>
+          <minimumDistance>0.38</minimumDistance>
+          <maximumDistance>48.21</maximumDistance>
+        </quality>
+        <evaluationMode>manual</evaluationMode>
+        <creationInfo>
+          <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+          <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        </creationInfo>
+        <originUncertainty>
+          <azimuthMaxHorizontalUncertainty>123.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+      <magnitude publicID="quakeml:eu.emsc/event/20030222_0000013/origin/2117512/mag/1">
+        <mag>
+          <value>5.5</value>
+        </mag>
+        <type>ML</type>
+        <originID>quakeml:eu.emsc/event/20030222_0000013/origin/2117512</originID>
+        <creationInfo>
+          <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+          <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="quakeml:eu.emsc/event/20030322_0000008">
+      <preferredOriginID>quakeml:eu.emsc/event/20030322_0000008/origin/1376703</preferredOriginID>
+      <preferredMagnitudeID>quakeml:eu.emsc/event/20030322_0000008/origin/1376703/mag/1</preferredMagnitudeID>
+      <description>
+        <text>GERMANY</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <creationInfo>
+        <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+        <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        <creationTime>2014-12-03T11:35:33.460336Z</creationTime>
+      </creationInfo>
+      <origin publicID="quakeml:eu.emsc/event/20030322_0000008/origin/1376703">
+        <time>
+          <value>2003-03-22T13:36:15.200000Z</value>
+          <uncertainty>0.07</uncertainty>
+        </time>
+        <latitude>
+          <value>48.2237</value>
+          <uncertainty>1.6</uncertainty>
+        </latitude>
+        <longitude>
+          <value>8.9701</value>
+          <uncertainty>1.6</uncertainty>
+        </longitude>
+        <depth>
+          <value>10000.0</value>
+        </depth>
+        <depthType>from location</depthType>
+        <methodID>smi:eu.emsc-csem/origin_method/NA</methodID>
+        <quality>
+          <usedPhaseCount>325</usedPhaseCount>
+          <usedStationCount>181</usedStationCount>
+          <standardError>1.31</standardError>
+          <azimuthalGap>9.0</azimuthalGap>
+          <minimumDistance>0.17</minimumDistance>
+          <maximumDistance>16.99</maximumDistance>
+        </quality>
+        <evaluationMode>manual</evaluationMode>
+        <creationInfo>
+          <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+          <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        </creationInfo>
+        <originUncertainty>
+          <azimuthMaxHorizontalUncertainty>118.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+      <magnitude publicID="quakeml:eu.emsc/event/20030322_0000008/origin/1376703/mag/1">
+        <mag>
+          <value>4.8</value>
+          <uncertainty>0.3</uncertainty>
+        </mag>
+        <type>ML</type>
+        <originID>quakeml:eu.emsc/event/20030322_0000008/origin/1376703</originID>
+        <stationCount>28</stationCount>
+        <creationInfo>
+          <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+          <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        </creationInfo>
+      </magnitude>
+    </event>
+    <event publicID="quakeml:eu.emsc/event/20041205_0000033">
+      <preferredOriginID>quakeml:eu.emsc/event/20041205_0000033/origin/2117545</preferredOriginID>
+      <preferredMagnitudeID>quakeml:eu.emsc/event/20041205_0000033/origin/2117545/mag/1</preferredMagnitudeID>
+      <description>
+        <text>FRANCE</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <creationInfo>
+        <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+        <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        <creationTime>2014-12-03T15:03:05.126069Z</creationTime>
+      </creationInfo>
+      <origin publicID="quakeml:eu.emsc/event/20041205_0000033/origin/2117545">
+        <time>
+          <value>2004-12-05T01:52:36.900000Z</value>
+          <uncertainty>0.07</uncertainty>
+        </time>
+        <latitude>
+          <value>48.1186</value>
+          <uncertainty>1.8</uncertainty>
+        </latitude>
+        <longitude>
+          <value>7.9265</value>
+          <uncertainty>1.4</uncertainty>
+        </longitude>
+        <depth>
+          <value>7200.0</value>
+        </depth>
+        <depthType>from location</depthType>
+        <methodID>smi:eu.emsc-csem/origin_method/NA</methodID>
+        <quality>
+          <usedPhaseCount>414</usedPhaseCount>
+          <usedStationCount>284</usedStationCount>
+          <standardError>1.22</standardError>
+          <azimuthalGap>21.0</azimuthalGap>
+          <minimumDistance>0.13</minimumDistance>
+          <maximumDistance>38.86</maximumDistance>
+        </quality>
+        <evaluationMode>manual</evaluationMode>
+        <creationInfo>
+          <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+          <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        </creationInfo>
+        <originUncertainty>
+          <azimuthMaxHorizontalUncertainty>164.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+      <magnitude publicID="quakeml:eu.emsc/event/20041205_0000033/origin/2117545/mag/1">
+        <mag>
+          <value>5.4</value>
+          <uncertainty>0.3</uncertainty>
+        </mag>
+        <type>ML</type>
+        <originID>quakeml:eu.emsc/event/20041205_0000033/origin/2117545</originID>
+        <creationInfo>
+          <agencyURI>smi:smi-registry/organization/EMSC</agencyURI>
+          <authorURI>smi:smi-registry/organization/EMSC</authorURI>
+        </creationInfo>
+      </magnitude>
+    </event>
+  </eventParameters>
+</q:quakeml>

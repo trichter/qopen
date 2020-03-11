@@ -1,0 +1,5 @@
+[console_scripts]
+qopen = qopen.core:run_cmdline
+qopen-rt = qopen.rt:main
+qopen-runtests = qopen.tests:run
+

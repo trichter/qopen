@@ -1,0 +1,21 @@
+Metadata-Version: 1.1
+Name: qopen
+Version: 2.7.dev0
+Summary: Separation of intrinsic and scattering Q by envelope inversion
+Home-page: https://github.com/trichter/qopen
+Author: Tom Eulenfeld
+Author-email: tom.eulenfeld@gmail.com
+License: MIT
+Description: Please look at the project site for more information.
+Platform: UNKNOWN
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Topic :: Scientific/Engineering :: Physics
