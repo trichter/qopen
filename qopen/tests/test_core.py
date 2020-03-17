@@ -186,8 +186,10 @@ class TestCase(unittest.TestCase):
         if not self.all_tests:
             raise unittest.SkipTest('save time')
         plot = self.all_tests
-        freq = np.array([0.375, 0.75, 1.5, 3.0, 6.0])
-        b = np.array([0.012, 0.019, 0.029, 0.038, 0.047])
+#        freq = np.array([0.375, 0.75, 1.5, 3.0, 6.0])
+#        b = np.array([0.012, 0.019, 0.029, 0.038, 0.047])
+        freq = np.array([3.0, 6.0])
+        b = np.array([0.038, 0.047])
         kwargs = {
             "optimize": False,
             "bulkwindow": None,
@@ -215,8 +217,10 @@ class TestCase(unittest.TestCase):
         if not self.all_tests:
             raise unittest.SkipTest('save time')
         plot = self.all_tests
-        freq = np.array([0.375, 0.75, 1.5, 3.0, 6.0])
-        b = np.array([0.012, 0.019, 0.029, 0.038, 0.047])
+#        freq = np.array([0.375, 0.75, 1.5, 3.0, 6.0])
+#        b = np.array([0.012, 0.019, 0.029, 0.038, 0.047])
+        freq = np.array([3.0, 6.0])
+        b = np.array([0.038, 0.047])
         kwargs = {'mean': 'mean',
                   'coda_normalization': {'window_norm': [180, 200],
                                          'window_norm_smooth': 2},
