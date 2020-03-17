@@ -218,13 +218,13 @@ class TestCase(unittest.TestCase):
         freq = np.array([0.375, 0.75, 1.5, 3.0, 6.0])
         b = np.array([0.012, 0.019, 0.029, 0.038, 0.047])
         kwargs = {'mean': 'mean',
-            'coda_normalization': {'window_norm':[180, 200],
-                                   'window_norm_smooth': 2},
-            'plot_energies': plot, 'plot_fits': plot,
-            'plot_eventresult': plot, 'plot_eventsites': plot,
-            'plot_results': plot,
-            'plot_sites': plot, 'plot_sds': plot, 'plot_mags': plot,
-        }
+                  'coda_normalization': {'window_norm': [180, 200],
+                                         'window_norm_smooth': 2},
+                  'plot_energies': plot, 'plot_fits': plot,
+                  'plot_eventresult': plot, 'plot_eventsites': plot,
+                  'plot_results': plot,
+                  'plot_sites': plot, 'plot_sds': plot, 'plot_mags': plot,
+                  }
         if self.njobs:
             kwargs['njobs'] = int(self.njobs)
         if self.verbose:

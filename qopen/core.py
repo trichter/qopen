@@ -188,11 +188,11 @@ def observed_energy(stream, rho, df, coda_normalization=None, fs=4, tolerance=1)
     if coda_normalization is not None:
         window_norm = coda_normalization['window_norm']
         window_norm_smooth = coda_normalization['window_norm_smooth']
-        sr=stream[0].stats.sampling_rate
-        smoothw=window_norm_smooth
+        sr = stream[0].stats.sampling_rate
+        smoothw = window_norm_smooth
         sl = tr.slice(tr.stats.origintime + window_norm[0],
                       tr.stats.origintime + window_norm[1])
-        norm = np.mean(obspy.signal.util.smooth(sl.data,int(smoothw*sr)))
+        norm = np.mean(obspy.signal.util.smooth(sl.data, int(smoothw*sr)))
         tr.data = tr.data / norm
     return tr
 
@@ -1589,7 +1589,8 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
     """
     time_start = time.time()
     if pdb:
-        import traceback, pdb
+        import traceback
+        import pdb
 
         def info(type, value, tb):
             traceback.print_exception(type, value, tb)
