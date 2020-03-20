@@ -829,7 +829,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             weights = 1
         if np.any(np.isinf(B)) and nonlocal_['warn']:
             nonlocal_['warn'] = False
-            msg = '%s: log(E/G) has infinite values. These values are droped.'
+            msg = ('%s: log(E/G) has infinite values. These values are droped.'
+                   ' Probably G is smaller than machine precision.')
             log.warning(msg, pair)
         # scipy.linalg.lstsq can only be used for ordinary (unweighted) LES
         # C, _, _, _ = scipy.linalg.lstsq(A, B) (with C == results.params)
