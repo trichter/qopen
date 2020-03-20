@@ -185,7 +185,7 @@ class TestCase(unittest.TestCase):
 #        b = np.array([0.038, 0.047])
         kwargs = {
             "freqs": {"width": 1, "cfreqs": list(freq)},
-            "optimize": False,
+            "optimize": None,
             "bulkwindow": None,
             "G_plugin": "qopen.rt : G_diffapprox3d",
             "seismic_moment_method": None,
