@@ -3,12 +3,16 @@
 Tests for rt module.
 """
 
+import matplotlib
 import numpy as np
 import unittest
 from pkg_resources import load_entry_point
+import warnings
 
 from qopen.rt import G, rt3d_coda_reduced
 from qopen.tests.util import tempdir, quiet
+
+matplotlib.use('agg')
 
 
 class TestCase(unittest.TestCase):
@@ -35,7 +39,6 @@ class TestCase(unittest.TestCase):
             # 2% error are OK for Paaschens solution
             self.assertLess(abs(G_int - 1), 0.02)
 
-
     def test_preservation_of_total_energy_2d(self):
         """Area integral over Green's function should be 1"""
         c = 3000
@@ -46,7 +49,6 @@ class TestCase(unittest.TestCase):
             G_int = 2 * np.pi * np.sum(r * G_) * (r[1] - r[0])
             self.assertLess(abs(G_int - 1), 0.005)
 
-
     def test_preservation_of_total_energy_1d(self):
         """Integral over Green's function should be 1"""
         c = 3000
@@ -56,7 +58,6 @@ class TestCase(unittest.TestCase):
             G_ = G(r, t, c, g0, type='rt1d')
             G_int = 2 * np.sum(G_) * (r[1] - r[0])
             self.assertLess(abs(G_int - 1), 0.005)
-
 
     def test_reduced_Sato(self):
         """Test against exact solution in figure 8.4, page 256 of
@@ -78,9 +79,11 @@ class TestCase(unittest.TestCase):
                 self.cmd('calc 1600 500 -t 5 -r 1000')
                 self.cmd('calc 1600 500 -t 5 -r 1000 -a 5000')
                 self.cmd('calc-direct 1600 500 -t 5')
-                self.cmd('plot-t 1600 500 -r 1000')
-                self.cmd('plot-t 1600 500 -r 1000 --no-direct')
-                self.cmd('plot-r 1600 500 -t 0.5 --type rt2d')
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')
+                    self.cmd('plot-t 1600 500 -r 1000')
+                    self.cmd('plot-t 1600 500 -r 1000 --no-direct')
+                    self.cmd('plot-r 1600 500 -t 0.5 --type rt2d')
 
 
 if __name__ == '__main__':
