@@ -220,6 +220,12 @@
 # http://docs.scipy.org/doc/numpy/reference/routines.window.html
 "smooth_window": "bartlett",
 
+# Option for coda normalization of the envelope. In the case of coda normalization, 
+# the source spectrum and site amplification are not inverted. The window for coda 
+# normalization is specified with 'window_norm' in seconds after origin time.
+"coda_normalization": null,
+#"coda_normalization": {"window_norm":[180, 200]},
+
 # Cut coda if a local minimum is present in data (e.g. because of a second
 # earthquake with bulk waves arriving in the coda). Local maxima in the coda
 # are compared to previous local minima. If the ratio between a maximum and

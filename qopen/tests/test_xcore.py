@@ -223,8 +223,7 @@ class TestCase(unittest.TestCase):
         kwargs = {
             "freqs": {"width": 1, "cfreqs": list(freq)},
             "mean": "mean",
-            "coda_normalization": {"window_norm": [180, 200],
-                                   "window_norm_smooth": 2},
+            "coda_normalization": {"window_norm": [180, 200]},
             "seismic_moment_method": "mean",
             "seismic_moment_options": {"fc": 10},
             'plot_energies': plot, 'plot_fits': plot,
