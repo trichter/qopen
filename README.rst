@@ -98,15 +98,37 @@ To call Qopen from Python do e.g. ::
 All configuration options in `conf.json` can be overwritten by keyword
 arguments passed to `run()`.
 
-Please also consult the `API documentation`_.
+Use Qopen to determines coda Q
+..............................
 
-.. _`API documentation`: https://qopen.readthedocs.io
+Qopen can be "abused" to determine a mean coda Q with the diffusion approximation with the following settings in conf.json::
+
+    "optimize": null,
+    "bulkwindow": null,
+    "G_plugin": "qopen.rt : G_diffapprox3d",
+    "seismic_moment_method": null,
+
+The scattering coefficient and event spectra are meaningless with these settings. Qi corresponds to Qc in this case. For the single scattering approximation use a user-defined Green's function.
+
+Use Qopen with coda normalization
+.................................
+
+For comparison, Qopen can be used with coda normalization with the following settings in conf.json::
+
+    "coda_normalization": [180, 200],
+    "seismic_moment_method": null,
+
+Of course, site amplifications and event spectra are useless in this case.
 
 Get help and discuss
 --------------------
+
+Please consult the `API documentation`_.
 
 The `seistools <https://lserv.uni-jena.de/mailman/listinfo/seistools>`_ mailing list can be used to contact other users and developers.
 
 A somewhat advanced example using the Qopen package: `USAttenuation <https://github.com/trichter/usattenuation>`_.
 
 These studies make use of Qopen: `Google Scholar Link <https://scholar.google.com/scholar?cites=2976023441381045818&scipsc=1&q=Qopen>`_.
+
+.. _`API documentation`: https://qopen.readthedocs.io
