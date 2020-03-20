@@ -186,12 +186,9 @@ def observed_energy(stream, rho, df, coda_normalization=None, fs=4, tolerance=1)
     tr = obspy.Trace(data=data, header=stream[0].stats)
     tr.stats.channel = tr.stats.channel[:2] + 'X'
     if coda_normalization is not None:
-        window_norm = coda_normalization['window_norm']
-        sr = stream[0].stats.sampling_rate
-        sl = tr.slice(tr.stats.origintime + window_norm[0],
-                      tr.stats.origintime + window_norm[1])
-        norm = np.mean(sl.data)
-        tr.data = tr.data / norm
+        sl = tr.slice(tr.stats.origintime + coda_normalization[0],
+                      tr.stats.origintime + coda_normalization[1])
+        tr.data = tr.data / np.mean(sl.data)
     return tr
 
 
