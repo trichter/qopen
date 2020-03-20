@@ -188,8 +188,7 @@ class TestCase(unittest.TestCase):
             "optimize": False,
             "bulkwindow": None,
             "G_plugin": "qopen.rt : G_diffapprox3d",
-            "seismic_moment_method": "mean",
-            "seismic_moment_options": {"fc": 10},
+            "seismic_moment_method": None,
             'plot_energies': plot, 'plot_fits': plot,
             'plot_eventresult': plot, 'plot_eventsites': plot,
             'plot_results': plot,
@@ -210,7 +209,7 @@ class TestCase(unittest.TestCase):
                 # 5 * 2 * 2 energies, fits
                 # 2 * 2 eventresults, eventsites
                 self.check_num_images('plots/*.png', 24)
-                self.check_num_images('plots/*.pdf', 4)
+                self.check_num_images('plots/*.pdf', 3)
         np.testing.assert_equal(result['freq'], freq)
         np.testing.assert_array_less(np.abs(np.log10(result['b'] / b)), 0.5)
 
@@ -222,10 +221,8 @@ class TestCase(unittest.TestCase):
         b = np.array([0.038, 0.047])
         kwargs = {
             "freqs": {"width": 1, "cfreqs": list(freq)},
-            "mean": "linear",
             "coda_normalization": [180, 200],
-            "seismic_moment_method": "mean",
-            "seismic_moment_options": {"fc": 10},
+            "seismic_moment_method": None,
             'plot_energies': plot, 'plot_fits': plot,
             'plot_eventresult': plot, 'plot_eventsites': plot,
             'plot_results': plot,
@@ -246,7 +243,7 @@ class TestCase(unittest.TestCase):
                 # 3 * 2 * 2 energies, fits, optimization
                 # 2 * 2 eventresults, eventsites
                 self.check_num_images('plots/*.png', 16)
-                self.check_num_images('plots/*.pdf', 4)
+                self.check_num_images('plots/*.pdf', 3)
         np.testing.assert_equal(result['freq'], freq)
         np.testing.assert_array_less(np.abs(np.log10(result['b'] / b)), 0.5)
 
