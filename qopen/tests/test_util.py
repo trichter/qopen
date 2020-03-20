@@ -5,6 +5,7 @@ Tests for util module.
 
 import numpy as np
 import unittest
+import warnings
 
 from qopen.util import gmean, gerr, smooth
 
@@ -15,15 +16,17 @@ class TestCase(unittest.TestCase):
         """Results are same for no weight and equal weights"""
         x = np.array([3, 5, 8, 10, np.nan, 3, 4, -np.inf])
         w = np.ones(len(x))
-        self.assertEqual(gmean(x), gmean(x, weights=w))
-        self.assertEqual(gerr(x), gerr(x, weights=w))
-        x = x.reshape((2, 4))
-        w = np.ones(x.shape)
-        self.assertEqual(len(gmean(x, axis=0)), x.shape[1])
-        np.testing.assert_array_equal(gmean(x, axis=0),
-                                      gmean(x, axis=0, weights=w))
-        np.testing.assert_array_equal(gerr(x, axis=0),
-                                      gerr(x, axis=0, weights=w))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self.assertEqual(gmean(x), gmean(x, weights=w))
+            self.assertEqual(gerr(x), gerr(x, weights=w))
+            x = x.reshape((2, 4))
+            w = np.ones(x.shape)
+            self.assertEqual(len(gmean(x, axis=0)), x.shape[1])
+            np.testing.assert_array_equal(gmean(x, axis=0),
+                                          gmean(x, axis=0, weights=w))
+            np.testing.assert_array_equal(gerr(x, axis=0),
+                                          gerr(x, axis=0, weights=w))
 
     def test_gmean_gerr2(self):
         """Results are same for repeated elements and adapted weights"""

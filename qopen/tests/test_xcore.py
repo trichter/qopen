@@ -222,7 +222,7 @@ class TestCase(unittest.TestCase):
         b = np.array([0.038, 0.047])
         kwargs = {
             "freqs": {"width": 1, "cfreqs": list(freq)},
-            "mean": "mean",
+            "mean": "linear",
             "coda_normalization": [180, 200],
             "seismic_moment_method": "mean",
             "seismic_moment_options": {"fc": 10},
