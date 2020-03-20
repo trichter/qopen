@@ -1,6 +1,6 @@
 dev:
   * add option to use coda normalization, no inversion for site effects and event spectra in this case
-  * add option to not perform optimization, but only invert for b ("optimize": false)
+  * add option to not perform optimization, but only invert for b ("optimize": null)
   * add 2 Greens functions for 3d diffusion approximation, one for exact diffusion and one usable for determining coda Q within Qopen
   * add debug option (--pdb)
   * fix bug when using newly introduced figsize and dpi options
