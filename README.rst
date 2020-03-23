@@ -104,7 +104,7 @@ Use Qopen to determine coda Q
 Qopen can be "abused" to determine a mean coda Q with the diffusion approximation with the following settings in conf.json::
 
     "optimize": null,
-    "bulkwindow": null,
+    "bulk_window": null,
     "G_plugin": "qopen.rt : G_diffapprox3d",
     "seismic_moment_method": null,
 

@@ -186,7 +186,7 @@ class TestCase(unittest.TestCase):
         kwargs = {
             "freqs": {"width": 1, "cfreqs": list(freq)},
             "optimize": None,
-            "bulkwindow": None,
+            "bulk_window": None,
             "G_plugin": "qopen.rt : G_diffapprox3d",
             "seismic_moment_method": None,
             'plot_energies': plot, 'plot_fits': plot,
