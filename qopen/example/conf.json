@@ -272,6 +272,12 @@
 #                  to invert envelopes for coda Q)
 #"G_plugin": "qopen.rt : G_rt3d",
 
+# Option for coda normalization of the envelope. In the case of coda normalization,
+# the source spectrum and site amplification are not inverted. The window for coda
+# normalization is specified in seconds after origin time.
+"coda_normalization": null,
+#"coda_normalization": [180, 200],
+
 ### Plot options ###
 
 # For all parameters which can be used in the plot_*_options dictionaries see the qopen.imaging module.

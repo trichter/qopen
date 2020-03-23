@@ -11,6 +11,7 @@ import sys
 import unittest
 
 import numpy as np
+from obspy import read_events
 from qopen.core import init_data, run, run_cmdline
 from qopen.tests.util import tempdir, quiet
 
@@ -33,6 +34,19 @@ class TestCase(unittest.TestCase):
         self.all_tests = '-a' in args
         self.njobs = args[args.index('-n') + 1] if '-n' in args else None
 
+    def check_num_images(self, expr, num):
+        msg = ('Only %d plot files are created (glob expression %s).\n\n'
+               'Created files are:\n%s\n\n'
+               '%s')
+        if os.path.exists('example.log'):
+            with open('example.log') as flog:
+                log = 'Content of log file:\n' + flog.read()
+        else:
+            log = 'Log file does not exist.'
+        files = list(glob(expr))
+        msg2 = msg % (len(files), expr, files, log)
+        self.assertEqual(len(files), num, msg=msg2)
+
     def test_entry_point(self):
         script = load_entry_point('qopen', 'console_scripts', 'qopen')
         with quiet():
@@ -41,14 +55,12 @@ class TestCase(unittest.TestCase):
             except SystemExit:
                 pass
 
-    def test_cmdline(self):
+    def test_x_cmdline(self):
         # TODO: add test with picks
         if not self.all_tests:
             raise unittest.SkipTest('save time')
         script = run_cmdline
-        msg = ('Only %d plot files (%s) are created.\n\n'
-               'Created files are:\n%s\n\n'
-               '%s')
+
         args = []
         if self.njobs:
             args.extend(['--njobs', self.njobs])
@@ -58,20 +70,10 @@ class TestCase(unittest.TestCase):
         with tempdir(tempdirname, self.delete):
             script(['--create-config', '--tutorial'])
             script(args)
-            # check if pictures were created
-            if os.path.exists('example.log'):
-                with open('example.log') as flog:
-                    log = 'Content of log file:\n' + flog.read()
-            else:
-                log = 'Log file does not exist.'
-            files = list(glob('plots/*.png'))
-            msg2 = msg % (len(files), 'png', files, log)
             # 5*5 energies, optimization, fits
             # + 5 eventresults, eventsites = 85
-            self.assertEqual(len(files), 85, msg=msg2)
-            files = list(glob('plots/*.pdf'))
-            msg2 = msg % (len(files), 'pdf', files, log)
-            self.assertEqual(len(files), 4, msg=msg2)
+            self.check_num_images('plots/*.png', 85)
+            self.check_num_images('plots/*.pdf', 4)
             with open('results.json') as f:
                 result1 = json.load(f)
         # now check for "invert_events_simultaneously": true
@@ -84,19 +86,9 @@ class TestCase(unittest.TestCase):
                 '"invert_events_simultaneously": true')
             args.extend(['-c', 'conf2.json'])
             script(args)
-            # check if pictures were created
-            if os.path.exists('example.log'):
-                with open('example.log') as flog:
-                    log = 'Content of log file:\n' + flog.read()
-            else:
-                log = 'Log file does not exist.'
-            files = list(glob('plots/*.png'))
-            msg2 = msg % (len(files), 'png', files, log)
             # 5 energies, optimization, fits = 15
-            self.assertEqual(len(files), 15, msg=msg2)
-            files = list(glob('plots/*.pdf'))
-            msg2 = msg % (len(files), 'pdf', files, log)
-            self.assertEqual(len(files), 4, msg=msg2)
+            self.check_num_images('plots/*.png', 15)
+            self.check_num_images('plots/*.pdf', 4)
             with open('results.json') as f:
                 result2 = json.load(f)
         # check similarity of results for invert_events_simultaneously
@@ -109,7 +101,7 @@ class TestCase(unittest.TestCase):
             np.testing.assert_allclose(result2['R'][sta], result1['R'][sta],
                                        rtol=0.5)
 
-    def test_results_of_tutorial(self):
+    def test_y_tutorial_full(self):
         """Test against publication of Sens-Schoenfelder and Wegler (2006)"""
         plot = self.all_tests
         freq = [0.1875, 0.375, 0.75, 1.5, 3.0, 6.0, 12.0, 24.0]  # page 1365
@@ -141,6 +133,9 @@ class TestCase(unittest.TestCase):
             if plot:
                 plot_comparison(result['freq'], freq, result['g0'], g0,
                                 result['b'], b)
+                self.check_num_images('plots/*.png', 85)
+                self.check_num_images('plots/*.pdf', 4)
+
         M0_qopen = {evid.split('_')[0]: r.get('M0')
                     for evid, r in result['events'].items()}
         temp = [(M0_qopen[evid], M0[evid]) for evid in sorted(M0)]
@@ -183,15 +178,17 @@ class TestCase(unittest.TestCase):
             self.assertEqual(result, result2)
 
     def test_tutorial_codaQ(self):
-        if not self.all_tests:
-            raise unittest.SkipTest('save time')
         plot = self.all_tests
         freq = np.array([0.375, 0.75, 1.5, 3.0, 6.0])
         b = np.array([0.012, 0.019, 0.029, 0.038, 0.047])
+#        freq = np.array([3.0, 6.0])
+#        b = np.array([0.038, 0.047])
         kwargs = {
-            "optimize": False,
+            "freqs": {"width": 1, "cfreqs": list(freq)},
+            "optimize": None,
             "bulkwindow": None,
             "G_plugin": "qopen.rt : G_diffapprox3d",
+            "seismic_moment_method": None,
             'plot_energies': plot, 'plot_fits': plot,
             'plot_eventresult': plot, 'plot_eventsites': plot,
             'plot_results': plot,
@@ -204,15 +201,54 @@ class TestCase(unittest.TestCase):
         tempdirname = 'qopen_test3' if self.permanent_tempdir else None
         with tempdir(tempdirname, self.delete):
             run(create_config='conf.json', tutorial=True)
-            result = run(conf='conf.json', **kwargs)
+            events = read_events('example_events.xml', 'QUAKEML')[:2]
+            result = run(conf='conf.json', events=events, **kwargs)
             if plot:
                 plot_comparison(result['freq'], freq, None, None,
                                 result['b'], b)
+                # 5 * 2 * 2 energies, fits
+                # 2 * 2 eventresults, eventsites
+                self.check_num_images('plots/*.png', 24)
+                self.check_num_images('plots/*.pdf', 3)
+        np.testing.assert_equal(result['freq'], freq)
+        np.testing.assert_array_less(np.abs(np.log10(result['b'] / b)), 0.5)
+
+    def test_tutorial_codanorm(self):
+        plot = self.all_tests
+#        freq = np.array([0.375, 0.75, 1.5, 3.0, 6.0])
+#        b = np.array([0.012, 0.019, 0.029, 0.038, 0.047])
+        freq = np.array([3.0, 6.0])
+        b = np.array([0.038, 0.047])
+        kwargs = {
+            "freqs": {"width": 1, "cfreqs": list(freq)},
+            "coda_normalization": [180, 200],
+            "seismic_moment_method": None,
+            'plot_energies': plot, 'plot_fits': plot,
+            'plot_eventresult': plot, 'plot_eventsites': plot,
+            'plot_results': plot,
+            'plot_sites': plot, 'plot_sds': plot, 'plot_mags': plot,
+        }
+        if self.njobs:
+            kwargs['njobs'] = int(self.njobs)
+        if self.verbose:
+            kwargs['verbose'] = 3
+        tempdirname = 'qopen_test4' if self.permanent_tempdir else None
+        with tempdir(tempdirname, self.delete):
+            run(create_config='conf.json', tutorial=True)
+            events = read_events('example_events.xml', 'QUAKEML')[:2]
+            result = run(conf='conf.json', events=events, **kwargs)
+            if plot:
+                plot_comparison(result['freq'], freq, None, None,
+                                result['b'], b)
+                # 3 * 2 * 2 energies, fits, optimization
+                # 2 * 2 eventresults, eventsites
+                self.check_num_images('plots/*.png', 16)
+                self.check_num_images('plots/*.pdf', 3)
         np.testing.assert_equal(result['freq'], freq)
         np.testing.assert_array_less(np.abs(np.log10(result['b'] / b)), 0.5)
 
     def test_plugin_option(self):
-        f = init_data('plugin', plugin='qopen.tests.test_core : gw_test')
+        f = init_data('plugin', plugin='qopen.tests.test_xcore : gw_test')
         self.assertEqual(f(nework=4, station=2), 42)
 
 

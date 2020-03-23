@@ -62,7 +62,8 @@ DUMP_CONFIG = ['invert_events_simultaneously', 'mean',
                'v0', 'rho0', 'R0', 'free_surface',
                'freqs', 'filter', 'optimize', 'g0_bounds', 'b_bounds',
                'seismic_moment_method', 'seismic_moment_options',
-               'bulk_window', 'coda_window', 'noise_windows',
+               'bulk_window', 'coda_normalization',
+               'coda_window', 'noise_windows',
                'weight', 'remove_noise',
                'adjust_sonset', 'adjust_sonset_options',
                'remove_response', 'correct_for_elevation', 'skip',
@@ -162,7 +163,7 @@ def energy1c(data, rho, df, fs=4):
     return rho * (data ** 2 + hilb ** 2) / 2 / df / fs
 
 
-def observed_energy(stream, rho, df, fs=4, tolerance=1):
+def observed_energy(stream, rho, df, coda_normalization=None, fs=4, tolerance=1):
     """
     Return trace with total spectral energy density of three component stream
 
@@ -184,6 +185,10 @@ def observed_energy(stream, rho, df, fs=4, tolerance=1):
     data = np.sum(data, axis=0)
     tr = obspy.Trace(data=data, header=stream[0].stats)
     tr.stats.channel = tr.stats.channel[:2] + 'X'
+    if coda_normalization is not None:
+        sl = tr.slice(tr.stats.origintime + coda_normalization[0],
+                      tr.stats.origintime + coda_normalization[1])
+        tr.data = tr.data / np.mean(sl.data)
     return tr
 
 
@@ -486,7 +491,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
               R0=1, free_surface=4,
               noise_windows=None, bulk_window=None, weight=None,
               optimize=None, g0_bounds=(1e-8, 1e-3), b_bounds=(1e-5, 10),
-              num_points_integration=1000,
+              num_points_integration=1000, coda_normalization=None,
               smooth=None, smooth_window='flat',
               remove_noise=False, cut_coda=None, skip=None,
               adjust_sonset=None, adjust_sonset_options={},
@@ -556,7 +561,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             else:
                 fs = fs[0]
         try:
-            energies.append(observed_energy(stream, rho0, df, fs=fs))
+            energies.append(observed_energy(
+                stream, rho0, df, coda_normalization, fs=fs))
         except SkipError as ex:
             msg = '%s: cannot calculate ernergy (%s)'
             log.warning(msg, pair, str(ex))
@@ -766,16 +772,21 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     As = []
     Ns = len(stations)
     Ne = len(eventids)
-    for i, B in enumerate(Ecoda + [[_] for _ in Ebulk]):
-        A = np.zeros((Ns + Ne - fix, len(B)))
-#        A[i % Ns, :] = 1
-        evid, st = event_station_pairs[i % len(event_station_pairs)]
-        A[stations.index(st), :] = 1
-        idx = eventids.index(evid)
-        if idx > 0:
-            A[Ns + idx - 1, :] = 1
-        As.append(A)
-    del st, evid
+    if coda_normalization is None:
+        for i, B in enumerate(Ecoda + [[_] for _ in Ebulk]):
+            A = np.zeros((Ns + Ne - fix, len(B)))
+#            A[i % Ns, :] = 1
+            evid, st = event_station_pairs[i % len(event_station_pairs)]
+            A[stations.index(st), :] = 1
+            idx = eventids.index(evid)
+            if idx > 0:
+                A[Ns + idx - 1, :] = 1
+            As.append(A)
+        del st, evid
+    else:
+        for i, B in enumerate(Ecoda + [[_] for _ in Ebulk]):
+            A = np.ones((2, len(B)))
+            As.append(A)
     A = np.hstack(As)
     if not fix:
         A[-1, :] = -np.hstack(tcoda + tbulk)
@@ -818,7 +829,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             weights = 1
         if np.any(np.isinf(B)) and nonlocal_['warn']:
             nonlocal_['warn'] = False
-            msg = '%s: log(E/G) has infinite values. These values are droped.'
+            msg = ('%s: log(E/G) has infinite values. These values are droped.'
+                   ' Probably G is smaller than machine precision.')
             log.warning(msg, pair)
         # scipy.linalg.lstsq can only be used for ordinary (unweighted) LES
         # C, _, _, _ = scipy.linalg.lstsq(A, B) (with C == results.params)
@@ -839,6 +851,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         # source energies of all events
         W = [W0] + list(np.exp(C[N1:N2]) * W0)
         R = np.exp(C[:N1]) / W0  # amplification factors
+        if coda_normalization is not None:
+            R = np.ones(Ns)
         info = (tcoda, tbulk, Ecoda, Ebulk, Gcoda, Gbulk)
         if plot_optimization and opt:
             record_g0.append((err, g0))
@@ -1571,7 +1585,8 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
     """
     time_start = time.time()
     if pdb:
-        import traceback, pdb
+        import traceback
+        import pdb
 
         def info(type, value, tb):
             traceback.print_exception(type, value, tb)
