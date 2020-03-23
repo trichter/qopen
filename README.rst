@@ -98,8 +98,8 @@ To call Qopen from Python do e.g. ::
 All configuration options in `conf.json` can be overwritten by keyword
 arguments passed to `run()`.
 
-Use Qopen to determines coda Q
-..............................
+Use Qopen to determine coda Q
+.............................
 
 Qopen can be "abused" to determine a mean coda Q with the diffusion approximation with the following settings in conf.json::
 
