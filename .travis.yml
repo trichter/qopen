@@ -20,7 +20,7 @@ before_install:
   - wget https://raw.githubusercontent.com/trichter/conda4travis/latest/conda4travis.sh -O conda4travis.sh
   - source conda4travis.sh
   - conda config --add channels conda-forge
-  - conda create -q -n testenv python=$PYTHON_VERSION coverage matplotlib numpy scipy obspy statsmodels
+  - conda create -n testenv python=$PYTHON_VERSION coverage matplotlib numpy scipy obspy statsmodels
   - conda activate testenv
   - conda list
 install:
