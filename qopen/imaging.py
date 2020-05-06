@@ -46,6 +46,8 @@ DEPMAP = {'g0': 'g0', 'lsc': 'g0', 'Qsc': 'g0',
           'b': 'b', 'li': 'b', 'Qi': 'b',
           'W': 'W', 'omM': 'sds', 'sds': 'sds', 'error': 'error'}
 
+_NOCMAP = mpl.colors.ListedColormap(['black', 'black'], name='black')
+
 
 def calc_dependent(quantity, value, freq=None, v0=None):
     """Calculate dependent value (Qsc, Qi, lsc, li) from g0 and b
@@ -370,8 +372,24 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
 def plot_sds(freq, result, ax=None,
              annotate=False, va='bottom',
              seismic_moment_method=None, seismic_moment_options={},
+             cmap = 'viridis_r', vmin=None, vmax=None, max_nobs=None,
              **kwargs):
     """Plot source displacement spectrum and fitted source model"""
+
+    kw = {'s': 4 * MS ** 2, 'marker': 'o', 'zorder': 10, #'linewidth': 0.5,
+          'c': 'k'}
+    if 'R' in result and cmap is not None:
+        Rvals = np.array(list(result['R'].values()), dtype='float')
+        nobs = np.sum(~np.isnan(Rvals), axis=0)
+        if max_nobs is None:
+            max_nobs = np.max(nobs)
+        cmap = plt.get_cmap(cmap, max_nobs)
+        if vmax is None:
+            vmax = max_nobs + 0.5
+        if vmin is None:
+            vmin = 0.5
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        kw.update({'c': nobs, 'norm': norm, 'cmap': cmap})
     freq = np.array(freq)
     omM = np.array(result['sds'], dtype=np.float)
     if all(np.isnan(omM)):
@@ -387,17 +405,24 @@ def plot_sds(freq, result, ax=None,
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
     if seismic_moment_method == 'mean':
-        ax.loglog(freq, omM, 'o-', color='gray', mec='gray')
-        ax.loglog(freq[freq < fc], omM[freq < fc], 'o-k')
+        ax.plot(freq, omM, 'o-', color='gray', mec='gray')
+        ax.plot(freq[freq < fc], omM[freq < fc], 'o-k')
+        kw['c'] = nobs[freq < fc]
+        kw['linewidth'] = 0.5
+        sc = ax.scatter(freq[freq < fc], freq[freq < fc], **kw)
     elif seismic_moment_method in ('fit', 'robust_fit'):
-        ax.loglog(freq, omM, 'ok')
+        sc = ax.scatter(freq, omM, **kw)
         if M0 and fc:
             f = np.linspace(freq[0] / 1.5, freq[-1] * 1.5, 100)
             omM2 = source_model(f, **smo)
-            ax.loglog(f, omM2, '-k')
+            ax.plot(f, omM2, '-k')
     else:
-        ax.loglog(freq, omM, 'o-k')
+        kw['linewidth'] = 0.5
+        sc = ax.scatter(freq, omM, **kw)
+
     if M0:
         ax.axhline(M0, ls='--', color='k')
     labels = OrderedDict((('M0', r'M$_0$=%.1e Nm'),
@@ -415,6 +440,7 @@ def plot_sds(freq, result, ax=None,
 
     if fig:
         _savefig(fig, **kwargs)
+    return sc
 
 
 def plot_eventresult(result, v0=None, quantities=QUANTITIES_EVENT,
@@ -537,6 +563,7 @@ def plot_results(result, v0=None, quantities=QUANTITIES, mean=None,
 
 def plot_sites(result, mean=None,
                xlim=None, ylim=(1e-2, 1e2), nx=None,
+               cmap='viridis_r', vmin=None, vmax=None,
                **kwargs):
     """Plot site amplification factors"""
     freq = np.array(result['freq'])
@@ -561,8 +588,14 @@ def plot_sites(result, mean=None,
 #    N = len(R) + (max_nobs > 1)
     fig = plt.figure()
     nx, ny, gs = _get_grid(N, nx=nx)
-    cmap = plt.get_cmap('hot_r', max_nobs)
-    norm = mpl.colors.Normalize(vmin=0.5, vmax=max_nobs + 0.5)
+    if cmap is None:
+        cmap = 'black'
+    cmap = plt.get_cmap(cmap, max_nobs)
+    if vmax is None:
+        vmax = max_nobs + 0.5
+    if vmin is None:
+        vmin = 0.5
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     share = None
     i = 0
     for station in sorted(R):
@@ -619,7 +652,9 @@ def plot_all_sds(result, seismic_moment_method=None,
                  seismic_moment_options=None,
                  xlim=None, ylim=None, nx=None,
                  annotate=None, va='top',
-                 plot_only_ids=None, **kwargs):
+                 plot_only_ids=None,
+                 cmap = 'viridis_r', vmin=None, vmax=None,
+                 **kwargs):
     """Plot all source displacement spectra with fitted source models"""
     freq = np.array(result['freq'])
     conf = result.get('config', {})
@@ -630,6 +665,12 @@ def plot_all_sds(result, seismic_moment_method=None,
     if plot_only_ids:
         result = {id_: r for id_, r in result.items() if id_ in plot_only_ids}
     N = len(result)
+    if 'R' not in list(result.values())[0] or cmap is None:
+        max_nobs = None  # single inversion
+    else:
+        Rvals = [list(evres['R'].values()) for evres in result.values()]
+        nobs = np.sum(~np.isnan(np.array(Rvals, dtype='float')), axis=1)
+        max_nobs = np.max(nobs)
 #    n = int(np.ceil(np.sqrt(N)))
     fig = plt.figure()
 #    gs = gridspec.GridSpec(n, n)
@@ -639,8 +680,9 @@ def plot_all_sds(result, seismic_moment_method=None,
         annotate = nx < 7
     for i, evid in enumerate(sorted(result)):
         ax = plt.subplot(gs[i // nx, i % nx], sharex=share, sharey=share)
-        plot_sds(freq, result[evid], seismic_moment_method=smm, va=va,
-                 seismic_moment_options=smo, ax=ax, annotate=annotate)
+        sc = plot_sds(freq, result[evid], seismic_moment_method=smm, va=va,
+                      seismic_moment_options=smo, ax=ax, annotate=annotate,
+                      cmap=cmap, vmin=vmin, vmax=vmax, max_nobs=max_nobs)
         ax.annotate(evid, (0, 0), (5, 5), 'axes fraction',
                     'offset points', ha='left', va='bottom', size='x-small')
         _set_gridlabels(ax, i, nx, ny, N, ylabel=r'$\omega$M (Nm)')
@@ -650,6 +692,11 @@ def plot_all_sds(result, seismic_moment_method=None,
     ax.set_xlim(xlim or freqlim(freq))
     if ylim:
         ax.set_ylim(ylim)
+    if max_nobs != 1:
+        ax = plt.subplot(gs[(N - 1) // nx, (N - 1) % nx])
+        ax.set_axis_off()
+        fig.colorbar(sc, ax=ax, shrink=0.9, format='%d', label='nobs',
+                     ticks=np.arange(0, max_nobs + 1, max(1, max_nobs // 5)))
     _savefig(fig, **kwargs)
 
 
