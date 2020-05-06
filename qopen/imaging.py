@@ -666,7 +666,7 @@ def plot_all_sds(result, seismic_moment_method=None,
         result = {id_: r for id_, r in result.items() if id_ in plot_only_ids}
     N = len(result)
     if 'R' not in list(result.values())[0] or cmap is None:
-        max_nobs = None  # single inversion
+        max_nobs = 1  # single inversion
     else:
         Rvals = [list(evres['R'].values()) for evres in result.values()]
         nobs = np.sum(~np.isnan(np.array(Rvals, dtype='float')), axis=1)
