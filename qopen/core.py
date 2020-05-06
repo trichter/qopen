@@ -919,19 +919,20 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     label_eventid = (len(eventids) == 1)
 
     def fname_and_title(fname, evtotitle=False):
-        part1 = '%05.2fHz-%05.2fHz' % freq_band
         title = 'filter: (%.2fHz, %.2fHz)' % freq_band
-        if label_eventid:
-            eventid = energies[0].stats.eventid
-            part1 = '%s_%s' % (eventid, part1)
-            if evtotitle:
-                title = 'event: %s  %s' % (eventid, title)
-        return (fname % part1), title
+        evid = energies[0].stats.eventid if label_eventid else ''
+        if label_eventid and evtotitle:
+            title = 'event: %s  %s' % (evid, title)
+        fname = fname.format(evid=evid, f1=freq_band[0], f2=freq_band[1])
+        if not label_eventid:
+            fname = fname.replace('__', '_')
+        return fname, title
 
     try:
         if plot_energies and len(energies) > 0:
             pkwargs = copy(plot_energies_options)
-            fname = pkwargs.pop('fname', 'energies_%s.png')
+            fname = pkwargs.pop(
+                    'fname', 'energies_{evid}_{f1:05.2f}Hz-{f2:05.2f}Hz.png')
             fname, title = fname_and_title(fname)
             pkwargs.update({'bulk_window': bulkw, 'coda_window': codaw})
             from qopen.imaging import plot_energies
@@ -939,7 +940,9 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             log.debug('create energies plot at %s', fname)
         if plot_optimization and not fix and optimize:
             pkwargs = copy(plot_optimization_options)
-            fname = pkwargs.pop('fname', 'optimization_%s.png')
+            fname = pkwargs.pop(
+                    'fname',
+                    'optimization_{evid}_{f1:05.2f}Hz-{f2:05.2f}Hz.png')
             fname, title = fname_and_title(fname)
             from qopen.imaging import plot_optimization
             plot_optimization(record, record_g0, event_station_pairs,
@@ -947,7 +950,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             log.debug('create optimization plot at %s', fname)
         if plot_fits:
             pkwargs = copy(plot_fits_options)
-            fname = pkwargs.pop('fname', 'fits_%s.png')
+            fname = pkwargs.pop('fname',
+                                'fits_{evid}_{f1:05.2f}Hz-{f2:05.2f}Hz.png')
             fname, title = fname_and_title(fname)
             from qopen.imaging import plot_fits
             plot_fits(energies, g0, b, W, R, v0, info, G_func,
@@ -1443,19 +1447,17 @@ def _plot(result, eventid=None, v0=None,
             raise ParseError('No event with this id in results')
         if plot_eventresult:
             pkwargs = copy(plot_eventresult_options)
-            fname = pkwargs.pop('fname', 'eventresult_%s.pdf')
-            if '%s' in fname:
-                fname = fname % (eventid,)
-            title = 'event %s' % (eventid,)
+            fname = pkwargs.pop('fname', 'eventresult_{evid}.pdf')
+            fname = fname.format(evid=eventid)
+            title = 'event {evid}'.format(evid=eventid)
             from qopen.imaging import plot_eventresult
             plot_eventresult(result, title=title, fname=fname, **pkwargs)
             log.debug('create eventresult plot at %s', fname)
         if plot_eventsites:
             pkwargs = copy(plot_eventsites_options)
-            fname = pkwargs.pop('fname', 'eventsites_%s.pdf')
-            if '%s' in fname:
-                fname = fname % (eventid,)
-            title = 'event %s' % (eventid,)
+            fname = pkwargs.pop('fname', 'eventsites_{evid}.pdf')
+            fname = fname.format(evid=eventid)
+            title = 'event {evid}'.format(evid=eventid)
             from qopen.imaging import plot_eventsites
             plot_eventsites(result, title=title, fname=fname, **pkwargs)
             log.debug('create eventsites plot at %s', fname)

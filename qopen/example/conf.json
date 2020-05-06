@@ -287,7 +287,7 @@
 # xlim_log: time limits for log plot (relative to origin time)
 # fname: filename gets populated by eventid and freq_band
 "plot_energies": true,
-"plot_energies_options": {"fname": "plots/energies_%s.png",
+"plot_energies_options": {"fname": "plots/energies_{evid}_{f1:05.2f}Hz-{f2:05.2f}Hz.png",
                           "xlim_lin": [0, 210], "xlim_log": [10, 210]},
 
 # Plot optimization routine
@@ -295,22 +295,22 @@
 # fname: filename gets populated by eventid and freq_band
 "plot_optimization": true,
 "plot_optimization_options": {"num": 7,
-                              "fname": "plots/optimization_%s.png"},
+                              "fname": "plots/optimization_{evid}_{f1:05.2f}Hz-{f2:05.2f}Hz.png"},
 
 # Plot fits for optimization result
 # fname: filename gets populated by eventid and freq_band
 "plot_fits": true,
-"plot_fits_options": {"fname": "plots/fits_%s.png"},
+"plot_fits_options": {"fname": "plots/fits_{evid}_{f1:05.2f}Hz-{f2:05.2f}Hz.png"},
 
 # Plot scattering parameters and magnitude estimation for one event
 # fname: filename gets populated by eventid
 "plot_eventresult": true,
-"plot_eventresult_options": {"fname": "plots/eventresult_%s.png"},
+"plot_eventresult_options": {"fname": "plots/eventresult_{evid}.png"},
 
 # Plot site corrections for one event
 # fname: filename gets populated by eventid
 "plot_eventsites": true,
-"plot_eventsites_options": {"fname": "plots/eventsites_%s.png"},
+"plot_eventsites_options": {"fname": "plots/eventsites_{evid}.png"},
 
 # Plot mean attenuation and scattering properties
 # fname: filename
