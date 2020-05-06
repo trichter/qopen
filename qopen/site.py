@@ -127,7 +127,8 @@ def _find_unconnected_areas(results, freqi, ignore_stations=None):
             areas.append(area)
     areas = _merge_sets(areas)
     areas = {list(a)[0]: a for a in areas}
-    log.info('found %d unconnected areas', len(areas))
+    log.log(logging.WARNING if len(areas) == 0 else logging.INFO,
+            'found %d unconnected areas', len(areas))
     for name in areas:
         stations = areas[name]
         log.debug('area "%s" with %d stations', name, len(stations))
@@ -245,7 +246,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         row[0] += 1
 
     # calculate best factors for each freq band with OLS A*factor=b
-    factors = np.empty((Ne, Nf))
+    factors = np.ones((Ne, Nf))
     std_before = []
     # one for each freq
     largest_areas = []
@@ -257,6 +258,10 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         if join_unconnected:
             areas, near_stations = _join_unconnected_areas(
                 areas, join_unconnected, inventory)
+        if len(areas) == 0:
+            largest_areas.append(None)
+            std_before.append(np.nan)
+            continue
         largest_area = max(areas, key=lambda k: len(areas[k]))
         msg = 'use largest area %s with %d stations'
         log.info(msg, largest_area, len(areas[largest_area]))
