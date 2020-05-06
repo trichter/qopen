@@ -719,7 +719,7 @@ def plot_mags(result, xlim=None, ylim=None, plot_only_ids=None, **kwargs):
 
     if len(Mw) > 3:
         a, b = linear_fit(Mw, Mcat)
-        ax.plot(m, a * m + b, '-m', label='%.2fM %+.2f' % (a, b))
+        ax.plot(m, a * m + b, '-', color='0.5', label='%.2fM %+.2f' % (a, b))
 #    if len(Mw) > 3:
 #        _, b2 = linear_fit(Mw, Mcat, m=1)
 #        ax.plot(m, m + b2, '--m', label='M %+.2f' % (b2,))
