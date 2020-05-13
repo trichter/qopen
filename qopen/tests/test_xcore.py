@@ -84,8 +84,7 @@ class TestCase(unittest.TestCase):
                 'conf.json', 'conf2.json',
                 '"invert_events_simultaneously": false',
                 '"invert_events_simultaneously": true')
-            args.extend(['-c', 'conf2.json'])
-            script(args)
+            script(args + ['-c', 'conf2.json'])
             # 5 energies, optimization, fits = 15
             self.check_num_images('plots/*.png', 15)
             self.check_num_images('plots/*.pdf', 4)
@@ -126,7 +125,7 @@ class TestCase(unittest.TestCase):
         freq = freq[ind]
         g0 = np.array(g0)[ind]
         b = np.array(b)[ind]
-        tempdirname = 'qopen_test2' if self.permanent_tempdir else None
+        tempdirname = 'qopen_test3' if self.permanent_tempdir else None
         with tempdir(tempdirname, self.delete):
             run(create_config='conf.json', tutorial=True)
             result = run(conf='conf.json', **kwargs)
@@ -198,7 +197,7 @@ class TestCase(unittest.TestCase):
             kwargs['njobs'] = int(self.njobs)
         if self.verbose:
             kwargs['verbose'] = 3
-        tempdirname = 'qopen_test3' if self.permanent_tempdir else None
+        tempdirname = 'qopen_test4' if self.permanent_tempdir else None
         with tempdir(tempdirname, self.delete):
             run(create_config='conf.json', tutorial=True)
             events = read_events('example_events.xml', 'QUAKEML')[:2]
@@ -232,7 +231,7 @@ class TestCase(unittest.TestCase):
             kwargs['njobs'] = int(self.njobs)
         if self.verbose:
             kwargs['verbose'] = 3
-        tempdirname = 'qopen_test4' if self.permanent_tempdir else None
+        tempdirname = 'qopen_test5' if self.permanent_tempdir else None
         with tempdir(tempdirname, self.delete):
             run(create_config='conf.json', tutorial=True)
             events = read_events('example_events.xml', 'QUAKEML')[:2]
