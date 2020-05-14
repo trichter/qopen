@@ -20,7 +20,7 @@ from obspy.geodetics import gps2dist_azimuth
 import scipy
 
 from qopen.source import calculate_source_properties
-from qopen.util import gmean
+from qopen.util import gmeanlist
 
 
 log = logging.getLogger('qopen.site')
@@ -340,7 +340,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
     results.setdefault('R', {})
     for st, Rst in _collectR(results, freqi=None).items():
         if not np.all(np.isnan(Rst)):
-            results['R'][st] = gmean(Rst, axis=0, robust=True).tolist()
+            results['R'][st] = gmeanlist(Rst, axis=0, robust=True)
     std_after = []
     for i in range(Nf):
         R = _collectR(results, freqi=i)

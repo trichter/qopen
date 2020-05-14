@@ -94,7 +94,12 @@ def robust_stat(data, axis=None, fall_back=5):
         mean = np.empty(data.shape[0])
         err = np.empty(data.shape[0])
         for i, d in enumerate(data):
-            mean[i], err[i] = robust_stat(d)
+            # manually convert masked mean_ value to nan to circumvent
+            # a warning
+            mean_, err_ = robust_stat(d)
+            if hasattr(mean_, 'mask') and mean_.mask:
+                mean_ = np.nan
+            mean[i], err[i] = mean_, err_
         return mean, err
     assert len(data.shape) < 2
     data = data[~data.mask]
@@ -104,7 +109,8 @@ def robust_stat(data, axis=None, fall_back=5):
     return res.params[0], res.scale
 
 
-def gstat(data, axis=None, weights=None, unbiased=True, robust=False):
+def gstat(data, axis=None, weights=None, unbiased=True, robust=False,
+          fall_back=5):
     """Weighted or robust geometric mean and error (log scale)"""
     # warnings may pop up due to a bug in numpy
     # https://github.com/numpy/numpy/issues/4959
@@ -112,7 +118,7 @@ def gstat(data, axis=None, weights=None, unbiased=True, robust=False):
     if robust and weights is not None:
         raise NotImplementedError
     elif robust:
-        mean, err = robust_stat(data, axis=axis)
+        mean, err = robust_stat(data, axis=axis, fall_back=fall_back)
     else:
         mean, err = weighted_stat(data, axis=axis, weights=weights,
                                   unbiased=unbiased)
@@ -122,6 +128,13 @@ def gstat(data, axis=None, weights=None, unbiased=True, robust=False):
 def gmean(data, **kwargs):
     """Weighted or robust geometric mean"""
     return np.exp(gstat(data, **kwargs)[0])
+
+def gmeanlist(*args, **kwargs):
+    """Weighted or robust geometric mean returned as list"""
+    xs = gmean(*args, **kwargs).tolist()
+    if isinstance(xs, float):
+        return xs
+    return [None if x is None or np.isnan(x) else x for x in xs]
 
 
 def gerr(data, **kwargs):

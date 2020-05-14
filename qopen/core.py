@@ -48,7 +48,7 @@ from statsmodels.regression.linear_model import WLS
 import qopen
 from qopen.site import align_site_responses
 from qopen.source import calculate_source_properties, insert_source_properties
-from qopen.util import (cache, gmean, smooth as smooth_, smooth_func,
+from qopen.util import (cache, gmeanlist, smooth as smooth_, smooth_func,
                         LOGGING_DEFAULT_CONFIG)
 
 IS_PY3 = sys.version_info.major == 3
@@ -1383,11 +1383,12 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
         kw = {'axis': 0, 'robust': mean == 'robust',
               'weights': (1 / np.array(col['error']) if mean == 'weighted'
                           else None)}
-        result['g0'] = gmean(col['g0'], **kw).tolist()
-        result['b'] = gmean(col['b'], **kw).tolist()
-        result['error'] = gmean(col['error'], **kw).tolist()
+        if kwargs.get('fix_params') is None:
+            result['g0'] = gmeanlist(col['g0'], **kw)
+            result['b'] = gmeanlist(col['b'], **kw)
+        result['error'] = gmeanlist(col['error'], **kw)
         for st, Rst in col['R'].items():
-            result['R'][st] = gmean(Rst, **kw).tolist()
+            result['R'][st] = gmeanlist(Rst, **kw)
     result['config'] = {k: kwargs[k] for k in DUMP_CONFIG if k in kwargs}
     result['config'][
         'invert_events_simultaneously'] = invert_events_simultaneously
@@ -1418,7 +1419,9 @@ def _plot(result, eventid=None, v0=None,
     """Plotting helper function"""
 #    M0_freq = M0_freq or result.get('config', {}).get('M0_freq')
     if eventid is None:
-        if plot_results:
+        if plot_results and 'b' in result:
+            # only plot results if b key is in result
+            # this is not the case for --fix-params
             pkwargs = copy(plot_results_options)
             fname = pkwargs.pop('fname', 'results.pdf')
             from qopen.imaging import plot_results
@@ -1720,8 +1723,10 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
     if fix_params and not (align_sites or calc_source_params):
         # Optionally fix g0 and b
         log.info('use fixed g0 and b')
-        with open(fix_params) as f:
-            args['fix_params'] = json.load(f)
+        if isinstance(fix_params, str):
+            with open(fix_params) as f:
+                fix_params = json.load(f)
+        args['fix_params'] = fix_params
     if align_sites or calc_source_params:
         kw = {'seismic_moment_method': args.get('seismic_moment_method'),
               'seismic_moment_options': args.get('seismic_moment_options')}

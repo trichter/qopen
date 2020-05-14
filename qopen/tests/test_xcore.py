@@ -112,7 +112,8 @@ class TestCase(unittest.TestCase):
         M0 = {'20010623': 5.4e14, '20020722': 4.1e15, '20030222': 1.5e16,
               '20030322': 8.8e14, '20041205': 6.8e15}  # table 1
         kwargs = {
-            'plot_energies': plot, 'plot_optimization': plot,
+            'plot_optimization': plot,
+            'plot_energies': plot,
             'plot_fits': plot, 'plot_eventresult': plot,
             'plot_eventsites': plot, 'plot_results': plot,
             'plot_sites': plot, 'plot_sds': plot, 'plot_mags': plot,
@@ -188,6 +189,7 @@ class TestCase(unittest.TestCase):
             "bulk_window": None,
             "G_plugin": "qopen.rt : G_diffapprox3d",
             "seismic_moment_method": None,
+            'plot_optimization': plot,
             'plot_energies': plot, 'plot_fits': plot,
             'plot_eventresult': plot, 'plot_eventsites': plot,
             'plot_results': plot,
@@ -222,6 +224,7 @@ class TestCase(unittest.TestCase):
             "freqs": {"width": 1, "cfreqs": list(freq)},
             "coda_normalization": [180, 200],
             "seismic_moment_method": None,
+            'plot_optimization': plot,
             'plot_energies': plot, 'plot_fits': plot,
             'plot_eventresult': plot, 'plot_eventsites': plot,
             'plot_results': plot,
@@ -245,6 +248,77 @@ class TestCase(unittest.TestCase):
                 self.check_num_images('plots/*.pdf', 3)
         np.testing.assert_equal(result['freq'], freq)
         np.testing.assert_array_less(np.abs(np.log10(result['b'] / b)), 0.5)
+
+    def test_tutorial_everything_with_nans(self):
+        """Test scenarios:
+            * no results for one station
+            * no results for one event
+            * no results for single frequency
+            * only some results for single frequency
+
+            * test qopen
+            * test qopen --fix-params
+            * test qopen --align-sites
+            * test qopen --calc-source-params
+        """
+        if not self.all_tests:
+            raise unittest.SkipTest('save time')
+        plot = self.all_tests
+        freq = np.array([0.01, 0.375, 0.75, 1.5, 3.0, 6.0])
+        kwargs = {
+            "freqs": {"width": 1, "cfreqs": list(freq)},
+            #            "coda_normalization": [180, 200],
+            #            "seismic_moment_method": None,
+            'plot_optimization': plot,
+            'plot_energies': plot, 'plot_fits': plot,
+            'plot_eventresult': plot, 'plot_eventsites': plot,
+            'plot_results': plot,
+            'plot_sites': plot, 'plot_sds': plot, 'plot_mags': plot,
+        }
+        if self.njobs:
+            kwargs['njobs'] = int(self.njobs)
+        if self.verbose:
+            kwargs['verbose'] = 3
+        tempdirname = 'qopen_test6' if self.permanent_tempdir else None
+        with tempdir(tempdirname, self.delete):
+            run(create_config='conf.json', tutorial=True)
+            events = read_events('example_events.xml', 'QUAKEML')
+            # create one fake event for which no data is present
+            events2 = read_events('example_events.xml', 'QUAKEML')
+            events = events + events2[:1]
+            events[-1].resource_id = 'fake'
+            events[-1].origins[0].time += 500
+            result = run(conf='conf.json', events=events,
+                         coda_window=["S+20s", ["S+150s", "5SNR"]],
+                         skip={"coda_window": 120},
+                         **kwargs)
+            self.assertIsNone(result['g0'][0])
+            self.assertIsNone(result['b'][0])
+            self.assertNotIn('fake', result['events'])
+            result2 = run(conf='conf.json', events=events,
+                          coda_window=["S+20s", ["S+150s", "10SNR"]],
+                          skip={"coda_window": 120},
+                          fix_params='results.json',
+                          output='results_fixparams.json',
+                          plot_sds_options={"fname": "plots/sds_fix.pdf"},
+                          plot_sites_options={"fname": "plots/sites_fix.pdf"},
+                          **kwargs)
+            self.assertNotIn('b', result2)
+            result3 = run(conf='conf.json',
+                          align_sites='results_fixparams.json',
+                          output='results_aligned.json',
+                          plot_sds_options={"fname": "plots/sds_al.pdf"},
+                          plot_sites_options={"fname": "plots/sites_al.pdf"},
+                          **kwargs)
+            self.assertNotIn('b', result3)
+            result4 = run(conf='conf.json',
+                          calc_source_params='results_aligned.json',
+                          output='results_aligned_source_params.json',
+                          plot_sds_options={"fname": "plots/sds_al2.pdf"},
+                          plot_sites_options={"fname": "plots/sites_al2.pdf"},
+                          **kwargs)
+            self.assertNotIn('b', result4)
+            self.assertEqual(result4, result3)
 
     def test_plugin_option(self):
         f = init_data('plugin', plugin='qopen.tests.test_xcore : gw_test')

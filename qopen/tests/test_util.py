@@ -7,7 +7,8 @@ import numpy as np
 import unittest
 import warnings
 
-from qopen.util import gmean, gerr, smooth
+from qopen.core import collect_results
+from qopen.util import gmean, gerr, smooth, gmeanlist
 
 
 class TestCase(unittest.TestCase):
@@ -89,6 +90,23 @@ class TestCase(unittest.TestCase):
                                       smooth(x, 10, method=None))
         np.testing.assert_array_equal(smooth(x, 11, method='reflect')[5:-5],
                                       smooth(x, 11, method=None))
+
+    def test_gmean_list_with_nan(self):
+        expected = [None, 1.2e-05, 2.4e-06]
+        results = {"events": {
+            "1": {"g0": [None, 2.4e-05, 2.4e-06]},
+            "2": {"g0": [None, 6.0e-06, 2.4e-06]},
+            "3": {"g0": [None, None, 2.4e-06]}}}
+        collected = collect_results(results, only=['g0'])
+        r1 = gmeanlist(collected['g0'], axis=0, robust=False)
+        r2 = gmeanlist(collected['g0'], axis=0, robust=True)
+        r3 = gmeanlist(collected['g0'], axis=0, robust=False, fall_back=2)
+        self.assertIsNone(r1[0])
+        self.assertIsNone(r2[0])
+        self.assertIsNone(r3[0])
+        np.testing.assert_array_almost_equal(r1[1:], expected[1:])
+        np.testing.assert_array_almost_equal(r2[1:], expected[1:])
+        np.testing.assert_array_almost_equal(r3[1:], expected[1:])
 
 
 if __name__ == '__main__':

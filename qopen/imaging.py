@@ -598,8 +598,10 @@ def plot_sites(result, mean=None,
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     share = None
     i = 0
+    do_not_plot_stations = []
     for station in sorted(R):
         if np.all(np.isnan(R[station])):
+            do_not_plot_stations.append(station)
             continue
         ax = plt.subplot(gs[i // nx, i % nx], sharex=share, sharey=share)
         means, err1, err2 = gerr(R[station], axis=0, weights=weights,
@@ -636,6 +638,10 @@ def plot_sites(result, mean=None,
         ax.set_axis_off()
         fig.colorbar(sc, ax=ax, shrink=0.9, format='%d', label='nobs',
                      ticks=np.arange(0, max_nobs + 1, max(1, max_nobs // 5)))
+    if len(do_not_plot_stations) > 0:
+        ax.annotate('excluded: ' + ' '.join(do_not_plot_stations),
+                     (1, 0), (-5, 5), 'figure fraction', 'offset points',
+                     ha='right', size='x-small')
     _savefig(fig, **kwargs)
 
 
@@ -664,13 +670,13 @@ def plot_all_sds(result, seismic_moment_method=None,
     result = result['events']
     if plot_only_ids:
         result = {id_: r for id_, r in result.items() if id_ in plot_only_ids}
-    N = len(result)
     if 'R' not in list(result.values())[0] or cmap is None:
         max_nobs = 1  # single inversion
     else:
         Rvals = [list(evres['R'].values()) for evres in result.values()]
         nobs = np.sum(~np.isnan(np.array(Rvals, dtype='float')), axis=1)
         max_nobs = np.max(nobs)
+    N = len(result) + (max_nobs != 1)
 #    n = int(np.ceil(np.sqrt(N)))
     fig = plt.figure()
 #    gs = gridspec.GridSpec(n, n)
@@ -693,7 +699,7 @@ def plot_all_sds(result, seismic_moment_method=None,
     if ylim:
         ax.set_ylim(ylim)
     if max_nobs != 1:
-        ax = plt.subplot(gs[(N - 1) // nx, (N - 1) % nx])
+        ax = plt.subplot(gs[(N-1) // nx, (N-1) % nx])
         ax.set_axis_off()
         fig.colorbar(sc, ax=ax, shrink=0.9, format='%d', label='nobs',
                      ticks=np.arange(0, max_nobs + 1, max(1, max_nobs // 5)))
