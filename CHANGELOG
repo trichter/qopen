@@ -7,7 +7,7 @@ dev:
   * type of cmap can now be set with the config
   * indicate number of observations with color in source displacement spectrum plots
   * allow more fine grained control of plot file names with str.format method
-  * do not plot or calculate b and g0 for --fix-params, --align-sites and --calc-source-params,
+  * do not plot or calculate b and g0 for --fix-params
     this fixes a bug when using --fix-params with robust mean
   * fix bug when using newly introduced figsize and dpi options
   * fix NaN values in json output (are converted to None aka null)
