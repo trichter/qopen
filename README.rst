@@ -129,7 +129,7 @@ Get help and discuss
 
 Please consult the `API documentation`_.
 
-The `seistools <https://lserv.uni-jena.de/mailman/listinfo/seistools>`_ mailing list can be used to contact other users and developers.
+The Obspy forum can be used to contact other users and developers. Please post the topic in the `ObsPy Related Projects category <https://discourse.obspy.org/c/obspy-related-projects>`_.
 
 A somewhat advanced example using the Qopen package: `USAttenuation <https://github.com/trichter/usattenuation>`_.
 
