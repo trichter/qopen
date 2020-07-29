@@ -1658,30 +1658,37 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
         try:
             # Read inventory
             inventory = args.pop('inventory')
-            fi = args.pop('filter_inventory', None)
+            filter_inventory = args.pop('filter_inventory', None)
             if not isinstance(inventory, obspy.Inventory):
                 if isinstance(inventory, str):
                     format_ = None
                 else:
                     inventory, format_ = inventory
                 inventory = obspy.read_inventory(inventory, format_)
-                if fi:
-                    inventory = inventory.select(**fi)
                 channels = inventory.get_contents()['channels']
                 stations = list(set(get_station(ch) for ch in channels))
                 log.info('read inventory with %d stations', len(stations))
-            elif fi:
-                inventory = inventory.select(**fi)
+            if filter_inventory:
+                inventory = inventory.select(**filter_inventory)
+                channels = inventory.get_contents()['channels']
+                stations = list(set(get_station(ch) for ch in channels))
+                log.info('filter inventory with %d stations', len(stations))
             if not align_sites:
                 # Read events
                 events = args.pop('events')
+                filter_events = args.pop('filter_events', None)
+                resolve_seedid = args.pop('resolve_seedid', False)
                 if isinstance(events, str):
                     events = [events, None]
                 if (isinstance(events, (tuple, list)) and
                         not isinstance(events[0], obspy.core.event.Event)):
                     events, format_ = events
-                    events = obspy.read_events(events, format_)
+                    kw = dict(inventory=inventory) if resolve_seedid else {}
+                    events = obspy.read_events(events, format_, **kw)
                     log.info('read %d events', len(events))
+                if filter_events:
+                    events = events.filter(*filter_events)
+                    log.info('filter %d events', len(events))
                 # Initialize get_waveforms
                 keys = ['data', 'client_options', 'plugin', 'cache_waveforms']
                 tkwargs = {k: args.pop(k, None) for k in keys}
@@ -1821,8 +1828,10 @@ def run_cmdline(args=None):
     g3 = p.add_argument_group('optional qopen arguments', description=msg)
     features_str = ('events', 'inventory', 'data', 'output',
                     'seismic-moment-method')
-    features_json = ('seismic-moment-options',)
-    features_bool = ('invert_events_simultaneously',
+    features_json = ('filter-events', 'filter-inventory',
+                     'seismic-moment-options')
+    features_bool = ('resolve_seedid',
+                     'invert_events_simultaneously',
                      'plot_energies', 'plot_optimization', 'plot_fits',
                      'plot_eventresult', 'plot_eventsites')
     for f in features_str:

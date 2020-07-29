@@ -8,6 +8,15 @@
 # Filename of events file (format supported by ObsPy)
 "events": "example_events.xml",
 
+# Filter event catalog with Obspy method Catalog.filter
+# example: "filter_events": ["magnitude > 2.5"],
+"filter_events": null,
+# Filter event catalog with Obspy method Catalog.filter
+
+# Resolve full SEED id for event formats that do not specify the full SEED id
+# by passing the inventory to the read_events call
+"resolve_seedid": false,
+
 # Filename of inventory of stations (format supported by ObsPy)
 "inventory": "example_inventory.xml",
 
