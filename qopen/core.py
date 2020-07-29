@@ -1652,6 +1652,12 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
           'verbose': args.pop('verbose', 0),
           'loglevel': args.pop('loglevel', 3),
           'logfile': args.pop('logfile', None)}
+    if prefix:
+        prefix_path = os.path.dirname(prefix)
+        if prefix_path != '' and not os.path.isdir(prefix_path):
+            os.makedirs(prefix_path)
+    if isinstance(kw['logfile'], str) and prefix:
+        kw['logfile'] = prefix + kw['logfile']
     configure_logging(**kw)
     log.info('Qopen version %s', qopen.__version__)
     if not calc_source_params:
@@ -1724,9 +1730,8 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
                    'eventsites', 'results', 'sites', 'sds', 'mags']
         for t in targets:
             key = 'plot_%s_options' % t
-            default = '%s.png' % t
-            if key in args:
-                args[key]['fname'] = prefix + args[key].get('fname', default)
+            if key in args and 'fname' in args[key]:
+                args[key]['fname'] = prefix + args[key]['fname']
     if fix_params and not (align_sites or calc_source_params):
         # Optionally fix g0 and b
         log.info('use fixed g0 and b')

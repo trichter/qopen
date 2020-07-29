@@ -1,4 +1,5 @@
 dev:
+  * prefix option is more stringent now and adds prefix also to log file
   * add option to filter event catalog, add option to resolve full SEED id, add corresponding command line options
   * add option to use coda normalization, no inversion for site effects and event spectra in this case
   * add option to not perform optimization, but only invert for b ("optimize": null)
