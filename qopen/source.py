@@ -168,7 +168,14 @@ def fit_sds(freq, omM, method='mean', fc=None, n=2, gamma=1,
 
 
 def moment_magnitude(M0):
-    """Moment magnitude Mw from seismic moment M0"""
+    """
+    Moment magnitude Mw from seismic moment M0
+
+    Based on Kanamori (1997), an alternative definition is based on
+    Hanks and Kanamori (1999) with an offset of -6.03.
+
+    :param M0: seismic moment in Nm
+    """
     return 2 / 3 * np.log10(M0) - 6.07
 
 
