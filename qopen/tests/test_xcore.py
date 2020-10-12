@@ -305,6 +305,7 @@ class TestCase(unittest.TestCase):
                           **kwargs)
             self.assertNotIn('b', result2)
             result3 = run(conf='conf.json',
+                          calc_source_params='results_fixparams.json',
                           align_sites='results_fixparams.json',
                           output='results_aligned.json',
                           plot_sds_options={"fname": "plots/sds_al.pdf"},

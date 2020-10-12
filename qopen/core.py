@@ -1323,7 +1323,7 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
                    plot_sds=False, plot_sds_options={},
                    plot_mags=False, plot_mags_options={},
                    invert_events_simultaneously=False,
-                   mean=None, **kwargs):
+                   mean=None, noplots=False, **kwargs):
     """Qopen function for a list or Catalog of events
 
     Depending on 'invert_events_simultaneously' flag the function
@@ -1397,11 +1397,12 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
     result = sort_dict(result)
     # Optionally plot stuff
     try:
-        _plot(result, plot_results=plot_results,
-              plot_results_options=plot_results_options,
-              plot_sites=plot_sites, plot_sites_options=plot_sites_options,
-              plot_sds=plot_sds, plot_sds_options=plot_sds_options,
-              plot_mags=plot_mags, plot_mags_options=plot_mags_options)
+        if not noplots:
+            _plot(result, plot_results=plot_results,
+                  plot_results_options=plot_results_options,
+                  plot_sites=plot_sites, plot_sites_options=plot_sites_options,
+                  plot_sds=plot_sds, plot_sds_options=plot_sds_options,
+                  plot_mags=plot_mags, plot_mags_options=plot_mags_options)
     except Exception:
         log.exception('error while creating a plot (invert_wrapper)')
     return result
@@ -1660,8 +1661,8 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
         kw['logfile'] = prefix + kw['logfile']
     configure_logging(**kw)
     log.info('Qopen version %s', qopen.__version__)
-    if not calc_source_params:
-        try:
+    try:
+        if not calc_source_params or align_sites:
             # Read inventory
             inventory = args.pop('inventory')
             filter_inventory = args.pop('filter_inventory', None)
@@ -1679,32 +1680,32 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
                 channels = inventory.get_contents()['channels']
                 stations = list(set(get_station(ch) for ch in channels))
                 log.info('filter inventory with %d stations', len(stations))
-            if not align_sites:
-                # Read events
-                events = args.pop('events')
-                filter_events = args.pop('filter_events', None)
-                resolve_seedid = args.pop('resolve_seedid', False)
-                if isinstance(events, str):
-                    events = [events, None]
-                if (isinstance(events, (tuple, list)) and
-                        not isinstance(events[0], obspy.core.event.Event)):
-                    events, format_ = events
-                    kw = dict(inventory=inventory) if resolve_seedid else {}
-                    events = obspy.read_events(events, format_, **kw)
-                    log.info('read %d events', len(events))
-                if filter_events:
-                    events = events.filter(*filter_events)
-                    log.info('filter %d events', len(events))
-                # Initialize get_waveforms
-                keys = ['data', 'client_options', 'plugin', 'cache_waveforms']
-                tkwargs = {k: args.pop(k, None) for k in keys}
-                get_waveforms = init_data(get_waveforms=get_waveforms,
-                                          **tkwargs)
-                if tkwargs['data'] is not None:
-                    log.info('init data from %s', tkwargs['data'])
-        except Exception:
-            log.exception('cannot read events/stations or initalize data')
-            return
+        if not calc_source_params:
+            # Read events
+            events = args.pop('events')
+            filter_events = args.pop('filter_events', None)
+            resolve_seedid = args.pop('resolve_seedid', False)
+            if isinstance(events, str):
+                events = [events, None]
+            if (isinstance(events, (tuple, list)) and
+                    not isinstance(events[0], obspy.core.event.Event)):
+                events, format_ = events
+                kw = dict(inventory=inventory) if resolve_seedid else {}
+                events = obspy.read_events(events, format_, **kw)
+                log.info('read %d events', len(events))
+            if filter_events:
+                events = events.filter(*filter_events)
+                log.info('filter %d events', len(events))
+            # Initialize get_waveforms
+            keys = ['data', 'client_options', 'plugin', 'cache_waveforms']
+            tkwargs = {k: args.pop(k, None) for k in keys}
+            get_waveforms = init_data(get_waveforms=get_waveforms,
+                                      **tkwargs)
+            if tkwargs['data'] is not None:
+                log.info('init data from %s', tkwargs['data'])
+    except Exception:
+        log.exception('cannot read events/stations or initalize data')
+        return
     # Optionally select event
     if eventid:
         elist = [ev for ev in events if get_eventid(ev) == eventid]
@@ -1716,9 +1717,9 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
         events = obspy.Catalog(elist)
     # Start main routine with remaining args
     log.debug('start qopen routine with parameters %s', json.dumps(args))
-    if not calc_source_params:
+    if not calc_source_params or align_sites:
         args['inventory'] = inventory
-    if not (align_sites or calc_source_params):
+    if not calc_source_params:
         args['get_waveforms'] = get_waveforms
         args['events'] = events
     output = args.pop('output', None)
@@ -1732,7 +1733,7 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
             key = 'plot_%s_options' % t
             if key in args and 'fname' in args[key]:
                 args[key]['fname'] = prefix + args[key]['fname']
-    if fix_params and not (align_sites or calc_source_params):
+    if fix_params:
         # Optionally fix g0 and b
         log.info('use fixed g0 and b')
         if isinstance(fix_params, str):
@@ -1740,28 +1741,30 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
                 fix_params = json.load(f)
         args['fix_params'] = fix_params
     if align_sites or calc_source_params:
-        kw = {'seismic_moment_method': args.get('seismic_moment_method'),
-              'seismic_moment_options': args.get('seismic_moment_options')}
+        kw = {'seismic_moment_method': args.pop('seismic_moment_method', None),
+              'seismic_moment_options': args.pop('seismic_moment_options',
+                                                 None)}
+    if calc_source_params:
+        with open(calc_source_params) as f:
+            result = json.load(f)
+    else:
+        # main inversion
+        noplots = calc_source_params or align_sites
+        result = invert_wrapper(noplots=noplots, **args)
+        # Output and return result
+        log.debug('final results: %s', json.dumps(result))
     if align_sites:
         msg = 'align station site responses and re-calculate source parameters'
         log.info(msg)
-        with open(align_sites) as f:
-            result = json.load(f)
         align_site_responses(result, station=align_sites_station,
                              response=align_sites_value, **kw)
         result.setdefault('config', {}).update(kw)
         _plot(result, eventid=eventid, **args)
-    elif calc_source_params:
+    if calc_source_params and not align_sites:
         log.info('calculate source parameters')
-        with open(calc_source_params) as f:
-            result = json.load(f)
         calculate_source_properties(result, **kw)
         result.setdefault('config', {}).update(kw)
         _plot(result, eventid=eventid, **args)
-    else:
-        result = invert_wrapper(**args)
-        # Output and return result
-        log.debug('final results: %s', json.dumps(result))
     if output == 'stdout':
         print(json.dumps(result))
     elif output is not None:
