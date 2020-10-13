@@ -70,7 +70,7 @@ DUMP_CONFIG = ['invert_events_simultaneously', 'mean',
                'G_module']
 
 DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma',
-              'freq', 'g0', 'b', 'error',
+              'freq', 'g0', 'b', 'nstations', 'error',
               'W', 'sds', 'sds_error', 'fit_error',
               'R', 'events', 'v0', 'config']
 
@@ -375,21 +375,21 @@ def collect_results(results, only=None, freqi=None):
         for c in collect:
             if c == 'eventid':
                 col[c].append(eventid)
-            elif c == 'R':
+            elif c == 'R' and 'R' in res:
                 for sta, Rsta in res['R'].items():
                     col['R'][sta].append(freq_getter(Rsta, 'R'))
-            else:
+            elif c in res:
                 col[c].append(freq_getter(res[c], c))
-    if 'R' in collect:
+    if 'R' in col:
         col['R'] = dict(col['R'])
     col = dict(col)
     for c in collect:
         if c == 'eventid':
             pass
-        elif c == 'R':
+        elif c == 'R' and 'R' in col:
             for sta in col['R']:
                 col['R'][sta] = np.array(col['R'][sta], dtype=np.float)
-        else:
+        elif c in col:
             col[c] = np.array(col[c], dtype=np.float)
     return col
 #    # old implementation returns list
@@ -500,7 +500,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
               plot_fits=False, plot_fits_options={},
               ignore_network_code=False, borehole_stations=(),
               G_plugin='qopen.rt : G_rt3d',
-              fix=False, fix_params=None,
+              fix=False, fix_params=False,
+              fix_sites=False, fix_sites_params=None,
               dump_optpkl=None, dump_fitpkl=None,
               **kwargs):
     """
@@ -508,7 +509,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
 
     :parameters:
         **freq_band**, **streams**, **borehole_stations**,
-        **fix**, **fix_params** --
+        **fix**, **fix_params** , **fix_sites**, **fix_sites_params** --
         are determined in :func:`invert`.
         All other options are described in the example configuration file.
     :return: result tuple
@@ -772,7 +773,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     As = []
     Ns = len(stations)
     Ne = len(eventids)
-    if coda_normalization is None:
+    if coda_normalization is None and not fix_sites:
         for i, B in enumerate(Ecoda + [[_] for _ in Ebulk]):
             A = np.zeros((Ns + Ne - fix, len(B)))
 #            A[i % Ns, :] = 1
@@ -782,6 +783,21 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             if idx > 0:
                 A[Ns + idx - 1, :] = 1
             As.append(A)
+        del st, evid
+    elif fix_sites:
+        B_fix_sites = []
+        R_fix_sites = []
+        for i, B in enumerate(Ecoda + [[_] for _ in Ebulk]):
+            A = np.zeros((Ne, len(B)))
+            evid, st = event_station_pairs[i % len(event_station_pairs)]
+            site_resp = fix_sites_params[freq_band].get(st, 1)
+            R_fix_sites.append(site_resp)
+            B_fix_sites.append(np.ones(len(B)) * np.log(site_resp))
+            idx = eventids.index(evid)
+            A[idx, :] = 1
+            As.append(A)
+        B_fix_sites = np.hstack(B_fix_sites)
+        R_fix_sites = R_fix_sites[:Ns]
         del st, evid
     else:
         for i, B in enumerate(Ecoda + [[_] for _ in Ebulk]):
@@ -800,7 +816,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     nonlocal_ = {'warn': True}
     G_func = _load_func(G_plugin)
 
-    def lstsq(g0, opt=False, b_fix=None):
+    def lstsq(g0, opt=False, b_fix=None, fix_sites=False):
         """Error for optimization of g0"""
         if opt and g0_bounds and not g0_bounds[0] <= g0 <= g0_bounds[1]:
             return np.inf
@@ -822,6 +838,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         B = np.log(E) - np.log(G)
         if b_fix:
             B = B + b_fix * np.hstack(tcoda + tbulk)
+        if fix_sites:
+            B = B - B_fix_sites
         if bulk_window:
             weights = np.hstack((np.ones(len(B) - len(weights_bulk)),
                                  weights_bulk))
@@ -839,20 +857,29 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         # err equals approx. (np.sum((B - np.dot(A, C)) ** 2) / len(B)) ** 0.5
         err = results.mse_resid ** 0.5
         C = results.params
-        # intrinsic attenuation
-        b = b_fix or C[-1]
-        if (b_bounds and not b_bounds[0] < b < b_bounds[1] or
-                g0_bounds and not g0_bounds[0] <= g0 <= g0_bounds[1]):
-            err = np.inf
-        # spectral source energy of 1st ev
-        N1 = len(C) - Ne + fix
-        N2 = len(C) - 1 + fix
-        W0 = np.exp(np.mean(C[:N1])) / R0
-        # source energies of all events
-        W = [W0] + list(np.exp(C[N1:N2]) * W0)
-        R = np.exp(C[:N1]) / W0  # amplification factors
-        if coda_normalization is not None:
-            R = np.ones(Ns)
+        if fix:
+            # intrinsic attenuation
+            b = b_fix
+            assert coda_normalization is None
+        else:
+            b = C[-1]
+            if (b_bounds and not b_bounds[0] < b < b_bounds[1] or
+                    g0_bounds and not g0_bounds[0] <= g0 <= g0_bounds[1]):
+                err = np.inf
+        if fix_sites:
+            W = list(np.exp(C))
+            R = R_fix_sites
+        else:
+            N1 = len(C) - Ne + fix
+            N2 = len(C) - 1 + fix
+            # spectral source energy of 1st ev
+            W0 = np.exp(np.mean(C[:N1])) / R0
+            # source energies of all events
+            W = [W0] + list(np.exp(C[N1:N2]) * W0)
+            if coda_normalization is None:
+                R = np.exp(C[:N1]) / W0  # amplification factors
+            else:
+                R = np.ones(Ns)
         info = (tcoda, tbulk, Ecoda, Ebulk, Gcoda, Gbulk)
         if plot_optimization and opt:
             record_g0.append((err, g0))
@@ -867,11 +894,17 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     if fix:
         # Invert with fixed g0 and b
         g0_fix, b_fix = fix_params[freq_band]
-        err, g0, b, W, R, info = lstsq(g0_fix, b_fix=b_fix)
-        assert g0 == g0_fix
-        assert b == b_fix
-        msg = 'solved WLS with %d equations and %d unknowns, error: %.1e'
-        log.debug(msg, A.shape[0], A.shape[1], err)
+        if g0_fix is None or b_fix is None:
+            msg = 'freq band (%.2f, %.2f): no g0 or b value present -> skip'
+            log.warning(msg, *freq_band)
+            return
+        else:
+            err, g0, b, W, R, info = lstsq(g0_fix, b_fix=b_fix,
+                                           fix_sites=fix_sites)
+            assert g0 == g0_fix
+            assert b == b_fix
+            msg = 'solved WLS with %d equations and %d unknowns, error: %.1e'
+            log.debug(msg, A.shape[0], A.shape[1], err)
     elif optimize is None or optimize is False:
         g0_fix = np.mean(g0_bounds)
         err, g0, b, W, R, info = lstsq(g0_fix)
@@ -897,12 +930,22 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     if len(kwargs) > 0:
         log.error('unused kwargs: %s', json.dumps(kwargs))
     # Arrange result
+    nstations = np.sum(~np.isnan(np.array(R, dtype='float')), axis=0).item()
+    if np.isnan(nstations):
+        nstations = 0
     R = OrderedDict([(st, Ri) for st, Ri in zip(stations, R)])
     W = OrderedDict([(evid, Wi) for evid, Wi in zip(eventids, W)])
-    result = sort_dict({'g0': g0, 'b': b, 'W': W, 'R': R, 'error': err,
-                        'v0': v0})
+    Rok = not fix_sites and coda_normalization is None
+    Wok = coda_normalization is None
+    result = {'g0': g0 if not fix else None,
+              'b': b if not fix else None,
+              'W': W if Wok else None,
+              'R': R if Rok else None,
+              'nstations': nstations,
+              'error': err,
+              'v0': v0}
     msg = 'freq band (%.2fHz, %.2fHz): optimization result is %s'
-    log.debug(msg, freq_band[0], freq_band[1], json.dumps(result))
+    log.debug(msg, freq_band[0], freq_band[1], json.dumps(sort_dict(result)))
     # Dump pkl files for external plotting
     if dump_optpkl or dump_fitpkl:
         import pickle
@@ -965,7 +1008,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         msg = 'freq band (%.2f, %.2f): b=%.1e or g0=%.1e near bounds -> skip'
         log.warning(msg, *(freq_band + (b, g0)))
         return
-    return g0, b, W, R, err, v0
+    return tuple(result.values())
+    #return g0, b, W, R, err, v0
 
 
 def invert(events, inventory, get_waveforms,
@@ -981,7 +1025,8 @@ def invert(events, inventory, get_waveforms,
            plot_sites=False, plot_sites_options={},
            plot_sds=False, plot_sds_options={},
            plot_mags=False, plot_mags_options={},
-           fix_params=None,
+           cmd='go', input=None,
+           coda_normalization=None,
            **kwargs):
     """
     Qopen function to invert events and stations simultaneously
@@ -991,6 +1036,9 @@ def invert(events, inventory, get_waveforms,
         All other options are described in the example configuration file.
     :return: result dictionary
     """
+    assert cmd in ('go', 'fixed', 'source_params')
+    if coda_normalization is not None and cmd != 'go':
+        raise ValueError('coda_normalization is only allowed for go command')
     msg = 'use %s cores for parallel computation'
     log.debug(msg, 'all available' if njobs is None else njobs)
     # Get origins and arrivals of event
@@ -1225,18 +1273,30 @@ def invert(events, inventory, get_waveforms,
         stations = list(OrderedDict.fromkeys(stations))
     # Construct kwargs for invert_fb call
     kw = copy(kwargs)
+    fix = cmd in ('fixed', 'source_params')
+    fix_sites = cmd == 'source_params'
     kw.update({'rho0': rho0, 'borehole_stations': borehole_stations,
-               'skip': skip, 'filter': filter, 'fix': fix_params is not None})
-    if fix_params is not None:
+               'skip': skip, 'filter': filter,
+               'fix': fix, 'fix_sites': fix_sites,
+               'coda_normalization': coda_normalization,
+               })
+    if fix:
         # if fix_params is used, the inversion for station site responses and
         # energy source terms are done for fixed g0 and b from previous results
-        if set(fix_params['freq']) != set(freq_bands.keys()):
+        fp = input
+        if set(fp['freq']) != set(freq_bands.keys()):
             msg = ('Frequencies for fixed inversion have to be the same '
                    'as in the original inversion')
             raise ValueError(msg)
-        fp = fix_params
         kw['fix_params'] = {freq_bands[cfreq]: (g0f, bf) for cfreq, g0f, bf in
                             zip(fp['freq'], fp['g0'], fp['b'])}
+    if fix_sites:
+        fp = input
+        kw['fix_sites_params'] = pars = {}
+        for i, cfreq in enumerate(fp['freq']):
+            fb = freq_bands[cfreq]
+            pars[fb] = {sta: val[i] for sta, val in fp['R'].items()
+                        if val[i] is not None}
     # Start invert_fb function
     if njobs == 1:
         # deepcopy only necessary for more than one freq band
@@ -1254,47 +1314,61 @@ def invert(events, inventory, get_waveforms,
     if all([r is None for r in rlist]):
         log.warning('invert: no result for any frequency band')
         return
-
     # Re-sort results
+    Rok = not fix_sites and coda_normalization is None
+    Wok = coda_normalization is None
     result = defaultdict(list)
-    result['R'] = defaultdict(list)
+    if Rok:
+        result['R'] = defaultdict(list)
     result['events'] = defaultdict(lambda: defaultdict(list))
     for (cfreq, freq_band), res in zip(freq_bands.items(), rlist):
         if res is None:
             msg = 'freq band (%.2f, %.2f): no result'
             log.debug(msg, *freq_band)
             g0opt, b, W, R, error, v0 = 6 * (None,)
+            nstations = 0
         else:
-            g0opt, b, W, R, error, v0 = res
+            g0opt, b, W, R, nstations, error, v0 = res
+        assert not fix or g0opt is None
+        assert not fix or b is None
+        assert Rok or R is None
+        assert Wok or W is None
         result['freq'].append(cfreq)
-        result['g0'].append(g0opt)
-        result['b'].append(b)
+        if not fix:
+            result['g0'].append(g0opt)
+            result['b'].append(b)
         # result['v0'].append(v0)
         if v0 is not None:
             result['v0'] = v0
         result['error'].append(error)
-        for st in stations:
-            if R is None:
-                result['R'][st].append(None)
-            else:
-                result['R'][st].append(R.get(st))
+        result['nstations'].append(nstations)
+        if Rok:
+            for st in stations:
+                if R is None:
+                    result['R'][st].append(None)
+                else:
+                    result['R'][st].append(R.get(st))
         # result['W'].append(W)
+        if Wok:
+            for event in events:
+                evid = get_eventid(event)
+                if W is None:
+                    result['events'][evid]['W'].append(None)
+                else:
+                    result['events'][evid]['W'].append(W.get(evid))
+    # Calculate source properties sds, M0 and Mw
+    if Wok:
         for event in events:
             evid = get_eventid(event)
-            if W is None:
-                result['events'][evid]['W'].append(None)
-            else:
-                result['events'][evid]['W'].append(W.get(evid))
-    # Calculate source properties sds, M0 and Mw
-    for event in events:
-        evid = get_eventid(event)
-        args = (result['freq'], result['events'][evid], result['v0'], rho0,
-                seismic_moment_method, seismic_moment_options,
-                get_magnitude(event_dict[evid]))
-        result['events'][evid] = insert_source_properties(*args)
-    result['R'] = OrderedDict(result['R'])
+            args = (result['freq'], result['events'][evid], result['v0'], rho0,
+                    seismic_moment_method, seismic_moment_options,
+                    get_magnitude(event_dict[evid]))
+            result['events'][evid] = insert_source_properties(*args)
+    if Rok:
+        result['R'] = OrderedDict(result['R'])
     result['events'] = OrderedDict(result['events'])
-    if 'freq' not in result or all([g0 is None for g0 in result['g0']]):
+    if ('freq' not in result or
+                not fix and all([g0 is None for g0 in result['g0']])):
         log.info('no result for event')
         return
     result = sort_dict(result)
@@ -1318,7 +1392,8 @@ def invert(events, inventory, get_waveforms,
     return result
 
 
-def invert_wrapper(events, plot_results=False, plot_results_options={},
+def invert_wrapper(events,
+                   plot_results=False, plot_results_options={},
                    plot_sites=False, plot_sites_options={},
                    plot_sds=False, plot_sds_options={},
                    plot_mags=False, plot_mags_options={},
@@ -1355,7 +1430,7 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
     if invert_events_simultaneously:
         result = invert(events, **kwargs)
     else:
-        result = {'events': OrderedDict(), 'R': OrderedDict()}
+        result = {'events': OrderedDict()}
         for i, event in enumerate(events):
             evid = get_eventid(event)
             o = get_origin(event)
@@ -1370,25 +1445,30 @@ def invert_wrapper(events, plot_results=False, plot_results_options={},
             log.info(msg, evid, i + 1, len(events))
             if res:
                 result['freq'] = res.pop('freq')
-                res.update(res['events'].pop(evid))
+                if evid in res['events']:
+                    res.update(res['events'].pop(evid))
+                else:
+                    assert kwargs.get('coda_normalization') is not None
                 del res['events']
                 result['events'][evid] = sort_dict(res)
         if len(result['events']) == 0:
             log.warning('invert_wrapper: no result')
             return
         col = collect_results(result, only=('g0', 'b', 'error', 'R'))
-        if np.all(np.isnan(col['g0'])):
+        if 'g0' in col and np.all(np.isnan(col['g0'])):
             log.warning('invert_wrapper: no result')
             return
         kw = {'axis': 0, 'robust': mean == 'robust',
               'weights': (1 / np.array(col['error']) if mean == 'weighted'
                           else None)}
-        if kwargs.get('fix_params') is None:
+        if 'g0' in col:
             result['g0'] = gmeanlist(col['g0'], **kw)
             result['b'] = gmeanlist(col['b'], **kw)
         result['error'] = gmeanlist(col['error'], **kw)
-        for st, Rst in col['R'].items():
-            result['R'][st] = gmeanlist(Rst, **kw)
+        if len(col['R']) > 0:
+            result['R'] = OrderedDict()
+            for st, Rst in col['R'].items():
+                result['R'][st] = gmeanlist(Rst, **kw)
     result['config'] = {k: kwargs[k] for k in DUMP_CONFIG if k in kwargs}
     result['config'][
         'invert_events_simultaneously'] = invert_events_simultaneously
@@ -1419,45 +1499,52 @@ def _plot(result, eventid=None, v0=None,
           ):
     """Plotting helper function"""
 #    M0_freq = M0_freq or result.get('config', {}).get('M0_freq')
+    Wok = (any('W' in evres for evres in result.get('events', {}).values()) or
+           'W' in result)
     if eventid is None:
-        if plot_results and 'b' in result:
+        if plot_results and 'g0' in result:
             # only plot results if b key is in result
-            # this is not the case for --fix-params
+            # this is not the case for fixed and source_params command
             pkwargs = copy(plot_results_options)
             fname = pkwargs.pop('fname', 'results.pdf')
             from qopen.imaging import plot_results
             plot_results(result, fname=fname, **pkwargs)
             log.debug('create results plot at %s', fname)
-        if plot_sites:
+        if plot_sites and 'R' in result:
             pkwargs = copy(plot_sites_options)
             fname = pkwargs.pop('fname', 'sites.pdf')
             from qopen.imaging import plot_sites
             plot_sites(result, fname=fname, **pkwargs)
             log.debug('create sites plot at %s', fname)
-        if plot_sds:
+        if plot_sds and Wok:
             pkwargs = copy(plot_sds_options)
             fname = pkwargs.pop('fname', 'sds.pdf')
             from qopen.imaging import plot_all_sds
             plot_all_sds(result, fname=fname, **pkwargs)
             log.debug('create sds plot at %s', fname)
-        if plot_mags:
+        if plot_mags and Wok:
             pkwargs = copy(plot_mags_options)
             fname = pkwargs.pop('fname', 'mags.pdf')
             from qopen.imaging import plot_mags
             plot_mags(result, fname=fname, **pkwargs)
             log.debug('create mags plot at %s', fname)
     else:
-        if eventid not in result['events']:
-            raise ParseError('No event with this id in results')
         if plot_eventresult:
+            qu = ()
+            if 'g0' in result:
+                qu = qu + ('g0', 'lsc', 'Qsc', 'b', 'li', 'Qi')
+            qu = qu + ('error',)
+            if Wok:
+                qu = qu + ('W', 'sds')
             pkwargs = copy(plot_eventresult_options)
             fname = pkwargs.pop('fname', 'eventresult_{evid}.pdf')
             fname = fname.format(evid=eventid)
             title = 'event {evid}'.format(evid=eventid)
             from qopen.imaging import plot_eventresult
-            plot_eventresult(result, title=title, fname=fname, **pkwargs)
+            plot_eventresult(result, title=title, fname=fname,
+                             quantities=qu, **pkwargs)
             log.debug('create eventresult plot at %s', fname)
-        if plot_eventsites:
+        if plot_eventsites and 'R' in result:
             pkwargs = copy(plot_eventsites_options)
             fname = pkwargs.pop('fname', 'eventsites_{evid}.pdf')
             fname = fname.format(evid=eventid)
@@ -1499,9 +1586,11 @@ def init_data(data, client_options=None, plugin=None, cache_waveforms=False,
         elif data == 'plugin':
             get_waveforms = _load_func(plugin)
         else:
-            from obspy import read
-            stream = read(data)
-
+            if isinstance(data, str):
+                from obspy import read
+                stream = read(data)
+            else:
+                stream = data
             def get_waveforms(network, station, location, channel,
                               starttime, endtime, event=None):
                 st = stream.select(network=network, station=station,
@@ -1562,10 +1651,23 @@ def configure_logging(loggingc, verbose=0, loglevel=3, logfile=None):
     logging.captureWarnings(loggingc.get('capture_warnings', False))
 
 
-def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
-        get_waveforms=None, prefix=None, plot=None, fix_params=None,
-        align_sites=None, align_sites_station=None, align_sites_value=1.,
-        calc_source_params=None,
+def _load_json_results(args, name, raise_missing=True):
+    fname = args.pop(name, None)
+    if fname is not None:
+        if isinstance(fname, str):
+            with open(fname) as f:
+                return json.load(f)
+        else:
+            return fname
+    elif raise_missing:
+        raise ParseError(f'Missing option: {name}')
+
+
+def run(cmd='go',
+        conf=None, pdb=False, tutorial=False,
+        eventid=None,
+        get_waveforms=None,
+        print_mag=False,
         **args):
     """Main entry point for a direct call from Python
 
@@ -1589,6 +1691,9 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
         file
     :return: result dictionary
     """
+    if cmd not in ('create', 'go', 'fixed', 'source_params',
+                   'recalc_source_params', 'plot', 'rt'):
+        raise ValueError(f'Unkown command {cmd}')
     time_start = time.time()
     if pdb:
         import traceback
@@ -1600,13 +1705,15 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
             pdb.pm()
 
         sys.excepthook = info
+    if conf in ('None', 'none', 'null', ''):
+        conf = None
     # Copy example files if create_config or tutorial
-    if create_config or tutorial:
-        if create_config is None:
-            create_config = 'conf.json'
+    if cmd == 'create':
+        if conf is None:
+            conf = 'conf.json'
         srcs = ['conf.json']
-        dest_dir = os.path.dirname(create_config)
-        dests = [create_config]
+        dest_dir = os.path.dirname(conf)
+        dests = [conf]
         if tutorial:
             example_files = ['example_events.xml', 'example_inventory.xml',
                              'example_data.mseed']
@@ -1618,8 +1725,6 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
             shutil.copyfile(src, dest)
         return
     # Parse config file
-    if conf in ('None', 'none', 'null', ''):
-        conf = None
     if conf:
         try:
             with open(conf) as f:
@@ -1637,32 +1742,50 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
     if wm in args:
         args.get('plot_results_options', {}).setdefault(wm, args[wm])
         args.get('plot_sites_options', {}).setdefault(wm, args[wm])
-    # Optionally plot
-    if plot:
-        with open(plot) as f:
-            result = json.load(f)
-        if conf:
-            result['config'] = args
-        else:
-            result['config'].update(args)
-            args = result['config']
-        _plot(result, eventid=eventid, **args)
-        return
+    args['cmd'] = cmd
     # Configure logging
     kw = {'loggingc': args.pop('logging', None),
           'verbose': args.pop('verbose', 0),
           'loglevel': args.pop('loglevel', 3),
           'logfile': args.pop('logfile', None)}
+    prefix = args.pop('prefix', None)
     if prefix:
         prefix_path = os.path.dirname(prefix)
         if prefix_path != '' and not os.path.isdir(prefix_path):
             os.makedirs(prefix_path)
     if isinstance(kw['logfile'], str) and prefix:
         kw['logfile'] = prefix + kw['logfile']
+    output = args.pop('output', None)
+    indent = args.pop('indent', None)
+    if prefix:
+        if output is not None:
+            output = prefix + output
+        targets = ['energies', 'optimization', 'fits', 'eventresult',
+                   'eventsites', 'results', 'sites', 'sds', 'mags']
+        for t in targets:
+            key = 'plot_%s_options' % t
+            if key in args and 'fname' in args[key]:
+                args[key]['fname'] = prefix + args[key]['fname']
+    # Optionally plot
+    if cmd == 'plot':
+        result_plot = _load_json_results(args, 'input')
+        if conf:
+            result_plot['config'] = args
+        else:
+            result_plot['config'].update(args)
+            args = result_plot['config']
+        if eventid is not None:
+            result_plot['events'] = {eventid: result_plot['events'][eventid]}
+        _plot(result_plot, eventid=eventid, **args)
+        return
+
     configure_logging(**kw)
     log.info('Qopen version %s', qopen.__version__)
+    align_sites = args.pop('align_sites', False)
+    load_inv = cmd != 'recalc_source_params' or align_sites
+    load_all = cmd != 'recalc_source_params'
     try:
-        if not calc_source_params or align_sites:
+        if load_inv:
             # Read inventory
             inventory = args.pop('inventory')
             filter_inventory = args.pop('filter_inventory', None)
@@ -1680,7 +1803,7 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
                 channels = inventory.get_contents()['channels']
                 stations = list(set(get_station(ch) for ch in channels))
                 log.info('filter inventory with %d stations', len(stations))
-        if not calc_source_params:
+        if load_all:
             # Read events
             events = args.pop('events')
             filter_events = args.pop('filter_events', None)
@@ -1716,52 +1839,43 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
         log.debug('use only event with id %s', eventid)
         events = obspy.Catalog(elist)
     # Start main routine with remaining args
+    log.info('Use Qopen command %s', cmd)
     log.debug('start qopen routine with parameters %s', json.dumps(args))
-    if not calc_source_params or align_sites:
+    if load_inv:
         args['inventory'] = inventory
-    if not calc_source_params:
+    if load_all:
         args['get_waveforms'] = get_waveforms
         args['events'] = events
-    output = args.pop('output', None)
-    indent = args.pop('indent', None)
-    if prefix:
-        if output is not None:
-            output = prefix + output
-        targets = ['energies', 'optimization', 'fits', 'eventresult',
-                   'eventsites', 'results', 'sites', 'sds', 'mags']
-        for t in targets:
-            key = 'plot_%s_options' % t
-            if key in args and 'fname' in args[key]:
-                args[key]['fname'] = prefix + args[key]['fname']
-    if fix_params:
-        # Optionally fix g0 and b
-        log.info('use fixed g0 and b')
-        if isinstance(fix_params, str):
-            with open(fix_params) as f:
-                fix_params = json.load(f)
-        args['fix_params'] = fix_params
-    if align_sites or calc_source_params:
+    if cmd in ('go', 'fixed', 'source_params'):
+        if cmd in ('fixed', 'source_params'):
+            args['input'] = _load_json_results(args, 'input')
+            if 'input_sites' in args and cmd == 'source_params':
+                input_sites = _load_json_results(args, 'input_sites')
+                args['input']['R'] = input_sites['R']
+        # main inversion
+        result = invert_wrapper(noplots=align_sites, **args)
+        # Output and return result
+        log.debug('inversion results: %s', json.dumps(result))
+    elif cmd == 'recalc_source_params':
+        result = _load_json_results(args, 'input')
+    if align_sites:
+        msg = 'align station site responses and calculate source parameters'
+        log.info(msg)
+        kw = {'seismic_moment_method': args.pop('seismic_moment_method', None),
+              'seismic_moment_options': args.pop('seismic_moment_options',
+                                                 None),
+              'station': args.pop('align_sites_station', None),
+              'response': args.pop('align_sites_value', 1)}
+        align_site_responses(result, **kw)
+        result.setdefault('config', {}).update(kw)
+        log.debug('results after alignment of site responses: %s',
+                  json.dumps(result))
+        _plot(result, eventid=eventid, **args)
+    elif cmd == 'recalc_source_params':
+        log.info('recalculate source parameters')
         kw = {'seismic_moment_method': args.pop('seismic_moment_method', None),
               'seismic_moment_options': args.pop('seismic_moment_options',
                                                  None)}
-    if calc_source_params:
-        with open(calc_source_params) as f:
-            result = json.load(f)
-    else:
-        # main inversion
-        noplots = calc_source_params or align_sites
-        result = invert_wrapper(noplots=noplots, **args)
-        # Output and return result
-        log.debug('final results: %s', json.dumps(result))
-    if align_sites:
-        msg = 'align station site responses and re-calculate source parameters'
-        log.info(msg)
-        align_site_responses(result, station=align_sites_station,
-                             response=align_sites_value, **kw)
-        result.setdefault('config', {}).update(kw)
-        _plot(result, eventid=eventid, **args)
-    if calc_source_params and not align_sites:
-        log.info('calculate source parameters')
         calculate_source_properties(result, **kw)
         result.setdefault('config', {}).update(kw)
         _plot(result, eventid=eventid, **args)
@@ -1771,9 +1885,12 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
         path = os.path.dirname(output)
         if path != '' and not os.path.isdir(path):
             os.makedirs(path)
-        fmode = 'w' + 'b' * (not IS_PY3)  # dirty hack for now
-        with open(output, fmode) as f:
+        with open(output, 'w') as f:
             json.dump(result, f, indent=indent)
+    if print_mag and 'events' in result:
+        for evid, evres in result['events'].items():
+            print(evid,
+                  '{:.2f}'.format(evres['Mw']) if 'Mw' in evres else 'nan')
     time_end = time.time()
     log.debug('used time: %.1fs', time_end - time_start)
     return result
@@ -1782,80 +1899,115 @@ def run(conf=None, create_config=None, pdb=False, tutorial=False, eventid=None,
 def run_cmdline(args=None):
     """Main entry point from the command line"""
     # Define command line arguments
+
+    from qopen import __version__
+    version = '%(prog)s ' + __version__
     msg = ('Qopen: Seperation of intrinsic and scattering Q by envelope '
            'inversion')
-    p = argparse.ArgumentParser(description=msg)
-    msg = 'Configuration file to load (default: conf.json)'
-    p.add_argument('-c', '--conf', default='conf.json', help=msg)
-    msg = 'Process only event with this id'
-    p.add_argument('-e', '--eventid', help=msg)
-    msg = 'Set chattiness on command line. Up to 3 -v flags are possible'
-    p.add_argument('-v', '--verbose', help=msg, action='count',
-                   default=SUPPRESS)
-    msg = 'if an exception occurs start the debugger'
-    p.add_argument('--pdb', action='store_true', help=msg)
-    msg = ('Add prefix for all output files defined in config '
-           '(useful for options operating on JSON files)')
-    p.add_argument('--prefix', help=msg)
+    epilog = 'To get help on a Qopen command run: qopen command -h'
+    mainp = argparse.ArgumentParser(description=msg, epilog=epilog)
+    mainp.add_argument('--version', action='version', version=version)
+    sub = mainp.add_subparsers(title='Qopen commands', dest='cmd')
 
-    g2 = p.add_argument_group('create example configuration or tutorial')
     msg = ('Create example configuration in specified file '
            '(default: conf.json if option is invoked without parameter)')
-    g2.add_argument('--create-config', help=msg, nargs='?',
-                    const='conf.json', default=SUPPRESS)
-    msg = "Tutorial: create example configureation with data files"
-    g2.add_argument('--tutorial', help=msg, action='store_true',
+    p1 = sub.add_parser('create', help=msg, description=msg)
+    msg = ('Estimate intrinsic attenuation and scattering strength, '
+           'site responses, event spectra by inversion of envelopes')
+    p2 = sub.add_parser('go', help=msg, description=msg)
+    msg = ('Recalculate site responses and event spectra with '
+           'fixed attenuation parameters (g0, b) by inversion '
+           'of envelopes')
+    desc = msg + '. Specify JSON file with attenuation results with --input.'
+    p3 = sub.add_parser('fixed', help=msg, description=desc)
+    msg = ('Estimate event spectra including moment magnitude with '
+           'fixed attenuation parameters (g0, b) and fixed site responses '
+           'by inversion of envelopes')
+    desc = msg + (
+            '. Specify JSON file with attenuation results and site responses '
+            'with --input, if site responses should be taken from a different '
+            'file, specify it with --input-sites.')
+    p4 = sub.add_parser('source_params', help=msg, description=desc)
+    msg = 'Recalculate source parameters without new inversion'
+    desc = msg + (
+            ', specify JSON file with sites and source spectra with --input.')
+    p5 = sub.add_parser('recalc_source_params', help=msg, description=msg)
+    msg = ('Replot results. Can be used '
+           'together with -e to plot event results')
+    desc = msg + (
+            '. Specify JSON file with reults with --input.')
+    p6 = sub.add_parser('plot', help=msg, description=desc)
+    msg = ("Calculate or plot spectral energy densitiy Green's functions, "
+           "mainly based on radiative transfer")
+    from qopen.rt import __doc__ as rtdoc, create_parser
+    p6 = sub.add_parser('rt', help=msg, description=rtdoc,
+                        formatter_class=argparse.RawDescriptionHelpFormatter)
+    create_parser(p6)
+
+    msg = 'additionally create data files for working example'
+    p1.add_argument('--tutorial', help=msg, action='store_true',
                     default=SUPPRESS)
-
-    msg = ('parameters operating on JSON result file '
-           '(no or different processing)')
-    g1 = p.add_argument_group(msg)
-    msg = ('Plot results. Can be used '
-           'together with -e to plot event results from the given event')
-    g1.add_argument('-p', '--plot', help=msg)
-    msg = ('Fix g0 and b from results in given json file to determine better '
-           'estimation of site responses and source energies (experimental)')
-    g1.add_argument('--fix-params', help=msg)
-    msg = ('Align site responses and correct source parameters from results '
-           'in given json file (experimental)')
-    g1.add_argument('--align-sites', help=msg)
-    msg = ('Site response of this station is fixed '
-           '(default: None -> product of station site responses is fixed)')
-    g1.add_argument('--align-sites-station', help=msg)
-    msg = ('Value of site response for specified station or product of '
-           'station site responses (default: 1)')
-    g1.add_argument('--align-sites-value', help=msg, default=1., type=float)
-    msg = ('Calculate seismic moment and moment magnitude from results in '
-           'given json file')
-    g1.add_argument('--calc-source-params', help=msg)
-
-    msg = ('Use these flags to overwrite values in the config file. '
-           'See the example configuration file for a description of '
-           'these options. Options representing dictionaries or lists are '
-           'expected to be valid JSON.')
-    g3 = p.add_argument_group('optional qopen arguments', description=msg)
-    features_str = ('events', 'inventory', 'data', 'output',
-                    'seismic-moment-method')
-    features_json = ('filter-events', 'filter-inventory',
-                     'seismic-moment-options')
-    features_bool = ('resolve_seedid',
-                     'invert_events_simultaneously',
-                     'plot_energies', 'plot_optimization', 'plot_fits',
-                     'plot_eventresult', 'plot_eventsites')
-    for f in features_str:
-        g3.add_argument('--' + f, default=SUPPRESS)
-    for f in features_json:
-        g3.add_argument('--' + f, default=SUPPRESS, type=json.loads)
-    g3.add_argument('--njobs', default=SUPPRESS, type=int)
-    for f in features_bool:
-        g3.add_argument('--' + f.replace('_', '-'), dest=f,
-                        action='store_true', default=SUPPRESS)
-        g3.add_argument('--no-' + f.replace('_', '-'), dest=f,
-                        action='store_false', default=SUPPRESS)
+    msg = 'Configuration file to create (default: conf.json)'
+    p1.add_argument('-c', '--conf', default='conf.json', help=msg)
+    for p in (p2, p3, p4, p5):
+        msg = 'if an exception occurs start the debugger'
+        p.add_argument('--pdb', action='store_true', help=msg)
+        msg = 'Configuration file to load (default: conf.json)'
+        p.add_argument('-c', '--conf', default='conf.json', help=msg)
+        msg = 'Set chattiness on command line. Up to 3 -v flags are possible'
+        p.add_argument('-v', '--verbose', help=msg, action='count',
+                       default=SUPPRESS)
+        msg = 'Process only event with this id'
+        p.add_argument('-e', '--eventid', help=msg)
+        msg = ('Add prefix for all output files defined in config '
+               '(useful for commands operating on JSON files)')
+        p.add_argument('--prefix', help=msg, default=SUPPRESS)
+    for p in (p2, p3, p5):
+        msg = ('Align site responses and correct source parameters'
+               'results in given json file')
+        p.add_argument('--align-sites', help=msg, action='store_true',
+                       default=SUPPRESS)
+        msg = ('Site response of this station is fixed '
+               '(default: None -> product of station site responses is fixed)')
+        p.add_argument('--align-sites-station', help=msg, default=SUPPRESS)
+        msg = ('Value of site response for specified station or product of '
+               'station site responses (default: 1)')
+        p.add_argument('--align-sites-value', help=msg, type=float,
+                       default=SUPPRESS)
+    for p in (p2, p3, p4, p5):
+        msg = ('Use these flags to overwrite values in the config file. '
+               'See the example configuration file for a description of '
+               'these options. Options representing dictionaries or lists are '
+               'expected to be valid JSON.')
+        g3 = p.add_argument_group('optional qopen arguments', description=msg)
+        features_str = ('events', 'inventory', 'data', 'output',
+                        'input', 'input-sites',
+                        'seismic-moment-method')
+        features_json = ('filter-events', 'filter-inventory',
+                         'seismic-moment-options')
+        features_bool = ('resolve_seedid',
+                         'invert_events_simultaneously',
+                         'plot_energies', 'plot_optimization', 'plot_fits',
+                         'plot_eventresult', 'plot_eventsites',
+                         'print_mag')
+        for f in features_str:
+            g3.add_argument('--' + f, default=SUPPRESS)
+        for f in features_json:
+            g3.add_argument('--' + f, default=SUPPRESS, type=json.loads)
+        g3.add_argument('--njobs', default=SUPPRESS, type=int)
+        for f in features_bool:
+            g3.add_argument('--' + f.replace('_', '-'), dest=f,
+                            action='store_true', default=SUPPRESS)
+            g3.add_argument('--no-' + f.replace('_', '-'), dest=f,
+                            action='store_false', default=SUPPRESS)
 
     # Get command line arguments and start run function
-    args = vars(p.parse_args(args))
-    try:
-        run(**args)
-    except ParseError as ex:
-        p.error(ex)
+    args = mainp.parse_args(args)
+    if args.cmd == 'rt':
+        from qopen.rt import main
+        main(args)
+    else:
+        try:
+            run(**vars(args))
+        except ParseError as ex:
+            p.error(ex)

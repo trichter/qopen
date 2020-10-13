@@ -2,7 +2,7 @@
 """
 Plotting functions
 
-Arguments supported by all plotting functions via its \*\*kwargs are:
+Arguments supported by all plotting functions via its \\*\\*kwargs are:
 
 :fname: file name for the plot output
         (if not provided the figure will be left open)
@@ -378,9 +378,10 @@ def plot_sds(freq, result, ax=None,
 
     kw = {'s': 4 * MS ** 2, 'marker': 'o', 'zorder': 10, #'linewidth': 0.5,
           'c': 'k'}
-    if 'R' in result and cmap is not None:
-        Rvals = np.array(list(result['R'].values()), dtype='float')
-        nobs = np.sum(~np.isnan(Rvals), axis=0)
+    if 'nstations' in result and cmap is not None:
+#        Rvals = np.array(list(result['R'].values()), dtype='float')
+#        nobs = np.sum(~np.isnan(Rvals), axis=0)
+        nobs = result['nstations']
         if max_nobs is None:
             max_nobs = np.max(nobs)
         cmap = plt.get_cmap(cmap, max_nobs)
@@ -449,9 +450,12 @@ def plot_eventresult(result, v0=None, quantities=QUANTITIES_EVENT,
     """Plot all results of one `~qopen.core.invert()` call"""
     v0 = v0 or result.get('v0') or result.get('config', {}).get('v0')
     freq = np.array(result['freq'])
-    res = copy(result)
-    _values_view = res.pop('events').values()
-    res.update((list(_values_view))[0])
+    if 'W' in quantities or 'sds' in quantities:
+        res = copy(result)
+        _values_view = res.pop('events').values()
+        res.update((list(_values_view))[0])
+    else:
+        res = result
     N = len(quantities)
     n = int(np.ceil(np.sqrt(N)))
     fig = plt.figure()
@@ -670,11 +674,10 @@ def plot_all_sds(result, seismic_moment_method=None,
     result = result['events']
     if plot_only_ids:
         result = {id_: r for id_, r in result.items() if id_ in plot_only_ids}
-    if 'R' not in list(result.values())[0] or cmap is None:
+    if 'nstations' not in list(result.values())[0] or cmap is None:
         max_nobs = 1  # single inversion
     else:
-        Rvals = [list(evres['R'].values()) for evres in result.values()]
-        nobs = np.sum(~np.isnan(np.array(Rvals, dtype='float')), axis=1)
+        nobs = [evres['nstations'] for evres in result.values()]
         max_nobs = np.max(nobs)
     N = len(result) + (max_nobs != 1)
 #    n = int(np.ceil(np.sqrt(N)))

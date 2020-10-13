@@ -96,7 +96,7 @@ def robust_stat(data, axis=None, fall_back=5):
         for i, d in enumerate(data):
             # manually convert masked mean_ value to nan to circumvent
             # a warning
-            mean_, err_ = robust_stat(d)
+            mean_, err_ = robust_stat(d, fall_back=fall_back)
             if hasattr(mean_, 'mask') and mean_.mask:
                 mean_ = np.nan
             mean[i], err[i] = mean_, err_
@@ -105,6 +105,8 @@ def robust_stat(data, axis=None, fall_back=5):
     data = data[~data.mask]
     if len(data) < fall_back:
         return weighted_stat(data)
+    if np.ptp(data) == 0:
+        return np.mean(data), 0
     res = RLM(data, np.ones(len(data))).fit()
     return res.params[0], res.scale
 

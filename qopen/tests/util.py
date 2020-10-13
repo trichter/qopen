@@ -14,13 +14,15 @@ class _Devnull(object):
 
 
 @contextlib.contextmanager
-def quiet():
-    stdout_save = sys.stdout
-    sys.stdout = _Devnull()
+def quiet(verbose=False):
+    if not verbose:
+        stdout_save = sys.stdout
+        sys.stdout = _Devnull()
     try:
         yield
     finally:
-        sys.stdout = stdout_save
+        if not verbose:
+            sys.stdout = stdout_save
 
 
 def _replace_in_file(fname_src, fname_dest, str_src, str_dest):

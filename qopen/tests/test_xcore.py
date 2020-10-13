@@ -34,7 +34,7 @@ class TestCase(unittest.TestCase):
         self.all_tests = '-a' in args
         self.njobs = args[args.index('-n') + 1] if '-n' in args else None
 
-    def check_num_images(self, expr, num):
+    def check_num_images(self, expr, num, greater=False):
         msg = ('Only %d plot files are created (glob expression %s).\n\n'
                'Created files are:\n%s\n\n'
                '%s')
@@ -45,7 +45,10 @@ class TestCase(unittest.TestCase):
             log = 'Log file does not exist.'
         files = list(glob(expr))
         msg2 = msg % (len(files), expr, files, log)
-        self.assertEqual(len(files), num, msg=msg2)
+        if greater:
+            self.assertGreater(len(files), num, msg=msg2)
+        else:
+            self.assertEqual(len(files), num, msg=msg2)
 
     def test_entry_point(self):
         script = load_entry_point('qopen', 'console_scripts', 'qopen')
@@ -61,14 +64,14 @@ class TestCase(unittest.TestCase):
             raise unittest.SkipTest('save time')
         script = run_cmdline
 
-        args = []
+        args = ['go']
         if self.njobs:
             args.extend(['--njobs', self.njobs])
         if self.verbose:
             args.append('-vvv')
         tempdirname = 'qopen_test1' if self.permanent_tempdir else None
         with tempdir(tempdirname, self.delete):
-            script(['--create-config', '--tutorial'])
+            script(['create', '--tutorial'])
             script(args)
             # 5*5 energies, optimization, fits
             # + 5 eventresults, eventsites = 85
@@ -79,7 +82,7 @@ class TestCase(unittest.TestCase):
         # now check for "invert_events_simultaneously": true
         tempdirname = 'qopen_test2' if self.permanent_tempdir else None
         with tempdir(tempdirname, self.delete):
-            script(['--create-config', '--tutorial'])
+            script(['create', '--tutorial'])
             _replace_in_file(
                 'conf.json', 'conf2.json',
                 '"invert_events_simultaneously": false',
@@ -128,8 +131,8 @@ class TestCase(unittest.TestCase):
         b = np.array(b)[ind]
         tempdirname = 'qopen_test3' if self.permanent_tempdir else None
         with tempdir(tempdirname, self.delete):
-            run(create_config='conf.json', tutorial=True)
-            result = run(conf='conf.json', **kwargs)
+            run('create', conf='conf.json', tutorial=True)
+            result = run('go', conf='conf.json', **kwargs)
             if plot:
                 plot_comparison(result['freq'], freq, result['g0'], g0,
                                 result['b'], b)
@@ -173,8 +176,8 @@ class TestCase(unittest.TestCase):
         if self.njobs != '1' and self.all_tests:
             kwargs['njobs'] = 1
             with tempdir():
-                run(create_config='conf.json', tutorial=True)
-                result2 = run(conf='conf.json', **kwargs)
+                run('create', conf='conf.json', tutorial=True)
+                result2 = run('go', conf='conf.json', **kwargs)
             self.assertEqual(result, result2)
 
     def test_tutorial_codaQ(self):
@@ -201,9 +204,9 @@ class TestCase(unittest.TestCase):
             kwargs['verbose'] = 3
         tempdirname = 'qopen_test4' if self.permanent_tempdir else None
         with tempdir(tempdirname, self.delete):
-            run(create_config='conf.json', tutorial=True)
+            run('create', conf='conf.json', tutorial=True)
             events = read_events('example_events.xml', 'QUAKEML')[:2]
-            result = run(conf='conf.json', events=events, **kwargs)
+            result = run('go', conf='conf.json', events=events, **kwargs)
             if plot:
                 plot_comparison(result['freq'], freq, None, None,
                                 result['b'], b)
@@ -236,18 +239,24 @@ class TestCase(unittest.TestCase):
             kwargs['verbose'] = 3
         tempdirname = 'qopen_test5' if self.permanent_tempdir else None
         with tempdir(tempdirname, self.delete):
-            run(create_config='conf.json', tutorial=True)
+            run('create', conf='conf.json', tutorial=True)
             events = read_events('example_events.xml', 'QUAKEML')[:2]
-            result = run(conf='conf.json', events=events, **kwargs)
+            result = run('go', conf='conf.json', events=events, **kwargs)
             if plot:
                 plot_comparison(result['freq'], freq, None, None,
                                 result['b'], b)
                 # 3 * 2 * 2 energies, fits, optimization
-                # 2 * 2 eventresults, eventsites
-                self.check_num_images('plots/*.png', 16)
-                self.check_num_images('plots/*.pdf', 3)
+                # 2 eventresults,  (2) eventsites
+                # only results plot
+                self.check_num_images('plots/*.png', 14)
+                self.check_num_images('plots/*.pdf', 1)
         np.testing.assert_equal(result['freq'], freq)
         np.testing.assert_array_less(np.abs(np.log10(result['b'] / b)), 0.5)
+        self.assertNotIn('R', result)
+        self.assertTrue(
+                all('W' not in evres for evres in result['events'].values()))
+        self.assertTrue(
+                all('R' not in evres for evres in result['events'].values()))
 
     def test_tutorial_everything_with_nans(self):
         """Test scenarios:
@@ -256,19 +265,20 @@ class TestCase(unittest.TestCase):
             * no results for single frequency
             * only some results for single frequency
 
-            * test qopen
-            * test qopen --fix-params
+            * test qopen go
+            * test qopen plot
+            * test qopen fixed
             * test qopen --align-sites
-            * test qopen --calc-source-params
+            * test qopen recalc-source-params
+            * test qopen source-params
         """
         if not self.all_tests:
             raise unittest.SkipTest('save time')
         plot = self.all_tests
+        # first freq is failing for all events
         freq = np.array([0.01, 0.375, 0.75, 1.5, 3.0, 6.0])
         kwargs = {
             "freqs": {"width": 1, "cfreqs": list(freq)},
-            #            "coda_normalization": [180, 200],
-            #            "seismic_moment_method": None,
             'plot_optimization': plot,
             'plot_energies': plot, 'plot_fits': plot,
             'plot_eventresult': plot, 'plot_eventsites': plot,
@@ -281,45 +291,103 @@ class TestCase(unittest.TestCase):
             kwargs['verbose'] = 3
         tempdirname = 'qopen_test6' if self.permanent_tempdir else None
         with tempdir(tempdirname, self.delete):
-            run(create_config='conf.json', tutorial=True)
+            run('create', conf='conf.json', tutorial=True)
             events = read_events('example_events.xml', 'QUAKEML')
             # create one fake event for which no data is present
             events2 = read_events('example_events.xml', 'QUAKEML')
             events = events + events2[:1]
             events[-1].resource_id = 'fake'
             events[-1].origins[0].time += 500
-            result = run(conf='conf.json', events=events,
+            result = run('go', conf='conf.json', events=events,
                          coda_window=["S+20s", ["S+150s", "5SNR"]],
                          skip={"coda_window": 120},
                          **kwargs)
             self.assertIsNone(result['g0'][0])
             self.assertIsNone(result['b'][0])
+            self.assertTrue(any(
+                    'nstations' in evres
+                    for evres in result['events'].values()))
             self.assertNotIn('fake', result['events'])
-            result2 = run(conf='conf.json', events=events,
+            if plot:
+                # 5 * 5 * 3 - 3 energies, optimization, fits
+                # (one freq bacnd for one event missing)
+                # 5 * 2 eventresults, eventsites
+                self.check_num_images('plots/*.png', 82)
+                self.check_num_images('plots/*.pdf', 4)
+            run('plot', conf='conf.json', events=events,
+                input='results.json',
+                prefix='test_',
+                **kwargs)
+            run('plot', conf='conf.json', events=events,
+                eventid='20010623_0000004',
+                input='results.json',
+                prefix='test_',
+                **kwargs)
+            if plot:
+                self.check_num_images('test_plots/*.png', 2)
+                self.check_num_images('test_plots/*.pdf', 4)
+            result2 = run('fixed', conf='conf.json', events=events,
                           coda_window=["S+20s", ["S+150s", "10SNR"]],
                           skip={"coda_window": 120},
-                          fix_params='results.json',
-                          output='results_fixparams.json',
-                          plot_sds_options={"fname": "plots/sds_fix.pdf"},
-                          plot_sites_options={"fname": "plots/sites_fix.pdf"},
+                          input='results.json',
+                          prefix='fixed_',
                           **kwargs)
+            self.assertNotIn('g0', result2)
             self.assertNotIn('b', result2)
-            result3 = run(conf='conf.json',
-                          calc_source_params='results_fixparams.json',
-                          align_sites='results_fixparams.json',
-                          output='results_aligned.json',
-                          plot_sds_options={"fname": "plots/sds_al.pdf"},
-                          plot_sites_options={"fname": "plots/sites_al.pdf"},
+            if plot:
+                # energies, fits
+                # 5 * 2 eventresults, eventsites
+                # no results plot
+                self.check_num_images('fixed_plots/energies_*.png', 1, True)
+                self.check_num_images('fixed_plots/fits_*.png', 1, True)
+                self.check_num_images('fixed_plots/event*.png', 10)
+                self.check_num_images('fixed_plots/*.pdf', 3)
+            result3 = run('recalc_source_params', conf='conf.json',
+                          input='fixed_results.json',
+                          align_sites=True,
+                          prefix='aligned_',
                           **kwargs)
             self.assertNotIn('b', result3)
-            result4 = run(conf='conf.json',
-                          calc_source_params='results_aligned.json',
-                          output='results_aligned_source_params.json',
-                          plot_sds_options={"fname": "plots/sds_al2.pdf"},
-                          plot_sites_options={"fname": "plots/sites_al2.pdf"},
+            self.assertNotIn('g0', result3)
+            if plot:
+                self.check_num_images('aligned_plots/*.png', 0)
+                self.check_num_images('aligned_plots/*.pdf', 3)
+            result4 = run('recalc_source_params', conf='conf.json',
+                          input='aligned_results.json',
+                          prefix='aligned_rsp_',
                           **kwargs)
             self.assertNotIn('b', result4)
+            self.assertNotIn('g0', result4)
             self.assertEqual(result4, result3)
+            if plot:
+                self.check_num_images('aligned_rsp_plots/*.png', 0)
+                self.check_num_images('aligned_rsp_plots/*.pdf', 3)
+            with quiet(verbose=self.verbose):
+                result5 = run(
+                        'source_params', conf='conf.json',
+                        coda_window=["S+20s", ["S+150s", "10SNR"]],
+                        skip={"coda_window": 120},
+                        input='results.json',
+                        input_sites='aligned_results.json',
+                        prefix='source_params_',
+                        print_mag=True,
+                        **kwargs)
+            self.assertNotIn('b', result5)
+            self.assertNotIn('g0', result5)
+            self.assertNotIn('R', result5)
+            Mw1 = [evres.get('Mw') for evres in result4['events'].values()]
+            Mw2 = [evres.get('Mw') for evres in result5['events'].values()]
+            for mw1, mw2 in zip(Mw1, Mw2):
+                if mw1 and mw2:
+                    self.assertLess(abs(mw1 - mw2), 0.5)
+            if plot:
+                # energies and fits, no eventsites, no sites.pdf
+                self.check_num_images(
+                        'source_params_plots/energies_*.png', 1, True)
+                self.check_num_images(
+                        'source_params_plots/fits_*.png', 1, True)
+                self.check_num_images('source_params_plots/event*.png', 5)
+                self.check_num_images('source_params_plots/*.pdf', 2)
 
     def test_plugin_option(self):
         f = init_data('plugin', plugin='qopen.tests.test_xcore : gw_test')

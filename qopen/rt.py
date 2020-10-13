@@ -1,13 +1,20 @@
-# Copyright 2015-2019 Tom Eulenfeld, MIT license
+# Copyright 2015-2020 Tom Eulenfeld, MIT license
 """
-Radiative Transfer: 3D approximative interpolation solution of Paasschens (1997)
+Calculate or plot spectral energy densitiy Green's function
 
-Use the ``qopen-rt`` command line script to calculate or plot the
-spectral energy densitiy Green's function.
-
-This module also defines analytical Green's functions for 1D and 2D isotropic
-radiative transfer. The Green's function used by the ``qopen`` command
+The Green's function used by the ``qopen`` command
 line program can be switched with the "G_plugin" configuration option.
+
+Available Green's functions:
+
+.. code-block:: none
+
+    rt3d (default) ...     Isotropic radiative transfer, 3D approximative
+                           interpolation solution of Paasschens (1997)
+    rt2d/1d ...            Isotropic radiative transfer, 2D or 1D solution
+    diff3d/2d/1d ...       Diffusion, 3D, 2D or 1D
+    diffapprox3d/2d/1d ... Approximation of diffusion, 3D, 2D or 1D,
+                           often used to determine coda Q
 
 Used variables:
 
@@ -20,14 +27,12 @@ Used variables:
     la ... absorption length in m
     g0 = 1/l ... (transport) scattering coefficient
 
-
 .. note::
-    The formula for the 3D Green's function is valid for the
+    The formulas for radiative transfer are valid for the
     scattering coefficient (g0) under assumption of isotropic scattering.
     However, g0 is used by `qopen.core` module as transport scattering
     coefficient (g*) under the assumption of non-isotropic scattering.
     ``g*=g0`` is a reasonable assumption under these conditions.
-
 """
 
 import argparse
@@ -294,8 +299,9 @@ CHOICES_TYPE = ('rt3d', 'rt2d', 'rt1d', 'diff3d', 'diff2d', 'diff1d',
                 'diffapprox3d', 'diffapprox2d', 'diffapprox1d')
 
 
-def main(args=None):
-    p = argparse.ArgumentParser(description=__doc__.split('\n')[1])
+def create_parser(p):
+    if p is None:
+        p = argparse.ArgumentParser(description=__doc__.split('\n')[1])
     choices = ('calc', 'calc-direct', 'plot-t', 'plot-r', 'plot-rt')
     p.add_argument('command', help='command', choices=choices)
     p.add_argument('c', help='velocity (m/s)', type=float)
@@ -307,23 +313,30 @@ def main(args=None):
     p.add_argument('--log', help='log plot', action='store_true')
     msg = 'do not include direct wave term in plots'
     p.add_argument('--no-direct', help=msg, action='store_true')
-    msg = "type of Green's function to use"
+    msg = ("type of Green's function to use, "
+           "specify multiple types for comparison")
     p.add_argument('--type', help=msg, default=[CHOICES_TYPE[0]],
                    choices=CHOICES_TYPE, nargs='+')
-    args = p.parse_args(args)
-    r, t, c, l, la, type = (args.r, args.t, args.c, args.l, args.absorption,
+    return p
+
+
+def main(args=None):
+    if args is None:
+        p = create_parser(None)
+        args = p.parse_args(args)
+    r, t, c, l, la, types = (args.r, args.t, args.c, args.l, args.absorption,
                             args.type)
     com = args.command
-    if com in ('calc', 'plot-rt') and len(type) != 1:
+    if com in ('calc', 'plot-rt') and len(types) != 1:
         raise ValueError('More than one type not allowed for that command')
     if 'calc' in com:
-        type = type[0]
+        type_ = types[0]
         if com == 'calc':
-            G_ = G(r, t, c, 1/l, type=type)
+            G_ = G(r, t, c, 1/l, type=type_)
         else:
-            Gdirect = (rt1d_direct if type == 'rt1d' else
-                       rt2d_direct if type == 'rt2d' else
-                       rt3d_direct if type == 'rt3d' else None)
+            Gdirect = (rt1d_direct if type_ == 'rt1d' else
+                       rt2d_direct if type_ == 'rt2d' else
+                       rt3d_direct if type_ == 'rt3d' else None)
             if Gdirect is None:
                 raise ValueError('No direct term for this Greens function.')
             G_ = Gdirect(t, c, 1/l)
@@ -333,15 +346,15 @@ def main(args=None):
     else:
         import matplotlib.pyplot as plt
         kw = dict(log=args.log, include_direct=not args.no_direct, la=la)
-        for typ in type:
-            kw['type'] = typ
+        for type_ in types:
+            kw['type'] = type_
             if com == 'plot-t':
                 plot_t(c, 1/l, r, t=t, **kw)
             elif com == 'plot-r':
                 plot_r(c, 1/l, t, r=r, **kw)
             elif com == 'plot-rt':
                 plot_rt(c, 1/l, t=t, r=r, **kw)
-        if len(type) > 1:
+        if len(types) > 1:
             plt.legend()
         plt.show()
 

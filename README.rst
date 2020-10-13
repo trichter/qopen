@@ -72,13 +72,13 @@ The installation can be tested with::
 Tutorial
 ........
 
-The code is run by the installed command line script `qopen`. A tutorial can be created with the appropriate flag::
+The code is run by the installed command line script `qopen`. A tutorial can be created with::
 
-    qopen --tutorial
+    qopen create --tutorial
 
 This command copies an example configuration file in JSON format and the corresponding data files into the current directory. The configuration file is heavily commented and should be rather self-explanatory. Now you can perform the inversion by simply running ::
 
-    qopen
+    qopen go
 
 which will calculate the results and create different plots.
 
@@ -87,9 +87,33 @@ Use your own data
 
 To use the script with your own data you need 1. an inventory (StationXML or other ObsPy readable format) of your stations, 2. the earthquake catalog (QuakeML or other ObsPy readable format) preferable with P and S picks and 3. the waveforms. Waveforms may exist in data files of various formats or can be fetched from a webservice. A custom solution for waveform retrieval is also possible (e.g. mixing of data files and web requests). An example configuration file can be created with ::
 
-    qopen --create-config
+    qopen create
 
 This file has to be adapted to your needs (time window selection, etc.). The inversion is started by simply running `qopen` again.
+
+Available Qopen commands
+........................
+
+Available Qopen commands can be displayed with `qopen -h`::
+
+    create              Create example configuration in specified file
+                        (default: conf.json if option is invoked without
+                        parameter)
+    go                  Estimate intrinsic attenuation and scattering
+                        strength, site responses, event spectra by inversion
+                        of envelopes
+    fixed               Recalculate site responses and event spectra with
+                        fixed attenuation parameters (g0, b) by inversion of
+                        envelopes
+    source_params       Estimate event spectra including moment magnitude with
+                        fixed attenuation parameters (g0, b) and fixed site
+                        responses by inversion of envelopes
+    recalc_source_params
+                        Recalculate source parameters without new inversion
+    plot                Replot results. Can be used together with -e to plot
+                        event results
+    rt                  Calculate or plot spectral energy densitiy Green's
+                        functions, mainly based on radiative transfer
 
 Use Qopen in Python scripts
 ...........................

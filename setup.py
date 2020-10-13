@@ -21,8 +21,7 @@ LONG_DESCRIPTION = 'Please look at the project site for more information.'
 
 ENTRY_POINTS = {
     'console_scripts': ['qopen-runtests = qopen.tests:run',
-                        'qopen = qopen.core:run_cmdline',
-                        'qopen-rt = qopen.rt:main']}
+                        'qopen = qopen.core:run_cmdline']}
 
 DEPS = ['matplotlib>=1.3', 'numpy>=1.8', 'scipy>=0.14',
         'setuptools', 'obspy>=1.0', 'statsmodels']

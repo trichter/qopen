@@ -73,17 +73,17 @@ class TestCase(unittest.TestCase):
         self.script(cmd.split())
 
     def test_script(self):
-        self.script = load_entry_point('qopen', 'console_scripts', 'qopen-rt')
+        self.script = load_entry_point('qopen', 'console_scripts', 'qopen')
         with tempdir():
             with quiet():
-                self.cmd('calc 1600 500 -t 5 -r 1000')
-                self.cmd('calc 1600 500 -t 5 -r 1000 -a 5000')
-                self.cmd('calc-direct 1600 500 -t 5')
+                self.cmd('rt calc 1600 500 -t 5 -r 1000')
+                self.cmd('rt calc 1600 500 -t 5 -r 1000 -a 5000')
+                self.cmd('rt calc-direct 1600 500 -t 5')
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore')
-                    self.cmd('plot-t 1600 500 -r 1000')
-                    self.cmd('plot-t 1600 500 -r 1000 --no-direct')
-                    self.cmd('plot-r 1600 500 -t 0.5 --type rt2d')
+                    self.cmd('rt plot-t 1600 500 -r 1000')
+                    self.cmd('rt plot-t 1600 500 -r 1000 --no-direct')
+                    self.cmd('rt plot-r 1600 500 -t 0.5 --type rt2d')
 
 
 if __name__ == '__main__':

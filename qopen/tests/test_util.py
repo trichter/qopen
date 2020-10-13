@@ -92,15 +92,15 @@ class TestCase(unittest.TestCase):
                                       smooth(x, 11, method=None))
 
     def test_gmean_list_with_nan(self):
-        expected = [None, 1.2e-05, 2.4e-06]
+        expected = [None, 1.2e-05, 2.4e-06, 1]
         results = {"events": {
-            "1": {"g0": [None, 2.4e-05, 2.4e-06]},
-            "2": {"g0": [None, 6.0e-06, 2.4e-06]},
-            "3": {"g0": [None, None, 2.4e-06]}}}
+            "1": {"g0": [None, 2.4e-05, 2.4e-06, 1]},
+            "2": {"g0": [None, 6.0e-06, 2.4e-06, 1]},
+            "3": {"g0": [None, None, 2.4e-06, 1]}}}
         collected = collect_results(results, only=['g0'])
         r1 = gmeanlist(collected['g0'], axis=0, robust=False)
         r2 = gmeanlist(collected['g0'], axis=0, robust=True)
-        r3 = gmeanlist(collected['g0'], axis=0, robust=False, fall_back=2)
+        r3 = gmeanlist(collected['g0'], axis=0, robust=True, fall_back=2)
         self.assertIsNone(r1[0])
         self.assertIsNone(r2[0])
         self.assertIsNone(r3[0])
