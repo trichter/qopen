@@ -1,3 +1,6 @@
+v4.0-dev:
+  * complete refactoring of Qopen script to use subcommands for the different tasks
+  * add source_params subcommand to calculate sorce parameters including moment magnitude with the help of previous results
 v3.0:
   * prefix option is more stringent now and adds prefix also to log file
   * add option to filter event catalog, add option to resolve full SEED id, add corresponding command line options
