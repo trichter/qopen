@@ -1751,8 +1751,8 @@ def run(cmd='go',
     prefix = args.pop('prefix', None)
     if prefix:
         prefix_path = os.path.dirname(prefix)
-        if prefix_path != '' and not os.path.isdir(prefix_path):
-            os.makedirs(prefix_path)
+        if prefix_path != '':
+            os.makedirs(prefix_path, exist_ok=True)
     if isinstance(kw['logfile'], str) and prefix:
         kw['logfile'] = prefix + kw['logfile']
     output = args.pop('output', None)
@@ -1883,8 +1883,8 @@ def run(cmd='go',
         print(json.dumps(result))
     elif output is not None:
         path = os.path.dirname(output)
-        if path != '' and not os.path.isdir(path):
-            os.makedirs(path)
+        if path != '':
+            os.makedirs(path, exist_ok=True)
         with open(output, 'w') as f:
             json.dump(result, f, indent=indent)
     if print_mag and 'events' in result:

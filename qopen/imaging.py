@@ -91,8 +91,8 @@ def _savefig(fig, title=None, fname=None, dpi=None, figsize=None):
         extra = ()
     if fname:
         path = os.path.dirname(fname)
-        if path != '' and not os.path.isdir(path):
-            os.makedirs(path)
+        if path != '':
+            os.makedirs(path, exist_ok=True)
         fig.savefig(fname, bbox_inches='tight', bbox_extra_artists=extra,
                     dpi=dpi)
         plt.close(fig)
