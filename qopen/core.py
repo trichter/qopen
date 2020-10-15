@@ -1841,6 +1841,10 @@ def run(cmd='go',
     # Start main routine with remaining args
     log.info('Use Qopen command %s', cmd)
     log.debug('start qopen routine with parameters %s', json.dumps(args))
+    if align_sites and cmd == 'source_params':
+        msg = 'align sites not valid for command source_params -> set to False'
+        log.warning(msg)
+        align_sites = False
     if load_inv:
         args['inventory'] = inventory
     if load_all:
@@ -1894,6 +1898,14 @@ def run(cmd='go',
     time_end = time.time()
     log.debug('used time: %.1fs', time_end - time_start)
     return result
+
+
+def _add_bool_argument(parser, feature, help=None):
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument('--' + feature, dest=feature,
+                        action='store_true', default=SUPPRESS, help=help)
+    group.add_argument('--no-' + feature, dest=feature,
+                        action='store_false', default=SUPPRESS)
 
 
 def run_cmdline(args=None):
@@ -1950,7 +1962,7 @@ def run_cmdline(args=None):
     msg = 'Configuration file to create (default: conf.json)'
     p1.add_argument('-c', '--conf', default='conf.json', help=msg)
     for p in (p2, p3, p4, p5):
-        msg = 'if an exception occurs start the debugger'
+        msg = 'Start the debugger upon exception'
         p.add_argument('--pdb', action='store_true', help=msg)
         msg = 'Configuration file to load (default: conf.json)'
         p.add_argument('-c', '--conf', default='conf.json', help=msg)
@@ -1958,15 +1970,13 @@ def run_cmdline(args=None):
         p.add_argument('-v', '--verbose', help=msg, action='count',
                        default=SUPPRESS)
         msg = 'Process only event with this id'
-        p.add_argument('-e', '--eventid', help=msg)
+        p.add_argument('-e', '--eventid', help=msg, default=SUPPRESS)
         msg = ('Add prefix for all output files defined in config '
                '(useful for commands operating on JSON files)')
         p.add_argument('--prefix', help=msg, default=SUPPRESS)
     for p in (p2, p3, p5):
-        msg = ('Align site responses and correct source parameters'
-               'results in given json file')
-        p.add_argument('--align-sites', help=msg, action='store_true',
-                       default=SUPPRESS)
+        msg = 'Align site responses and correct source parameters'
+        _add_bool_argument(p, 'align-sites', help=msg)
         msg = ('Site response of this station is fixed '
                '(default: None -> product of station site responses is fixed)')
         p.add_argument('--align-sites-station', help=msg, default=SUPPRESS)
@@ -1985,21 +1995,18 @@ def run_cmdline(args=None):
                         'seismic-moment-method')
         features_json = ('filter-events', 'filter-inventory',
                          'seismic-moment-options')
-        features_bool = ('resolve_seedid',
-                         'invert_events_simultaneously',
-                         'plot_energies', 'plot_optimization', 'plot_fits',
-                         'plot_eventresult', 'plot_eventsites',
-                         'print_mag')
+        features_bool = ('resolve-seedid',
+                         'invert-events-simultaneously',
+                         'plot-energies', 'plot-optimization', 'plot-fits',
+                         'plot-eventresult', 'plot-eventsites',
+                         'print-mag')
         for f in features_str:
             g3.add_argument('--' + f, default=SUPPRESS)
         for f in features_json:
             g3.add_argument('--' + f, default=SUPPRESS, type=json.loads)
         g3.add_argument('--njobs', default=SUPPRESS, type=int)
         for f in features_bool:
-            g3.add_argument('--' + f.replace('_', '-'), dest=f,
-                            action='store_true', default=SUPPRESS)
-            g3.add_argument('--no-' + f.replace('_', '-'), dest=f,
-                            action='store_false', default=SUPPRESS)
+            _add_bool_argument(g3, f)
 
     # Get command line arguments and start run function
     args = mainp.parse_args(args)
