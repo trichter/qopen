@@ -704,7 +704,7 @@ def plot_all_sds(result, seismic_moment_method=None,
     if max_nobs != 1:
         ax = plt.subplot(gs[(N-1) // nx, (N-1) % nx])
         ax.set_axis_off()
-        fig.colorbar(sc, ax=ax, shrink=0.9, format='%d', label='nobs',
+        fig.colorbar(sc, ax=ax, shrink=0.9, format='%d', label='nstations',
                      ticks=np.arange(0, max_nobs + 1, max(1, max_nobs // 5)))
     _savefig(fig, **kwargs)
 

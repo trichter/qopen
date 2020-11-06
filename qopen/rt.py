@@ -314,7 +314,7 @@ def create_parser(p):
     msg = 'do not include direct wave term in plots'
     p.add_argument('--no-direct', help=msg, action='store_true')
     msg = ("type of Green's function to use, "
-           "specify multiple types for comparison")
+           "specify multiple types for comparison, e.g. --type rt3d rt2d")
     p.add_argument('--type', help=msg, default=[CHOICES_TYPE[0]],
                    choices=CHOICES_TYPE, nargs='+')
     return p

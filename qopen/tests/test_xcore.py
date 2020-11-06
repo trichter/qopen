@@ -342,7 +342,7 @@ class TestCase(unittest.TestCase):
                 self.check_num_images('fixed_plots/fits_*.png', 1, True)
                 self.check_num_images('fixed_plots/event*.png', 10)
                 self.check_num_images('fixed_plots/*.pdf', 3)
-            result3 = run('recalc_source_params', conf='conf.json',
+            result3 = run('recalc_source', conf='conf.json',
                           input='fixed_results.json',
                           align_sites=True,
                           prefix='aligned_',
@@ -352,7 +352,7 @@ class TestCase(unittest.TestCase):
             if plot:
                 self.check_num_images('aligned_plots/*.png', 0)
                 self.check_num_images('aligned_plots/*.pdf', 3)
-            result4 = run('recalc_source_params', conf='conf.json',
+            result4 = run('recalc_source', conf='conf.json',
                           input='aligned_results.json',
                           prefix='aligned_rsp_',
                           **kwargs)
@@ -364,12 +364,12 @@ class TestCase(unittest.TestCase):
                 self.check_num_images('aligned_rsp_plots/*.pdf', 3)
             with quiet(verbose=self.verbose):
                 result5 = run(
-                        'source_params', conf='conf.json',
+                        'source', conf='conf.json',
                         coda_window=["S+20s", ["S+150s", "10SNR"]],
                         skip={"coda_window": 120},
                         input='results.json',
                         input_sites='aligned_results.json',
-                        prefix='source_params_',
+                        prefix='source_',
                         print_mag=True,
                         **kwargs)
             self.assertNotIn('b', result5)
@@ -383,11 +383,11 @@ class TestCase(unittest.TestCase):
             if plot:
                 # energies and fits, no eventsites, no sites.pdf
                 self.check_num_images(
-                        'source_params_plots/energies_*.png', 1, True)
+                        'source_plots/energies_*.png', 1, True)
                 self.check_num_images(
-                        'source_params_plots/fits_*.png', 1, True)
-                self.check_num_images('source_params_plots/event*.png', 5)
-                self.check_num_images('source_params_plots/*.pdf', 2)
+                        'source_plots/fits_*.png', 1, True)
+                self.check_num_images('source_plots/event*.png', 5)
+                self.check_num_images('source_plots/*.pdf', 2)
 
     def test_plugin_option(self):
         f = init_data('plugin', plugin='qopen.tests.test_xcore : gw_test')

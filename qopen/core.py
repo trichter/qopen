@@ -1036,7 +1036,7 @@ def invert(events, inventory, get_waveforms,
         All other options are described in the example configuration file.
     :return: result dictionary
     """
-    assert cmd in ('go', 'fixed', 'source_params')
+    assert cmd in ('go', 'fixed', 'source')
     if coda_normalization is not None and cmd != 'go':
         raise ValueError('coda_normalization is only allowed for go command')
     msg = 'use %s cores for parallel computation'
@@ -1273,8 +1273,8 @@ def invert(events, inventory, get_waveforms,
         stations = list(OrderedDict.fromkeys(stations))
     # Construct kwargs for invert_fb call
     kw = copy(kwargs)
-    fix = cmd in ('fixed', 'source_params')
-    fix_sites = cmd == 'source_params'
+    fix = cmd in ('fixed', 'source')
+    fix_sites = cmd == 'source'
     kw.update({'rho0': rho0, 'borehole_stations': borehole_stations,
                'skip': skip, 'filter': filter,
                'fix': fix, 'fix_sites': fix_sites,
@@ -1504,7 +1504,7 @@ def _plot(result, eventid=None, v0=None,
     if eventid is None:
         if plot_results and 'g0' in result:
             # only plot results if b key is in result
-            # this is not the case for fixed and source_params command
+            # this is not the case for fixed and source command
             pkwargs = copy(plot_results_options)
             fname = pkwargs.pop('fname', 'results.pdf')
             from qopen.imaging import plot_results
@@ -1691,8 +1691,8 @@ def run(cmd='go',
         file
     :return: result dictionary
     """
-    if cmd not in ('create', 'go', 'fixed', 'source_params',
-                   'recalc_source_params', 'plot', 'rt'):
+    if cmd not in ('create', 'go', 'fixed', 'source',
+                   'recalc_source', 'plot', 'rt'):
         raise ValueError(f'Unkown command {cmd}')
     time_start = time.time()
     if pdb:
@@ -1782,8 +1782,8 @@ def run(cmd='go',
     configure_logging(**kw)
     log.info('Qopen version %s', qopen.__version__)
     align_sites = args.pop('align_sites', False)
-    load_inv = cmd != 'recalc_source_params' or align_sites
-    load_all = cmd != 'recalc_source_params'
+    load_inv = cmd != 'recalc_source' or align_sites
+    load_all = cmd != 'recalc_source'
     try:
         if load_inv:
             # Read inventory
@@ -1841,8 +1841,8 @@ def run(cmd='go',
     # Start main routine with remaining args
     log.info('Use Qopen command %s', cmd)
     log.debug('start qopen routine with parameters %s', json.dumps(args))
-    if align_sites and cmd == 'source_params':
-        msg = 'align sites not valid for command source_params -> set to False'
+    if align_sites and cmd == 'source':
+        msg = 'align sites not valid for command source -> set to False'
         log.warning(msg)
         align_sites = False
     if load_inv:
@@ -1850,20 +1850,20 @@ def run(cmd='go',
     if load_all:
         args['get_waveforms'] = get_waveforms
         args['events'] = events
-    if cmd in ('go', 'fixed', 'source_params'):
-        if cmd in ('fixed', 'source_params'):
+    if cmd in ('go', 'fixed', 'source'):
+        if cmd in ('fixed', 'source'):
             args['input'] = _load_json_results(args, 'input')
-            if 'input_sites' in args and cmd == 'source_params':
+            if 'input_sites' in args and cmd == 'source':
                 input_sites = _load_json_results(args, 'input_sites')
                 args['input']['R'] = input_sites['R']
         # main inversion
         result = invert_wrapper(noplots=align_sites, **args)
         # Output and return result
         log.debug('inversion results: %s', json.dumps(result))
-    elif cmd == 'recalc_source_params':
+    elif cmd == 'recalc_source':
         result = _load_json_results(args, 'input')
     if align_sites:
-        msg = 'align station site responses and calculate source parameters'
+        msg = 'align station site responses and calculate source spectra'
         log.info(msg)
         kw = {'seismic_moment_method': args.pop('seismic_moment_method', None),
               'seismic_moment_options': args.pop('seismic_moment_options',
@@ -1875,8 +1875,8 @@ def run(cmd='go',
         log.debug('results after alignment of site responses: %s',
                   json.dumps(result))
         _plot(result, eventid=eventid, **args)
-    elif cmd == 'recalc_source_params':
-        log.info('recalculate source parameters')
+    elif cmd == 'recalc_source':
+        log.info('recalculate source spectra')
         kw = {'seismic_moment_method': args.pop('seismic_moment_method', None),
               'seismic_moment_options': args.pop('seismic_moment_options',
                                                  None)}
@@ -1900,12 +1900,12 @@ def run(cmd='go',
     return result
 
 
-def _add_bool_argument(parser, feature, help=None):
+def _add_bool_argument(parser, feature, help=None, help2=None):
     group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument('--' + feature, dest=feature,
                         action='store_true', default=SUPPRESS, help=help)
     group.add_argument('--no-' + feature, dest=feature,
-                        action='store_false', default=SUPPRESS)
+                        action='store_false', default=SUPPRESS, help=help2)
 
 
 def run_cmdline(args=None):
@@ -1922,63 +1922,67 @@ def run_cmdline(args=None):
     sub = mainp.add_subparsers(title='Qopen commands', dest='cmd')
 
     msg = ('Create example configuration in specified file '
-           '(default: conf.json if option is invoked without parameter)')
+           '(default: conf.json)')
     p1 = sub.add_parser('create', help=msg, description=msg)
     msg = ('Estimate intrinsic attenuation and scattering strength, '
-           'site responses, event spectra by inversion of envelopes')
+           'site responses, event spectra (including source parameters) '
+           'by inversion of envelopes')
     p2 = sub.add_parser('go', help=msg, description=msg)
-    msg = ('Recalculate site responses and event spectra with '
-           'fixed attenuation parameters (g0, b) by inversion '
-           'of envelopes')
+    msg = ('Estimate site responses and event spectra '
+           '(including source parameters) with fixed attenuation parameters '
+           '(g0, b) by inversion of envelopes')
     desc = msg + '. Specify JSON file with attenuation results with --input.'
     p3 = sub.add_parser('fixed', help=msg, description=desc)
-    msg = ('Estimate event spectra including moment magnitude with '
-           'fixed attenuation parameters (g0, b) and fixed site responses '
-           'by inversion of envelopes')
+    msg = ('Estimate event spectra and derive source parameters, e.g. '
+           'moment magnitude, with fixed attenuation parameters (g0, b) and '
+           'fixed site responses by inversion of envelopes')
     desc = msg + (
             '. Specify JSON file with attenuation results and site responses '
             'with --input, if site responses should be taken from a different '
             'file, specify it with --input-sites.')
-    p4 = sub.add_parser('source_params', help=msg, description=desc)
-    msg = 'Recalculate source parameters without new inversion'
+    p4 = sub.add_parser('source', help=msg, description=desc)
+    msg = ('Derive source parameters from source spectra without '
+           'new inversion '
+           '(possibly changed configuration, e.g. seismic_moment_options)')
     desc = msg + (
-            ', specify JSON file with sites and source spectra with --input.')
-    p5 = sub.add_parser('recalc_source_params', help=msg, description=msg)
+            ', specify JSON file with source spectra with --input. '
+            'If align-sites is turned on, the JSON file has to contain '
+            'site responses, too.')
+    p5 = sub.add_parser('recalc_source', help=msg, description=desc)
     msg = ('Replot results. Can be used '
            'together with -e to plot event results')
     desc = msg + (
             '. Specify JSON file with reults with --input.')
     p6 = sub.add_parser('plot', help=msg, description=desc)
     msg = ("Calculate or plot spectral energy densitiy Green's functions, "
-           "mainly based on radiative transfer")
+           "used in the above inversions, mainly based on radiative transfer")
     from qopen.rt import __doc__ as rtdoc, create_parser
-    p6 = sub.add_parser('rt', help=msg, description=rtdoc,
+    p7 = sub.add_parser('rt', help=msg, description=rtdoc,
                         formatter_class=argparse.RawDescriptionHelpFormatter)
-    create_parser(p6)
+    create_parser(p7)
 
     msg = 'additionally create data files for working example'
     p1.add_argument('--tutorial', help=msg, action='store_true',
                     default=SUPPRESS)
     msg = 'Configuration file to create (default: conf.json)'
     p1.add_argument('-c', '--conf', default='conf.json', help=msg)
-    for p in (p2, p3, p4, p5):
-        msg = 'Start the debugger upon exception'
-        p.add_argument('--pdb', action='store_true', help=msg)
+    for p in (p2, p3, p4, p5, p6):
         msg = 'Configuration file to load (default: conf.json)'
         p.add_argument('-c', '--conf', default='conf.json', help=msg)
         msg = 'Set chattiness on command line. Up to 3 -v flags are possible'
         p.add_argument('-v', '--verbose', help=msg, action='count',
                        default=SUPPRESS)
+        msg = 'Start the debugger upon exception'
+        p.add_argument('--pdb', action='store_true', help=msg)
         msg = 'Process only event with this id'
         p.add_argument('-e', '--eventid', help=msg, default=SUPPRESS)
-        msg = ('Add prefix for all output files defined in config '
-               '(useful for commands operating on JSON files)')
+        msg = 'Add prefix for all output files defined in config'
         p.add_argument('--prefix', help=msg, default=SUPPRESS)
     for p in (p2, p3, p5):
-        msg = 'Align site responses and correct source parameters'
+        msg = 'Align site responses and correct source spectra'
         _add_bool_argument(p, 'align-sites', help=msg)
         msg = ('Site response of this station is fixed '
-               '(default: None -> product of station site responses is fixed)')
+               '(default: product of station site responses is fixed)')
         p.add_argument('--align-sites-station', help=msg, default=SUPPRESS)
         msg = ('Value of site response for specified station or product of '
                'station site responses (default: 1)')
@@ -1989,17 +1993,17 @@ def run_cmdline(args=None):
                'See the example configuration file for a description of '
                'these options. Options representing dictionaries or lists are '
                'expected to be valid JSON.')
-        g3 = p.add_argument_group('optional qopen arguments', description=msg)
         features_str = ('events', 'inventory', 'data', 'output',
                         'input', 'input-sites',
                         'seismic-moment-method')
         features_json = ('filter-events', 'filter-inventory',
                          'seismic-moment-options')
-        features_bool = ('resolve-seedid',
-                         'invert-events-simultaneously',
-                         'plot-energies', 'plot-optimization', 'plot-fits',
-                         'plot-eventresult', 'plot-eventsites',
+        features_bool = ('resolve-seedid', 'invert-events-simultaneously',
                          'print-mag')
+        features_plot = ('energies', 'optimization', 'fits',
+                         'eventresult', 'eventsites', 'results', 'sites',
+                         'sds', 'mags')
+        g3 = p.add_argument_group('optional qopen arguments', description=msg)
         for f in features_str:
             g3.add_argument('--' + f, default=SUPPRESS)
         for f in features_json:
@@ -2007,6 +2011,19 @@ def run_cmdline(args=None):
         g3.add_argument('--njobs', default=SUPPRESS, type=int)
         for f in features_bool:
             _add_bool_argument(g3, f)
+    p6.add_argument('--input', default=SUPPRESS)
+    for p in (p2, p3, p4, p5, p6):
+        msg = ('The plot configuration can be overridden with '
+               'the following options: '
+               '--plot-{type}, --no-plot-{type}, --plot-{type}-options '
+               'in which {type} is one of %s' % (features_plot,))
+        g4 = p.add_argument_group('optional qopen plot arguments',
+                                  description=msg)
+        for f in features_plot:
+            _add_bool_argument(g4, 'plot-' + f, help=argparse.SUPPRESS,
+                               help2=argparse.SUPPRESS)
+            g4.add_argument(f'--plot-{f}-options', default=SUPPRESS,
+                            type=json.loads, help=argparse.SUPPRESS)
 
     # Get command line arguments and start run function
     args = mainp.parse_args(args)

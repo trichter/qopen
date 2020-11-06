@@ -97,23 +97,26 @@ Available Qopen commands
 Available Qopen commands can be displayed with `qopen -h`::
 
     create              Create example configuration in specified file
-                        (default: conf.json if option is invoked without
-                        parameter)
+                        (default: conf.json)
     go                  Estimate intrinsic attenuation and scattering
-                        strength, site responses, event spectra by inversion
-                        of envelopes
-    fixed               Recalculate site responses and event spectra with
-                        fixed attenuation parameters (g0, b) by inversion of
-                        envelopes
-    source_params       Estimate event spectra including moment magnitude with
-                        fixed attenuation parameters (g0, b) and fixed site
-                        responses by inversion of envelopes
-    recalc_source_params
-                        Recalculate source parameters without new inversion
+                        strength, site responses, event spectra (including
+                        source parameters) by inversion of envelopes
+    fixed               Estimate site responses and event spectra (including
+                        source parameters) with fixed attenuation parameters
+                        (g0, b) by inversion of envelopes
+    source              Estimate event spectra and derive source parameters,
+                        e.g. moment magnitude, with fixed attenuation
+                        parameters (g0, b) and fixed site responses by
+                        inversion of envelopes
+    recalc_source       Derive source parameters from source spectra without
+                        new inversion (possibly changed configuration, e.g.
+                        seismic_moment_options)
     plot                Replot results. Can be used together with -e to plot
                         event results
     rt                  Calculate or plot spectral energy densitiy Green's
-                        functions, mainly based on radiative transfer
+                        functions, used in the above inversions, mainly based
+                        on radiative transfer
+
 
 Use Qopen in Python scripts
 ...........................
