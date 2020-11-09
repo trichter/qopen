@@ -136,7 +136,7 @@ following settings in conf.json:
 Of course, site amplifications and event spectra are useless in this
 case.
 
-#### Get help and discuss
+## Get help and discuss
 
 Please consult the [API documentation](https://qopen.readthedocs.io).
 
@@ -149,3 +149,24 @@ A somewhat advanced example using the Qopen package:
 
 These studies make use of Qopen:
 [Google Scholar Link](https://scholar.google.com/scholar?cites=2976023441381045818&scipsc=1&q=Qopen).
+
+## References
+
+Initial method:
+C Sens-Schönfelder and U Wegler (2006),
+Radiative transfer theory for estimation of the seismic moment,
+*Geophysical Journal International*, 167(3), 1363–1372.
+doi:[10.1111/j.1365-246X.2006.03139.x](https://dx.doi.org/10.1111/j.1365-246X.2006.03139.x)
+
+Enhanced Qopen method and implementation:
+T Eulenfeld and U Wegler (2016),
+Measurement of intrinsic and scattering attenuation of shear waves in two sedimentary basins and comparison to crystalline sites in Germany,
+*Geophysical Journal International*, 205(2), 744-757,
+doi:[10.1093/gji/ggw035](https://dx.doi.org/10.1093/gji/ggw035)
+[[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00038348/Eulenfeld_Wegler_2016_Intrinsic_and_scattering_attenuation_a.pdf)]
+
+Advanced example making use of alignment of site responses:
+T Eulenfeld and U Wegler (2017),
+Crustal intrinsic and scattering attenuation of high-frequency shear waves in the contiguous United States,
+*Journal of Geophysical Research: Solid Earth*, 122, doi:[10.1002/2017JB014038](https://dx.doi.org/10.1002/2017JB014038).
+[[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00040716/Eulenfeld_Wegler_2017_US_intrinsic_and_scattering_attenuation.pdf)]
