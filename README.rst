@@ -124,7 +124,7 @@ Use Qopen in Python scripts
 To call Qopen from Python do e.g. ::
 
     from qopen import run
-    run(conf='conf.json')
+    run('go', conf='conf.json')
 
 All configuration options in `conf.json` can be overwritten by keyword
 arguments passed to `run()`.
