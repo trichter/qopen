@@ -153,20 +153,27 @@ These studies make use of Qopen:
 ## References
 
 Initial method:
-C Sens-Schönfelder and U Wegler (2006),
+Sens-Schönfelder C and Wegler U (2006),
 Radiative transfer theory for estimation of the seismic moment,
 *Geophysical Journal International*, 167(3), 1363–1372.
 doi:[10.1111/j.1365-246X.2006.03139.x](https://dx.doi.org/10.1111/j.1365-246X.2006.03139.x)
 
 Enhanced Qopen method and implementation:
-T Eulenfeld and U Wegler (2016),
+Eulenfeld T and Wegler U (2016),
 Measurement of intrinsic and scattering attenuation of shear waves in two sedimentary basins and comparison to crystalline sites in Germany,
 *Geophysical Journal International*, 205(2), 744-757,
 doi:[10.1093/gji/ggw035](https://dx.doi.org/10.1093/gji/ggw035)
 [[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00038348/Eulenfeld_Wegler_2016_Intrinsic_and_scattering_attenuation_a.pdf)]
 
 Advanced example making use of alignment of site responses:
-T Eulenfeld and U Wegler (2017),
+Eulenfeld T and Wegler U (2017),
 Crustal intrinsic and scattering attenuation of high-frequency shear waves in the contiguous United States,
 *Journal of Geophysical Research: Solid Earth*, 122, doi:[10.1002/2017JB014038](https://dx.doi.org/10.1002/2017JB014038).
 [[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00040716/Eulenfeld_Wegler_2017_US_intrinsic_and_scattering_attenuation.pdf)]
+
+Comparison to inversion with the help of Mote-Carlo simulations based on elastic radiative transfer theory, relating g0 to g*:
+Gaebler PJ, Eulenfeld T and Wegler U (2015),
+Seismic scattering and absorption parameters in the W-Bohemia/Vogtland region from elastic and acoustic radiative transfer theory,
+*Geophysical Journal International*, 203 (3), 1471-1481,
+doi:[10.1093/gji/ggv393](https://dx.doi.org/10.1093/gji/ggv393)
+[[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00051750/Gaebler_Eulenfeld_Wegler_Elastic_versus_acoustic_radiative_transfer_theory.pdf)]
