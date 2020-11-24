@@ -1668,6 +1668,7 @@ def run(cmd='go',
         eventid=None,
         get_waveforms=None,
         print_mag=False,
+        plots=None,
         **args):
     """Main entry point for a direct call from Python
 
@@ -1757,15 +1758,20 @@ def run(cmd='go',
         kw['logfile'] = prefix + kw['logfile']
     output = args.pop('output', None)
     indent = args.pop('indent', None)
+    plottargets = ['energies', 'optimization', 'fits', 'eventresult',
+               'eventsites', 'results', 'sites', 'sds', 'mags']
     if prefix:
         if output is not None:
             output = prefix + output
-        targets = ['energies', 'optimization', 'fits', 'eventresult',
-                   'eventsites', 'results', 'sites', 'sds', 'mags']
-        for t in targets:
+        for t in plottargets:
             key = 'plot_%s_options' % t
             if key in args and 'fname' in args[key]:
                 args[key]['fname'] = prefix + args[key]['fname']
+    if plots is not None:
+        assert isinstance(plots, bool)
+        for t in plottargets:
+            args['plot_' + t] = plots
+
     # Optionally plot
     if cmd == 'plot':
         result_plot = _load_json_results(args, 'input')
@@ -1885,7 +1891,7 @@ def run(cmd='go',
         _plot(result, eventid=eventid, **args)
     if output == 'stdout':
         print(json.dumps(result))
-    elif output is not None:
+    elif output is not None and output.lower() not in ('none', 'null', ''):
         path = os.path.dirname(output)
         if path != '':
             os.makedirs(path, exist_ok=True)
@@ -1988,6 +1994,9 @@ def run_cmdline(args=None):
                'station site responses (default: 1)')
         p.add_argument('--align-sites-value', help=msg, type=float,
                        default=SUPPRESS)
+    p2.add_argument('--dump-optpkl', default=SUPPRESS, help=SUPPRESS)
+    for p in (p2, p3, p4):
+        p.add_argument('--dump-fitpkl', default=SUPPRESS, help=SUPPRESS)
     for p in (p2, p3, p4, p5):
         msg = ('Use these flags to overwrite values in the config file. '
                'See the example configuration file for a description of '
@@ -2019,11 +2028,14 @@ def run_cmdline(args=None):
                'in which {type} is one of %s' % (features_plot,))
         g4 = p.add_argument_group('optional qopen plot arguments',
                                   description=msg)
+        _add_bool_argument(g4, 'plots', help='turn all plots on',
+                   help2='turn all plots off')
         for f in features_plot:
             _add_bool_argument(g4, 'plot-' + f, help=argparse.SUPPRESS,
                                help2=argparse.SUPPRESS)
             g4.add_argument(f'--plot-{f}-options', default=SUPPRESS,
                             type=json.loads, help=argparse.SUPPRESS)
+
 
     # Get command line arguments and start run function
     args = mainp.parse_args(args)

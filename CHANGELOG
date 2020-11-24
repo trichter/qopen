@@ -1,6 +1,8 @@
 v4.0-dev:
   * complete refactoring of Qopen script to use subcommands for the different tasks
   * add source subcommand to calculate sorce spectra and derive source parameters including moment magnitude with the help of previous results
+  * add command line arguments to dump opt and fit pkl files for later plotting
+  * add command line arguments to turn all ploting on or off
 v3.0:
   * prefix option is more stringent now and adds prefix also to log file
   * add option to filter event catalog, add option to resolve full SEED id, add corresponding command line options
