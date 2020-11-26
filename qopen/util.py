@@ -4,7 +4,7 @@
 import functools
 
 import numpy as np
-from statsmodels.regression.linear_model import OLS
+from statsmodels.regression.linear_model import OLS, WLS
 from statsmodels.robust.robust_linear_model import RLM
 
 
@@ -216,22 +216,22 @@ def smooth(x, window_len=None, window='flat', method='zeros'):
     return np.convolve(w / w.sum(), s, mode='valid')
 
 
-def linear_fit(y, x, m=None, method='robust'):
+def linear_fit(y, x, m=None, method='robust', **kw):
     """Linear fit between x and y
 
     :param y,x: data
     :param m: fix slope at specific value
-    :param method: one of ('least_squares', 'robust')
+    :param method: one of ('least_squares', 'weighted', 'robust')
     :return: slope a and intercept b of y = ax + b
     """
-    Model = RLM if method == 'robust' else OLS
+    Model = RLM if method == 'robust' else WLS if method == 'weighted' else OLS
     if m is None:
         X = np.empty((len(y), 2))
         X[:, 0] = x
         X[:, 1] = 1
-        res = Model(y, X).fit()
+        res = Model(y, X, **kw).fit()
         return res.params
     else:
         X = np.ones(len(y))
-        res = Model(np.array(y) - m * np.array(x), X).fit()
+        res = Model(np.array(y) - m * np.array(x), X, **kw).fit()
         return m, res.params[0]

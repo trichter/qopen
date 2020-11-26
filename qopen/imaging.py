@@ -372,13 +372,14 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
 def plot_sds(freq, result, ax=None,
              annotate=False, va='bottom',
              seismic_moment_method=None, seismic_moment_options={},
-             cmap = 'viridis_r', vmin=None, vmax=None, max_nobs=None,
+             cmap='viridis_r', vmin=None, vmax=None, max_nobs=None,
+             color=None,
              **kwargs):
     """Plot source displacement spectrum and fitted source model"""
 
     kw = {'s': 4 * MS ** 2, 'marker': 'o', 'zorder': 10, #'linewidth': 0.5,
           'c': 'k'}
-    if 'nstations' in result and cmap is not None:
+    if color is None and 'nstations' in result and cmap is not None:
 #        Rvals = np.array(list(result['R'].values()), dtype='float')
 #        nobs = np.sum(~np.isnan(Rvals), axis=0)
         nobs = result['nstations']
@@ -391,6 +392,9 @@ def plot_sds(freq, result, ax=None,
             vmin = 0.5
         norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
         kw.update({'c': nobs, 'norm': norm, 'cmap': cmap})
+    elif color is not None:
+        kw['c'] = None
+        kw['color'] = color
     freq = np.array(freq)
     omM = np.array(result['sds'], dtype=np.float)
     if all(np.isnan(omM)):
@@ -662,8 +666,10 @@ def plot_all_sds(result, seismic_moment_method=None,
                  seismic_moment_options=None,
                  xlim=None, ylim=None, nx=None,
                  annotate=None, va='top',
+                 annotate_evid=True,
                  plot_only_ids=None,
-                 cmap = 'viridis_r', vmin=None, vmax=None,
+                 cmap='viridis_r', vmin=None, vmax=None,
+                 colors=None,
                  **kwargs):
     """Plot all source displacement spectra with fitted source models"""
     freq = np.array(result['freq'])
@@ -674,8 +680,9 @@ def plot_all_sds(result, seismic_moment_method=None,
     result = result['events']
     if plot_only_ids:
         result = {id_: r for id_, r in result.items() if id_ in plot_only_ids}
-    if 'nstations' not in list(result.values())[0] or cmap is None:
-        max_nobs = 1  # single inversion
+    if ('nstations' not in list(result.values())[0] or cmap is None or
+            colors is not None):
+        max_nobs = 1  # single inversion or uniform color
     else:
         nobs = [evres['nstations'] for evres in result.values()]
         max_nobs = np.max(nobs)
@@ -687,13 +694,22 @@ def plot_all_sds(result, seismic_moment_method=None,
     share = None
     if annotate is None:
         annotate = nx < 7
-    for i, evid in enumerate(sorted(result)):
+    color = None
+    for i, evid in enumerate(result):
+        if colors is not None:
+            try:
+                color = colors[evid]
+            except:
+                color = colors
         ax = plt.subplot(gs[i // nx, i % nx], sharex=share, sharey=share)
         sc = plot_sds(freq, result[evid], seismic_moment_method=smm, va=va,
                       seismic_moment_options=smo, ax=ax, annotate=annotate,
-                      cmap=cmap, vmin=vmin, vmax=vmax, max_nobs=max_nobs)
-        ax.annotate(evid, (0, 0), (5, 5), 'axes fraction',
-                    'offset points', ha='left', va='bottom', size='x-small')
+                      cmap=cmap, vmin=vmin, vmax=vmax, max_nobs=max_nobs,
+                      color=color)
+        if annotate_evid:
+            ax.annotate(evid, (0, 0), (5, 5), 'axes fraction',
+                        'offset points', ha='left', va='bottom',
+                        size='x-small')
         _set_gridlabels(ax, i, nx, ny, N, ylabel=r'$\omega$M (Nm)')
         if share is None:
             share = ax

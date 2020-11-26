@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Tom Eulenfeld, MIT license
+# Copyright 2015-2020 Tom Eulenfeld, MIT license
 """
 Qopen command line script and routines
 
