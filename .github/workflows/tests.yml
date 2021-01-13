@@ -1,0 +1,48 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  run_tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: [3.8]
+        flags: ["-v -f -n 2", "-v -f -n 1", "-v -a -n 2"]
+        include:
+          - os: ubuntu-latest
+            python: 3.7
+            flags: "-v -a -n 2"
+          - os: macos-latest
+            python: 3.8
+            flags: "-v -a -n 2"
+          - os: windows-latest
+            python: 3.8
+            flags: "-v -a -n 2"
+    runs-on: ${{ matrix.os }}
+    env:
+      flags: ${{ matrix.flags }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: ${{ matrix.python }}
+          environment-file: .github/test_conda_env.yml
+      - name: print conda environment info
+        run: |
+          conda info -a
+          conda list
+      - name: install package
+        run: |
+          pip install -v --no-deps .
+      - name: run test suite
+        run: |
+          mkdir empty; cd empty; cp ../.coveragerc ./
+          coverage run -m qopen.tests $flags
+          coverage combine
+          coverage xml -o ../coverage.xml
+      - name: upload coverage
+        uses: codecov/codecov-action@v1

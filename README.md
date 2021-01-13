@@ -2,7 +2,7 @@
 
 Separation of intrinsic and scattering **Q** by envel**ope** inversio**n**
 
-[![buildstatus](https://api.travis-ci.org/trichter/qopen.svg?%0A%20branch=master)](https://travis-ci.org/trichter/qopen)
+[![build status](https://github.com/trichter/qopen/workflows/tests/badge.svg)](https://github.com/trichter/qopen/actions)
 [![coverage](https://codecov.io/gh/trichter/qopen/branch/master/graph/badge.svg)](https://codecov.io/gh/trichter/qopen)
 [![version](https://img.shields.io/pypi/v/qopen.svg)](https://pypi.python.org/pypi/qopen)
 [![pyversions](https://img.shields.io/pypi/pyversions/qopen.svg)](https://python.org)
