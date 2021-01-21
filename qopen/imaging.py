@@ -46,8 +46,6 @@ DEPMAP = {'g0': 'g0', 'lsc': 'g0', 'Qsc': 'g0',
           'b': 'b', 'li': 'b', 'Qi': 'b',
           'W': 'W', 'omM': 'sds', 'sds': 'sds', 'error': 'error'}
 
-_NOCMAP = mpl.colors.ListedColormap(['black', 'black'], name='black')
-
 
 def calc_dependent(quantity, value, freq=None, v0=None):
     """Calculate dependent value (Qsc, Qi, lsc, li) from g0 and b
