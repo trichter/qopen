@@ -1027,6 +1027,7 @@ def invert(events, inventory, get_waveforms,
            plot_mags=False, plot_mags_options={},
            cmd='go', input=None,
            coda_normalization=None,
+           request_window_tolerance=0.5,
            **kwargs):
     """
     Qopen function to invert events and stations simultaneously
@@ -1183,7 +1184,7 @@ def invert(events, inventory, get_waveforms,
         # Check if data is complete
         if stream:
             for tr in stream:
-                ct = _check_times(tr, (t1, t2))
+                ct = _check_times(tr, (t1, t2), tol=request_window_tolerance)
                 if ct:
                     msg = ('%s: data missing at one end of requested time '
                            'window, difference in seconds %s')
