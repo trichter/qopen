@@ -2002,7 +2002,8 @@ def run_cmdline(args=None):
         msg = ('Use these flags to overwrite values in the config file. '
                'See the example configuration file for a description of '
                'these options. Options representing dictionaries or lists are '
-               'expected to be valid JSON.')
+               'expected to be valid JSON. --overwrite-conf allows to set '
+               'config options not listed here using a JSON dictionary.')
         features_str = ('events', 'inventory', 'data', 'output',
                         'input', 'input-sites',
                         'seismic-moment-method')
@@ -2021,6 +2022,7 @@ def run_cmdline(args=None):
         g3.add_argument('--njobs', default=SUPPRESS, type=int)
         for f in features_bool:
             _add_bool_argument(g3, f)
+        g3.add_argument('--overwrite-conf', default=SUPPRESS, type=json.loads)
     p6.add_argument('--input', default=SUPPRESS)
     for p in (p2, p3, p4, p5, p6):
         msg = ('The plot configuration can be overridden with '
@@ -2044,7 +2046,9 @@ def run_cmdline(args=None):
         from qopen.rt import main
         main(args)
     else:
+        args = vars(args)
+        args.update(args.pop('overwrite_conf', {}))
         try:
-            run(**vars(args))
+            run(**args)
         except ParseError as ex:
             p.error(ex)
