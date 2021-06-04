@@ -83,10 +83,9 @@ def freqlim(freq):
 def _savefig(fig, title=None, fname=None, dpi=None, figsize=None):
     if figsize is not None:
         fig.set_size_inches(*figsize)
+    extra = []
     if title:
-        extra = (fig.suptitle(title),)
-    else:
-        extra = ()
+        extra.append(fig.suptitle(title))
     if fname:
         path = os.path.dirname(fname)
         if path != '':
@@ -96,14 +95,15 @@ def _savefig(fig, title=None, fname=None, dpi=None, figsize=None):
         plt.close(fig)
 
 
-def _set_gridlabels(ax, i, nx, ny, N, xlabel='frequency (Hz)', ylabel=None):
-    if i % nx != 0 and ylabel:
+def _set_gridlabels(ax, i, nx, ny, N, xtlabel=True, ytlabel=True,
+                    xlabel=None, ylabel=None):
+    if i % nx != 0 and not ytlabel:
         plt.setp(ax.get_yticklabels(), visible=False)
-    elif i // nx == (ny - 1) // 2 and ylabel:
+    if i % nx == 0 and i // nx == (ny - 1) // 2 and ylabel:
         ax.set_ylabel(ylabel)
-    if i < N - nx and xlabel:
+    if i < N - nx and not xtlabel:
         plt.setp(ax.get_xticklabels(), visible=False)
-    elif i % nx == (nx - 1) // 2 and N - i <= nx and xlabel:
+    if i % nx == (nx - 1) // 2 and i >= N - nx and xlabel:
         ax.set_xlabel(xlabel)
 
 
@@ -153,7 +153,6 @@ def plot_energies(energies,
                 for i, win in enumerate(wins):
                     ax.axvspan(win[0] - otime, win[1] - otime,
                                0.05, 0.08, color=c[i], alpha=0.5)
-
         if sax1 is None:
             sax1 = ax2
             sax3 = ax3
@@ -207,7 +206,10 @@ def plot_lstsq(rec,  event_station_pairs, ax=None, base=np.e, **kwargs):
         _savefig(fig, **kwargs)
 
 
-def plot_optimization(record, record_g0, event_station_pairs, num=7, **kwargs):
+def plot_optimization(record, record_g0, event_station_pairs, num=7,
+                      xlabel=r'g$_0$ ($\mathrm{m}^{-1}$)',
+                      ylabel=r'misfit $\epsilon$',
+                      **kwargs):
     """Plot some steps of optimization"""
     fig = plt.figure()
     if num > 1:
@@ -273,10 +275,10 @@ def plot_optimization(record, record_g0, event_station_pairs, num=7, **kwargs):
                 plt.setp(ax2.get_yticklabels(), visible=False)
         ax2.locator_params(axis='y', nbins=4)
         ax2.locator_params(axis='x', nbins=3)
-    ax.set_xlabel(r'g$_0$ ($\mathrm{m}^{-1}$)')
+    ax.set_xlabel(xlabel)
     # yl = (r'error $\mathrm{rms}\left(\ln\frac{E_{\mathrm{obs}, ij}}'
     #      r'{E_{\mathrm{mod}, ij}}\right)$')
-    ax.set_ylabel(r'misfit $\epsilon$')
+    ax.set_ylabel(ylabel)
     _savefig(fig, **kwargs)
 
 
@@ -287,7 +289,9 @@ def _get_times(tr):
 
 def plot_fits(energies, g0, b, W, R, v0, info, G_func,
               smooth=None, smooth_window='bartlett',
-              xlim=None, ylim=None, **kwargs):
+              xlim=None, ylim=None,
+              xlabel='time (s)', ylabel=r'E (Jm$^{-3}$Hz$^{-1}$)',
+              **kwargs):
     """Plot fits of spectral energy densities"""
     tcoda, tbulk, Ecoda, Ebulk, Gcoda, Gbulk = info
     N = len(energies)
@@ -342,8 +346,8 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
         l = l + '\nr=%dkm' % (r / 1000)
         ax.annotate(l, (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top', size='x-small')
-        _set_gridlabels(ax, i, n, n, N, xlabel='time (s)',
-                        ylabel=r'E (Jm$^{-3}$Hz$^{-1}$)')
+        _set_gridlabels(ax, i, n, n, N, xtlabel=False, ytlabel=False,
+                        xlabel=xlabel, ylabel=ylabel)
         tmaxs.append(t[-1])
         ymaxs.append(max(np.max(Emod), np.max(energy.data)))
         ymins.append(min(np.min(Emodcoda), np.max(Ecoda[i])))
@@ -448,6 +452,7 @@ def plot_sds(freq, result, ax=None,
 
 def plot_eventresult(result, v0=None, quantities=QUANTITIES_EVENT,
                      seismic_moment_method=None, seismic_moment_options={},
+                     xlabel='frequency (Hz)',
                      **kwargs):
     """Plot all results of one `~qopen.core.invert()` call"""
     v0 = v0 or result.get('v0') or result.get('config', {}).get('v0')
@@ -476,14 +481,16 @@ def plot_eventresult(result, v0=None, quantities=QUANTITIES_EVENT,
                 ax.set_yscale('linear')
         ax.annotate(QLABELS[q], (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top')
-        _set_gridlabels(ax, i, n, n, N)
+        _set_gridlabels(ax, i, n, n, N, xtlabel=False, xlabel=xlabel)
         if share is None:
             share = ax
     ax.set_xlim(freq[0], freq[-1])
     _savefig(fig, **kwargs)
 
 
-def plot_eventsites(result, **kwargs):
+def plot_eventsites(result,
+                    xlabel='frequency (Hz)', ylabel='site amplification',
+                    **kwargs):
     """Plot site amplification factors of one `~qopen.core.invert()` call"""
     freq = np.array(result['freq'])
     R = result['R']
@@ -502,7 +509,8 @@ def plot_eventsites(result, **kwargs):
         l = station
         ax.annotate(l, (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top', size='small')
-        _set_gridlabels(ax, i, n, n, N, ylabel='site correction')
+        _set_gridlabels(ax, i, n, n, N, xtlabel=False, ytlabel=False,
+                        xlabel=xlabel, ylabel=ylabel)
         if share is None:
             share = ax
     allR = np.array(allR, dtype=np.float)
@@ -514,7 +522,8 @@ def plot_eventsites(result, **kwargs):
 
 
 def plot_results(result, v0=None, quantities=QUANTITIES, mean=None,
-                 llim=None, Qlim=None, **kwargs):
+                 llim=None, Qlim=None, xlabel='frequency (Hz)',
+                 **kwargs):
     """Plot results"""
     freq = np.array(result['freq'])
     N = len(quantities)
@@ -556,7 +565,7 @@ def plot_results(result, v0=None, quantities=QUANTITIES, mean=None,
         ax.set_xscale('log')
         ax.annotate(QLABELS[q], (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top')
-        _set_gridlabels(ax, i, n, n, N, ylabel=None)
+        _set_gridlabels(ax, i, n, n, N, xtlabel=False, xlabel=xlabel)
         if share is None:
             share = ax
         if q in ('Qsc', 'Qi') and Qlim:
@@ -570,6 +579,7 @@ def plot_results(result, v0=None, quantities=QUANTITIES, mean=None,
 def plot_sites(result, mean=None,
                xlim=None, ylim=(1e-2, 1e2), nx=None,
                cmap='viridis_r', vmin=None, vmax=None,
+               xlabel='frequency (Hz)', ylabel='site amplification',
                **kwargs):
     """Plot site amplification factors"""
     freq = np.array(result['freq'])
@@ -632,7 +642,9 @@ def plot_sites(result, mean=None,
         ax.set_yscale('log')
         ax.annotate(station, (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top', size='x-small')
-        _set_gridlabels(ax, i, nx, ny, N, ylabel='amplification factor')
+        _set_gridlabels(ax, i, nx, ny, N-(max_nobs > 1),
+                        xtlabel=False, ytlabel=False,
+                        xlabel=xlabel, ylabel=ylabel)
         if share is None:
             share = ax
         i += 1
@@ -668,6 +680,7 @@ def plot_all_sds(result, seismic_moment_method=None,
                  plot_only_ids=None,
                  cmap='viridis_r', vmin=None, vmax=None,
                  colors=None,
+                 xlabel='frequency (Hz)', ylabel=r'$\omega$M (Nm)',
                  **kwargs):
     """Plot all source displacement spectra with fitted source models"""
     freq = np.array(result['freq'])
@@ -708,7 +721,9 @@ def plot_all_sds(result, seismic_moment_method=None,
             ax.annotate(evid, (0, 0), (5, 5), 'axes fraction',
                         'offset points', ha='left', va='bottom',
                         size='x-small')
-        _set_gridlabels(ax, i, nx, ny, N, ylabel=r'$\omega$M (Nm)')
+        _set_gridlabels(ax, i, nx, ny, N - (max_nobs != 1),
+                        xtlabel=False, ytlabel=False,
+                        xlabel=xlabel, ylabel=ylabel)
         if share is None:
             share = ax
     ax.autoscale()
@@ -723,7 +738,9 @@ def plot_all_sds(result, seismic_moment_method=None,
     _savefig(fig, **kwargs)
 
 
-def plot_mags(result, xlim=None, ylim=None, plot_only_ids=None, **kwargs):
+def plot_mags(result, xlim=None, ylim=None, plot_only_ids=None,
+              xlabel='M from catalog', ylabel='Mw from inversion',
+              **kwargs):
     """Plot Qopen moment magnitudes versus catalogue magnitudes"""
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -750,6 +767,6 @@ def plot_mags(result, xlim=None, ylim=None, plot_only_ids=None, **kwargs):
         ax.legend(loc='lower right')
     if xlim:
         ax.set_xlim(xlim)
-    ax.set_xlabel('M from catalog')
-    ax.set_ylabel('Mw from inversion')
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
     _savefig(fig, **kwargs)
