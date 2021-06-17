@@ -489,7 +489,8 @@ def plot_eventresult(result, v0=None, quantities=QUANTITIES_EVENT,
 
 
 def plot_eventsites(result,
-                    xlabel='frequency (Hz)', ylabel='site amplification',
+                    xlabel='frequency (Hz)',
+                    ylabel='energy site amplification',
                     **kwargs):
     """Plot site amplification factors of one `~qopen.core.invert()` call"""
     freq = np.array(result['freq'])
@@ -680,7 +681,8 @@ def plot_all_sds(result, seismic_moment_method=None,
                  plot_only_ids=None,
                  cmap='viridis_r', vmin=None, vmax=None,
                  colors=None,
-                 xlabel='frequency (Hz)', ylabel=r'$\omega$M (Nm)',
+                 xlabel='frequency (Hz)',
+                 ylabel=r'source displacement spectrum $\omega$M (Nm)',
                  **kwargs):
     """Plot all source displacement spectra with fitted source models"""
     freq = np.array(result['freq'])
