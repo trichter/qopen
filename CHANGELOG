@@ -1,6 +1,7 @@
 dev:
   * add request_window_tolerance parameter (in seconds, default 0.5) to allow for missing data at the edges of request window
   * add --overwrite-conf to allow to set all available config options from the command line
+  * several small improvements in imaging module
 v4.0:
   * complete refactoring of Qopen script to use subcommands for the different tasks
   * add source subcommand to calculate sorce spectra and derive source parameters including moment magnitude with the help of previous results
