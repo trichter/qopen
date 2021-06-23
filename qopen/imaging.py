@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from qopen.core import get_pair, collect_results
-from qopen.source import source_model
+from qopen.source import moment_magnitude, source_model
 from qopen.util import gerr, smooth_func, linear_fit
 
 MS = mpl.rcParams['lines.markersize'] // 2
@@ -83,9 +83,7 @@ def freqlim(freq):
 def _savefig(fig, title=None, fname=None, dpi=None, figsize=None):
     if figsize is not None:
         fig.set_size_inches(*figsize)
-    extra = []
-    if title:
-        extra.append(fig.suptitle(title))
+    extra = [fig.suptitle(title)] if title else None
     if fname:
         path = os.path.dirname(fname)
         if path != '':
@@ -740,8 +738,19 @@ def plot_all_sds(result, seismic_moment_method=None,
     _savefig(fig, **kwargs)
 
 
+def _secondary_yaxis_seismic_moment(ax, inverse=False):
+    Mw2M0 = lambda Mw:  moment_magnitude(Mw, inverse=True)
+    funcs = (moment_magnitude, Mw2M0) if inverse else (Mw2M0, moment_magnitude)
+    ax2 = ax.secondary_yaxis('right', functions=funcs)
+    ax2.set_yscale('log')
+    ylabel = 'moment magnitude' if inverse else 'seismic moment $M_0$ (Nm)'
+    ax2.set_ylabel(ylabel)
+    return ax2
+
+
 def plot_mags(result, xlim=None, ylim=None, plot_only_ids=None,
               xlabel='M from catalog', ylabel='Mw from inversion',
+              secondary_yaxis=True,
               **kwargs):
     """Plot Qopen moment magnitudes versus catalogue magnitudes"""
     fig = plt.figure()
@@ -771,4 +780,6 @@ def plot_mags(result, xlim=None, ylim=None, plot_only_ids=None,
         ax.set_xlim(xlim)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
+    if secondary_yaxis:
+        _secondary_yaxis_seismic_moment(ax)
     _savefig(fig, **kwargs)
