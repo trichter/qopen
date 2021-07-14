@@ -258,6 +258,36 @@ class TestCase(unittest.TestCase):
         self.assertTrue(
                 all('R' not in evres for evres in result['events'].values()))
 
+    def test_remove_response(self):
+        plot = False
+        freq = np.array([3.0, 6.0])
+        b = np.array([0.038, 0.047])
+        kwargs = {
+            "freqs": {"width": 1, "cfreqs": list(freq)},
+            "seismic_moment_method": None,
+            'remove_response': 'full',
+            'plot_remove_response': True,
+            'plot_optimization': plot,
+            'plot_energies': plot, 'plot_fits': plot,
+            'plot_eventresult': plot, 'plot_eventsites': plot,
+            'plot_results': plot,
+            'plot_sites': plot, 'plot_sds': plot, 'plot_mags': plot,
+        }
+        if self.njobs:
+            kwargs['njobs'] = int(self.njobs)
+        if self.verbose:
+            kwargs['verbose'] = 3
+        tempdirname = 'qopen_test6' if self.permanent_tempdir else None
+        with tempdir(tempdirname, self.delete):
+            run('create', conf='conf.json', tutorial=True)
+            events = read_events('example_events.xml', 'QUAKEML')[:2]
+            result = run('go', conf='conf.json', events=events, **kwargs)
+            self.check_num_images('plots/remove_response_*.png', 30)
+        np.testing.assert_equal(result['freq'], freq)
+        np.testing.assert_array_less(np.abs(np.log10(result['b'] / b)), 0.5)
+        self.assertTrue(
+                all(evres['W'][0]<1e18 for evres in result['events'].values()))
+
     def test_tutorial_everything_with_nans(self):
         """Test scenarios:
             * no results for one station

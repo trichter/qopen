@@ -147,6 +147,10 @@
 # Instrument response has to be available in the inventory.
 # This option is important for the calculation of W and ωM
 "remove_response": "sensitivity",
+# only for full response removal, see help in ObsPy's Trace.remove_response
+"plot_remove_response": false,
+"remove_response_options" : {
+    "fname": "plots/remove_response_{evid}_{tr.id}.png"},
 
 # When calculating the distance, correct for the elevation of the station.
 # Useful if depth of events catalog is given relative to sea level.

@@ -66,7 +66,8 @@ DUMP_CONFIG = ['invert_events_simultaneously', 'mean',
                'coda_window', 'noise_windows',
                'weight', 'remove_noise',
                'adjust_sonset', 'adjust_sonset_options',
-               'remove_response', 'correct_for_elevation', 'skip',
+               'remove_response', 'remove_response_options',
+               'correct_for_elevation', 'skip',
                'G_module']
 
 DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma',
@@ -1012,10 +1013,18 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
     #return g0, b, W, R, err, v0
 
 
+def _remove_response(tr, evid, plot_remove_reponse, fname, **kw):
+    if plot_remove_reponse:
+        kw.setdefault('plot', fname.format(evid=evid, tr=tr))
+    tr.remove_response(**kw)
+
+
 def invert(events, inventory, get_waveforms,
            request_window, freqs, filter,
            rho0, vp=None, vs=None,
-           remove_response=None, skip=None, use_picks=False,
+           remove_response=None,
+           plot_remove_response=False, remove_response_options={},
+           skip=None, use_picks=False,
            correct_for_elevation=False,
            njobs=None,
            seismic_moment_method=None, seismic_moment_options={},
@@ -1038,6 +1047,7 @@ def invert(events, inventory, get_waveforms,
     :return: result dictionary
     """
     assert cmd in ('go', 'fixed', 'source')
+    assert remove_response in (None, 'full', 'sensitivity')
     if coda_normalization is not None and cmd != 'go':
         raise ValueError('coda_normalization is only allowed for go command')
     msg = 'use %s cores for parallel computation'
@@ -1212,6 +1222,14 @@ def invert(events, inventory, get_waveforms,
 
     # Optionally remove instrument response
     if remove_response:
+        remove_response_options = copy(remove_response_options)
+        remove_response_fname = remove_response_options.pop(
+            'fname', 'remove_response_{evid}_{tr.id}.png')
+        if plot_remove_response:
+            remove_response_options.pop('plot', None)
+            path = os.path.dirname(remove_response_fname)
+            if path != '':
+                os.makedirs(path, exist_ok=True)
         for stream in streams[:]:
             pair = get_pair(stream[0])
             fail = stream.attach_response(inventory)
@@ -1223,7 +1241,21 @@ def invert(events, inventory, get_waveforms,
                 continue
             try:
                 if remove_response == 'full':
-                    stream.remove_response()
+                    for tr in stream:
+                        _remove_response(
+                            tr, evid, plot_remove_response,
+                            remove_response_fname, **remove_response_options)
+                    # if njobs == 1:
+                    # else:
+                    #     do_work = partial(
+                    #         _remove_response,
+                    #         evid=evid, plot=plot_remove_response,
+                    #         fname=remove_response_fname,
+                    #         **remove_response_options)
+                    #     pool = multiprocessing.Pool(njobs)
+                    #     rlist = pool.map(do_work, stream.traces)
+                    #     pool.close()
+                    #     pool.join()
                 else:
                     for tr in stream:
                         sens = tr.stats.response.instrument_sensitivity
@@ -1760,12 +1792,15 @@ def run(cmd='go',
     output = args.pop('output', None)
     indent = args.pop('indent', None)
     plottargets = ['energies', 'optimization', 'fits', 'eventresult',
-               'eventsites', 'results', 'sites', 'sds', 'mags']
+               'eventsites', 'results', 'sites', 'sds', 'mags',
+               'remove_response']
     if prefix:
         if output is not None:
             output = prefix + output
         for t in plottargets:
             key = 'plot_%s_options' % t
+            if t == 'remove_response':
+                key = '%s_options' % t
             if key in args and 'fname' in args[key]:
                 args[key]['fname'] = prefix + args[key]['fname']
     if plots is not None:
@@ -1909,9 +1944,10 @@ def run(cmd='go',
 
 def _add_bool_argument(parser, feature, help=None, help2=None):
     group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument('--' + feature, dest=feature,
+    dest = feature.replace('-', '_')
+    group.add_argument('--' + feature, dest=dest,
                         action='store_true', default=SUPPRESS, help=help)
-    group.add_argument('--no-' + feature, dest=feature,
+    group.add_argument('--no-' + feature, dest=dest,
                         action='store_false', default=SUPPRESS, help=help2)
 
 
@@ -2033,6 +2069,9 @@ def run_cmdline(args=None):
                                   description=msg)
         _add_bool_argument(g4, 'plots', help='turn all plots on',
                    help2='turn all plots off')
+        _add_bool_argument(g4, 'plot-remove-response',
+                           help='plot response removal',
+                           help2=argparse.SUPPRESS)
         for f in features_plot:
             _add_bool_argument(g4, 'plot-' + f, help=argparse.SUPPRESS,
                                help2=argparse.SUPPRESS)
