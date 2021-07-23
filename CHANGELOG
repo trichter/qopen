@@ -1,4 +1,4 @@
-dev:
+v4.1:
   * add request_window_tolerance parameter (in seconds, default 0.5) to allow for missing data at the edges of request window
   * add --overwrite-conf to allow to set all available config options from the command line
   * allow to set parameters for removal of response ("full" option)
