@@ -177,3 +177,9 @@ Seismic scattering and absorption parameters in the W-Bohemia/Vogtland region fr
 *Geophysical Journal International*, 203 (3), 1471-1481,
 doi:[10.1093/gji/ggv393](https://dx.doi.org/10.1093/gji/ggv393)
 [[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00051750/Gaebler_Eulenfeld_Wegler_Elastic_versus_acoustic_radiative_transfer_theory.pdf)]
+
+Software citation:
+Eulenfeld T (2020),
+Qopen: Separation of intrinsic and scattering **Q** by envel**ope** inversio**n**,
+https://github.com/trichter/qopen,
+doi:[10.5281/zenodo.3953654](https://dx.doi.org/10.5281/zenodo.3953654)
