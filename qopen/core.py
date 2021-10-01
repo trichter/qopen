@@ -1234,8 +1234,9 @@ def invert(events, inventory, get_waveforms,
             pair = get_pair(stream[0])
             fail = stream.attach_response(inventory)
             if len(fail) > 0:
-                msg = '%s: no instrument response availlable -> skip pair'
-                log.error(msg, pair)
+                msg = ('%s: no instrument response availlable for channel %s '
+                       '-> skip pair')
+                log.error(msg, pair, stream[0].id)
                 streams.remove(stream)
                 event_station_pairs.remove(pair)
                 continue
