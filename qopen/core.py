@@ -1888,6 +1888,14 @@ def run(cmd='go',
         msg = 'align sites not valid for command source -> set to False'
         log.warning(msg)
         align_sites = False
+    if align_sites:
+        align_sites_kw = {
+            'seismic_moment_method': args.pop('seismic_moment_method', None),
+            'seismic_moment_options': args.pop('seismic_moment_options', None),
+            'station': args.pop('align_sites_station', None),
+            'response': args.pop('align_sites_value', 1)}
+        if align_sites_kw['station'] and ',' in align_sites_kw['station']:
+            align_sites_kw['station'] = align_sites_kw['station'].split(',')
     if load_inv:
         args['inventory'] = inventory
     if load_all:
@@ -1908,15 +1916,8 @@ def run(cmd='go',
     if align_sites:
         msg = 'align station site responses and calculate source spectra'
         log.info(msg)
-        kw = {'seismic_moment_method': args.pop('seismic_moment_method', None),
-              'seismic_moment_options': args.pop('seismic_moment_options',
-                                                 None),
-              'station': args.pop('align_sites_station', None),
-              'response': args.pop('align_sites_value', 1)}
-        if kw['station'] is not None and ',' in kw['station']:
-            kw['station'] = kw['station'].split(',')
-        align_site_responses(result, **kw)
-        result.setdefault('config', {}).update(kw)
+        align_site_responses(result, **align_sites_kw)
+        result.setdefault('config', {}).update(align_sites_kw)
         log.debug('results after alignment of site responses: %s',
                   json.dumps(result))
         _plot(result, eventid=eventid, **args)
