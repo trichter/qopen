@@ -1913,6 +1913,8 @@ def run(cmd='go',
                                                  None),
               'station': args.pop('align_sites_station', None),
               'response': args.pop('align_sites_value', 1)}
+        if kw['station'] is not None and ',' in kw['station']:
+            kw['station'] = kw['station'].split(',')
         align_site_responses(result, **kw)
         result.setdefault('config', {}).update(kw)
         log.debug('results after alignment of site responses: %s',
@@ -2025,7 +2027,8 @@ def run_cmdline(args=None):
     for p in (p2, p3, p5):
         msg = 'Align site responses and correct source spectra'
         _add_bool_argument(p, 'align-sites', help=msg)
-        msg = ('Site response of this station is fixed '
+        msg = ('Site response of this station is fixed, it is possible to '
+               'sepcify more than one station with "," delimiter '
                '(default: product of station site responses is fixed)')
         p.add_argument('--align-sites-station', help=msg, default=SUPPRESS)
         msg = ('Value of site response for specified station or product of '
