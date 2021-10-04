@@ -251,7 +251,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
     # one for each freq
     largest_areas = []
     for i in range(Nf):
-        log.debug('align sites for freq no. %d', i)
+        log.info('align sites for freq no. %d', i)
         # find unconnected areas
         areas = _find_unconnected_areas(results, i,
                                         ignore_stations=ignore_stations)
@@ -264,7 +264,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
             continue
         largest_area = max(areas, key=lambda k: len(areas[k]))
         msg = 'use largest area %s with %d stations'
-        log.info(msg, largest_area, len(areas[largest_area]))
+        log.debug(msg, largest_area, len(areas[largest_area]))
         largest_area = areas[largest_area]
         largest_areas.append(largest_area)
         R = _collectR(results, freqi=i, only=largest_area)
@@ -314,6 +314,8 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                 else:
                     last[sta] = first[sta] = (k, Rsta)
         # pin mean site response or site response of specific station(s)
+        msg = 'use geometric mean of %d stations for normalization'
+        log.debug(msg, len(stations_used_norm))
         norm_row_b = norm_row_b / len(stations_used_norm) + np.log(response)
         for k in norm_row_A:
             norm_row_A[k] /= len(stations_used_norm)
