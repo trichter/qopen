@@ -175,6 +175,18 @@ Crustal intrinsic and scattering attenuation of high-frequency shear waves in th
 *Journal of Geophysical Research: Solid Earth*, 122, doi:[10.1002/2017JB014038](https://dx.doi.org/10.1002/2017JB014038).
 [[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00040716/Eulenfeld_Wegler_2017_US_intrinsic_and_scattering_attenuation.pdf)]
 
+Robust source spectra using Qopen:
+Eulenfeld T, Dahm T, Heimann S, and Wegler U (2021),
+Fast and robust earthquake source spectra and moment magnitudes from envelope inversion,
+*accepted in Bulletin of the Seismological Society of America*,
+doi: TBA.
+[[preprint](https://arxiv.org/pdf/2107.11083)]
+
+Comparison between Qopen and MLTWA:
+van Laaten M, Eulenfeld T and Wegler U (2021),
+Comparison of Multiple Lapse Time Window Analysis and Qopen to determine intrinsic and scattering attenuation,
+*Geophysical Journal International*, doi: [10.1093/gji/ggab390](https://doi.org/10.1093/gji/ggab390).
+
 Comparison to inversion with the help of Mote-Carlo simulations based on elastic radiative transfer theory, relating g0 to g*:
 Gaebler PJ, Eulenfeld T and Wegler U (2015),
 Seismic scattering and absorption parameters in the W-Bohemia/Vogtland region from elastic and acoustic radiative transfer theory,
