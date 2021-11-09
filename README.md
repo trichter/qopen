@@ -60,6 +60,8 @@ can perform the inversion by simply running :
 
 which will calculate the results and create different plots.
 
+A more extensive tutorial is available [here](https://github.com/trichter/qopen_tutorial).
+
 #### Use your own data
 
 To use the script with your own data you need 1. an inventory
@@ -143,6 +145,8 @@ Please consult the [API documentation](https://qopen.readthedocs.io).
 The Obspy forum can be used to contact other users and developers.
 Please post the topic in the
 [ObsPy Related Projects category](https://discourse.obspy.org/c/obspy-related-projects).
+
+Work through the extended [Qopen tutorial](https://github.com/trichter/qopen_tutorial).
 
 A somewhat advanced example using the Qopen package:
 [USAttenuation](https://github.com/trichter/usattenuation).
