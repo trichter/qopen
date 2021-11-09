@@ -144,7 +144,7 @@ Please consult the [API documentation](https://qopen.readthedocs.io).
 
 The Obspy forum can be used to contact other users and developers.
 Please post the topic in the
-[ObsPy Related Projects category](https://discourse.obspy.org/c/obspy-related-projects).
+[ObsPy Related Projects category](https://discourse.obspy.org/c/obspy-related-projects/qopen).
 
 Work through the extended [Qopen tutorial](https://github.com/trichter/qopen_tutorial).
 
