@@ -136,7 +136,7 @@ def plot_energies(energies,
         ax2.semilogy(ts[::d], tr.data[::d], color=c)
         ax3.loglog(ts[::d], tr.data[::d], color=c)
         for ax in (ax1, ax2, ax3):
-            plt.setp(ax.get_xticklabels(), visible=False)
+            ax.tick_params(labelbottom=False)
             ax.set_yticklabels([])
             if 'ponset' in tr.stats:
                 tponset = tr.stats.ponset - otime
@@ -163,8 +163,8 @@ def plot_energies(energies,
     ax3.yaxis.set_major_locator(loglocator)
     ax2.yaxis.set_minor_locator(mpl.ticker.NullLocator())
     ax3.yaxis.set_minor_locator(mpl.ticker.NullLocator())
-    plt.setp(ax2.get_xticklabels(), visible=True)
-    plt.setp(ax3.get_xticklabels(), visible=True)
+    ax2.tick_params(labelbottom=True)
+    ax3.tick_params(labelbottom=True)
     _savefig(fig, **kwargs)
 
 
