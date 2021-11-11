@@ -186,6 +186,7 @@ Comparison between Qopen and MLTWA:
 van Laaten M, Eulenfeld T and Wegler U (2021),
 Comparison of Multiple Lapse Time Window Analysis and Qopen to determine intrinsic and scattering attenuation,
 *Geophysical Journal International*, doi: [10.1093/gji/ggab390](https://doi.org/10.1093/gji/ggab390).
+[[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00054668/vLaaten_Eulenfeld_Wegler_2021_Attenuation.pdf)]
 
 Comparison to inversion with the help of Mote-Carlo simulations based on elastic radiative transfer theory, relating g0 to g*:
 Gaebler PJ, Eulenfeld T and Wegler U (2015),
