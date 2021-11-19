@@ -601,7 +601,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
                 continue
         else:
             energy.stats.noise_level = noise_level = np.min(noise_levels)
-            log.debug('%s: noise level at %.1e', pair, noise_level)
+            msg = '%s: noise level at %.1e, max value %.1e'
+            log.debug(msg, pair, noise_level, np.max(energy.data))
         # Optionally remove noise
         if remove_noise:
             energy.data = energy.data - noise_level
