@@ -412,6 +412,7 @@ def plot_sds(freq, result, ax=None,
         ax = fig.add_subplot(111)
     ax.set_xscale('log')
     ax.set_yscale('log')
+    ax.xaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
     if seismic_moment_method == 'mean':
         ax.plot(freq, omM, 'o-', color='gray', mec='gray')
         ax.plot(freq[freq < fc], omM[freq < fc], 'o-k')
@@ -510,6 +511,7 @@ def plot_eventsites(result,
                     'offset points', ha='right', va='top', size='small')
         _set_gridlabels(ax, i, n, n, N, xtlabel=False, ytlabel=False,
                         xlabel=xlabel, ylabel=ylabel)
+        ax.xaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         if share is None:
             share = ax
     allR = np.array(allR, dtype=np.float)
@@ -562,6 +564,7 @@ def plot_results(result, v0=None, quantities=QUANTITIES, mean=None,
             if q != 'error':
                 ax.set_yscale('log')
         ax.set_xscale('log')
+        ax.xaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         ax.annotate(QLABELS[q], (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top')
         _set_gridlabels(ax, i, n, n, N, xtlabel=False, xlabel=xlabel)
@@ -639,6 +642,7 @@ def plot_sites(result, mean=None,
                         **kw)
         ax.set_xscale('log')
         ax.set_yscale('log')
+        ax.xaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         ax.annotate(station, (1, 1), (-5, -5), 'axes fraction',
                     'offset points', ha='right', va='top', size='x-small')
         _set_gridlabels(ax, i, nx, ny, N-(max_nobs > 1),
