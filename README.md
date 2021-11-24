@@ -159,44 +159,46 @@ These studies make use of Qopen:
 Initial method:
 Sens-Schönfelder C and Wegler U (2006),
 Radiative transfer theory for estimation of the seismic moment,
-*Geophysical Journal International*, 167(3), 1363–1372.
-doi:[10.1111/j.1365-246X.2006.03139.x](https://dx.doi.org/10.1111/j.1365-246X.2006.03139.x)
+*Geophysical Journal International*, 167(3), 1363-1372,
+doi:[10.1111/j.1365-246X.2006.03139.x](https://doi.org/10.1111/j.1365-246X.2006.03139.x)
 
 Enhanced Qopen method and implementation:
 Eulenfeld T and Wegler U (2016),
 Measurement of intrinsic and scattering attenuation of shear waves in two sedimentary basins and comparison to crystalline sites in Germany,
 *Geophysical Journal International*, 205(2), 744-757,
-doi:[10.1093/gji/ggw035](https://dx.doi.org/10.1093/gji/ggw035)
+doi:[10.1093/gji/ggw035](https://doi.org/10.1093/gji/ggw035)
 [[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00038348/Eulenfeld_Wegler_2016_Intrinsic_and_scattering_attenuation_a.pdf)]
 
 Advanced example making use of alignment of site responses:
 Eulenfeld T and Wegler U (2017),
 Crustal intrinsic and scattering attenuation of high-frequency shear waves in the contiguous United States,
-*Journal of Geophysical Research: Solid Earth*, 122, doi:[10.1002/2017JB014038](https://dx.doi.org/10.1002/2017JB014038).
+*Journal of Geophysical Research: Solid Earth*, 122,
+doi:[10.1002/2017JB014038](https://doi.org/10.1002/2017JB014038)
 [[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00040716/Eulenfeld_Wegler_2017_US_intrinsic_and_scattering_attenuation.pdf)]
 
 Robust source spectra using Qopen:
 Eulenfeld T, Dahm T, Heimann S, and Wegler U (2021),
 Fast and robust earthquake source spectra and moment magnitudes from envelope inversion,
-*accepted in Bulletin of the Seismological Society of America*,
-doi: TBA.
-[[preprint](https://arxiv.org/pdf/2107.11083)]
+*Bulletin of the Seismological Society of America*,
+doi:[10.1785/0120210200](https://doi.org/10.1785/0120210200)
+[[pdf](https://arxiv.org/pdf/2107.11083)]
 
 Comparison between Qopen and MLTWA:
 van Laaten M, Eulenfeld T and Wegler U (2021),
 Comparison of Multiple Lapse Time Window Analysis and Qopen to determine intrinsic and scattering attenuation,
-*Geophysical Journal International*, doi: [10.1093/gji/ggab390](https://doi.org/10.1093/gji/ggab390).
+*Geophysical Journal International*, 228(2), 913-926,
+doi: [10.1093/gji/ggab390](https://doi.org/10.1093/gji/ggab390)
 [[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00054668/vLaaten_Eulenfeld_Wegler_2021_Attenuation.pdf)]
 
 Comparison to inversion with the help of Mote-Carlo simulations based on elastic radiative transfer theory, relating g0 to g*:
 Gaebler PJ, Eulenfeld T and Wegler U (2015),
 Seismic scattering and absorption parameters in the W-Bohemia/Vogtland region from elastic and acoustic radiative transfer theory,
-*Geophysical Journal International*, 203 (3), 1471-1481,
-doi:[10.1093/gji/ggv393](https://dx.doi.org/10.1093/gji/ggv393)
+*Geophysical Journal International*, 203(3), 1471-1481,
+doi:[10.1093/gji/ggv393](https://doi.org/10.1093/gji/ggv393)
 [[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00051750/Gaebler_Eulenfeld_Wegler_Elastic_versus_acoustic_radiative_transfer_theory.pdf)]
 
 Software citation:
 Eulenfeld T (2020),
 Qopen: Separation of intrinsic and scattering **Q** by envel**ope** inversio**n**,
 https://github.com/trichter/qopen,
-doi:[10.5281/zenodo.3953654](https://dx.doi.org/10.5281/zenodo.3953654)
+doi:[10.5281/zenodo.3953654](https://doi.org/10.5281/zenodo.3953654)
