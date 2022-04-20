@@ -582,6 +582,7 @@ def plot_sites(result, mean=None,
                xlim=None, ylim=(1e-2, 1e2), nx=None,
                cmap='viridis_r', vmin=None, vmax=None,
                xlabel='frequency (Hz)', ylabel='site amplification',
+               show_excluded=True,
                **kwargs):
     """Plot site amplification factors"""
     freq = np.array(result['freq'])
@@ -659,7 +660,7 @@ def plot_sites(result, mean=None,
         ax.set_axis_off()
         fig.colorbar(sc, ax=ax, shrink=0.9, format='%d', label='nobs',
                      ticks=np.arange(0, max_nobs + 1, max(1, max_nobs // 5)))
-    if len(do_not_plot_stations) > 0:
+    if len(do_not_plot_stations) > 0 and show_excluded:
         ax.annotate('excluded: ' + ' '.join(do_not_plot_stations),
                      (1, 0), (-5, 5), 'figure fraction', 'offset points',
                      ha='right', size='x-small')
@@ -735,6 +736,8 @@ def plot_all_sds(result, seismic_moment_method=None,
     if ylim:
         ax.set_ylim(ylim)
     if max_nobs != 1:
+        if (N-1) % nx == (nx - 1) // 2 and xlabel:
+            N += 1
         ax = plt.subplot(gs[(N-1) // nx, (N-1) % nx])
         ax.set_axis_off()
         fig.colorbar(sc, ax=ax, shrink=0.9, format='%d', label='nstations',

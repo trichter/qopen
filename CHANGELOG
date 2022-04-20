@@ -1,5 +1,6 @@
 dev:
   * allow to fix station site response to geometric mean of more than one station (for command line script)
+  * excluded label is now optional
 v4.1:
   * add request_window_tolerance parameter (in seconds, default 0.5) to allow for missing data at the edges of request window
   * add --overwrite-conf to allow to set all available config options from the command line
