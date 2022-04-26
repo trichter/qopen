@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python: [3.8]
+        python: [3.9]
         flags: ["-v -f -n 2", "-v -f -n 1", "-v -a -n 2"]
         include:
           - os: ubuntu-latest
