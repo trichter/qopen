@@ -582,7 +582,7 @@ def plot_sites(result, mean=None,
                xlim=None, ylim=(1e-2, 1e2), nx=None,
                cmap='viridis_r', vmin=None, vmax=None,
                xlabel='frequency (Hz)', ylabel='site amplification',
-               show_excluded=True,
+               show_excluded=True, sortkey=None,
                **kwargs):
     """Plot site amplification factors"""
     freq = np.array(result['freq'])
@@ -601,7 +601,7 @@ def plot_sites(result, mean=None,
     weights = 1 / np.array(colres['error']) if mean == 'weighted' else None
     robust = mean == 'robust'
     N = max_nobs > 1
-    for station in sorted(R):
+    for station in sorted(R, key=sortkey):
         if not np.all(np.isnan(R[station])):
             N = N + 1
 #    N = len(R) + (max_nobs > 1)
@@ -618,7 +618,7 @@ def plot_sites(result, mean=None,
     share = None
     i = 0
     do_not_plot_stations = []
-    for station in sorted(R):
+    for station in sorted(R, key=sortkey):
         if np.all(np.isnan(R[station])):
             do_not_plot_stations.append(station)
             continue
