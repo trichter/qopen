@@ -219,7 +219,7 @@ def plot_t(c, g0, r, t=None, N=1000, log=False, include_direct=False, la=None,
         print('set r to %dm' % r)
     if t is None:
         t = 10 * r / c
-    ts = r / c + np.logspace(-3, np.log10(t - r / c), N)
+    ts = r / c + np.hstack([[-0.01*r/c, 0], np.logspace(-3, np.log10(t - r / c), N)])
     G_ = G(r, ts, c, g0, include_direct=include_direct, type=type)
     if la is not None:
         G_ = G_ * np.exp(-c * t / la)
@@ -227,9 +227,9 @@ def plot_t(c, g0, r, t=None, N=1000, log=False, include_direct=False, la=None,
         G_ = G_ / np.max(G_)
     ax = plt.gca()
     if log:
-        ax.semilogy(ts, G_, label=type)
+        ax.semilogy(ts, G_, label=f'{type} {1/g0:.0f}m')
     else:
-        ax.plot(ts, G_, label=type)
+        ax.plot(ts, G_, label=f'{type} {1/g0:.0f}m')
     ax.set_xlim((0, t))
     ax.set_ylabel('G')
     ax.set_xlabel('t (s)')
@@ -253,9 +253,9 @@ def plot_r(c, g0, t, r=None, N=1000, log=False, include_direct=False, la=None,
         G_ = G_ / np.max(G_)
     ax = plt.gca()
     if log:
-        ax.semilogy(rs, G_, label=type)
+        ax.semilogy(rs, G_, label=f'{type} {1/g0:.0f}m')
     else:
-        ax.plot(rs, G_, label=type)
+        ax.plot(rs, G_, label=f'{type} {1/g0:.0f}m')
     ax.set_xlim((0, r))
     ax.set_ylabel('G')
     ax.set_xlabel('r (m)')
@@ -305,7 +305,7 @@ def create_parser(p):
     choices = ('calc', 'calc-direct', 'plot-t', 'plot-r', 'plot-rt')
     p.add_argument('command', help='command', choices=choices)
     p.add_argument('c', help='velocity (m/s)', type=float)
-    p.add_argument('l', help='transport mean free path (m)', type=float)
+    p.add_argument('l', nargs='+', help='transport mean free path (m)', type=float)
     p.add_argument('-r', help='distance from source (m)', type=float)
     p.add_argument('-t', help='time after source (s)', type=float)
     msg = 'absorption length (m)'
@@ -324,37 +324,39 @@ def main(args=None):
     if args is None:
         p = create_parser(None)
         args = p.parse_args(args)
-    r, t, c, l, la, types = (args.r, args.t, args.c, args.l, args.absorption,
+    r, t, c, ls, la, types = (args.r, args.t, args.c, args.l, args.absorption,
                             args.type)
     com = args.command
     if com in ('calc', 'plot-rt') and len(types) != 1:
         raise ValueError('More than one type not allowed for that command')
     if 'calc' in com:
-        type_ = types[0]
-        if com == 'calc':
-            G_ = G(r, t, c, 1/l, type=type_)
-        else:
-            Gdirect = (rt1d_direct if type_ == 'rt1d' else
-                       rt2d_direct if type_ == 'rt2d' else
-                       rt3d_direct if type_ == 'rt3d' else None)
-            if Gdirect is None:
-                raise ValueError('No direct term for this Greens function.')
-            G_ = Gdirect(t, c, 1/l)
-        if la is not None:
-            G_ = G_ * np.exp(-c * t / la)
-        print(G_)
+        for l in ls:
+            type_ = types[0]
+            if com == 'calc':
+                G_ = G(r, t, c, 1/l, type=type_)
+            else:
+                Gdirect = (rt1d_direct if type_ == 'rt1d' else
+                           rt2d_direct if type_ == 'rt2d' else
+                           rt3d_direct if type_ == 'rt3d' else None)
+                if Gdirect is None:
+                    raise ValueError('No direct term for this Greens function.')
+                G_ = Gdirect(t, c, 1/l)
+            if la is not None:
+                G_ = G_ * np.exp(-c * t / la)
+            print(G_)
     else:
         import matplotlib.pyplot as plt
-        kw = dict(log=args.log, include_direct=not args.no_direct, la=la)
-        for type_ in types:
-            kw['type'] = type_
-            if com == 'plot-t':
-                plot_t(c, 1/l, r, t=t, **kw)
-            elif com == 'plot-r':
-                plot_r(c, 1/l, t, r=r, **kw)
-            elif com == 'plot-rt':
-                plot_rt(c, 1/l, t=t, r=r, **kw)
-        if len(types) > 1:
+        for l in ls:
+            kw = dict(log=args.log, include_direct=not args.no_direct, la=la)
+            for type_ in types:
+                kw['type'] = type_
+                if com == 'plot-t':
+                    plot_t(c, 1/l, r, t=t, **kw)
+                elif com == 'plot-r':
+                    plot_r(c, 1/l, t, r=r, **kw)
+                elif com == 'plot-rt':
+                    plot_rt(c, 1/l, t=t, r=r, **kw)
+        if len(types) > 1 or len(ls) >1:
             plt.legend()
         plt.show()
 
