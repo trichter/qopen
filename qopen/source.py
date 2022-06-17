@@ -171,8 +171,9 @@ def moment_magnitude(M0, inverse=False):
     """
     Moment magnitude Mw from seismic moment M0
 
-    Based on Kanamori (1997), an alternative definition is based on
-    Hanks and Kanamori (1999) with an offset of -6.03.
+    Based on Kanamori (1977), an alternative definition is based on
+    Hanks and Kanamori (1979) with an offset of -6.03.
+    Difference due to rounding errors.
 
     :param M0: seismic moment in Nm
     :param inverse: return the inverse relation ship M0(Mw)
