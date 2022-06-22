@@ -229,6 +229,6 @@ def insert_source_properties(freq, evresult, v0, rho0, seismic_moment_method,
             evresult.update(fitresult)
             if 'M0' in fitresult:
                 evresult['Mw'] = moment_magnitude(fitresult['M0'])
-            if catmag is not None:
-                evresult['Mcat'] = catmag
+        if catmag is not None:
+            evresult['Mcat'] = catmag
     return sort_dict(evresult)
