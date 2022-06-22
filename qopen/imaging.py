@@ -370,7 +370,7 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
 
 
 def plot_sds(freq, result, ax=None,
-             annotate=False, va='bottom',
+             annotate=False, va='bottom', annotate_label=None,
              seismic_moment_method=None, seismic_moment_options={},
              cmap='viridis_r', vmin=None, vmax=None, max_nobs=None,
              color=None,
@@ -431,16 +431,23 @@ def plot_sds(freq, result, ax=None,
 
     if M0:
         ax.axhline(M0, ls='--', color='k')
-    labels = OrderedDict((('M0', r'M$_0$=%.1e Nm'),
-                          ('fc', r'f$_{\rm{c}}$=%.1f Hz'),
-                          ('n', 'n=%.1f'),
-                          ('gamma', r'$\gamma$=%.2f'),
-                          ('fit_error', 'err=%.2f')))
-    labels = [labels[key] % np.float32(result[key])
-              for key in labels if key in result]
-    if len(labels) > 0 and annotate:
+    if annotate_label is None:
+        labels = OrderedDict((('M0', r'M$_0$={M0:.1e} Nm'),
+                              ('fc', r'f$_{{\rm{{c}}}}$={fc:.1f} Hz'),
+                              ('n', 'n={n:.1f}'),
+                              ('gamma', r'$\gamma$={gamma:.2f}'),
+                              ('fit_error', 'err={fit_error:.2f}')))
+        labels = [labels[key].format(**result)# % np.float32(result[key])
+                  for key in labels if key in result]
+        label = '\n'.join(labels)
+    else:
+        try:
+            label = annotate_label.format(**result)
+        except KeyError:
+            annotate=False
+    if annotate and (annotate_label or len(labels) > 0):
         ypos = 1 if va == 'top' else 0
-        ax.annotate('\n'.join(labels), (1, ypos), (-5, 5 - 10 * ypos),
+        ax.annotate(label, (1, ypos), (-5, 5 - 10 * ypos),
                     'axes fraction', 'offset points',
                     ha='right', va=va, size='x-small')
 
@@ -680,6 +687,7 @@ def plot_all_sds(result, seismic_moment_method=None,
                  seismic_moment_options=None,
                  xlim=None, ylim=None, nx=None,
                  annotate=None, va='top',
+                 annotate_label=None,
                  annotate_evid=True,
                  plot_only_ids=None,
                  cmap='viridis_r', vmin=None, vmax=None,
@@ -720,6 +728,7 @@ def plot_all_sds(result, seismic_moment_method=None,
         ax = plt.subplot(gs[i // nx, i % nx], sharex=share, sharey=share)
         sc = plot_sds(freq, result[evid], seismic_moment_method=smm, va=va,
                       seismic_moment_options=smo, ax=ax, annotate=annotate,
+                      annotate_label=annotate_label,
                       cmap=cmap, vmin=vmin, vmax=vmax, max_nobs=max_nobs,
                       color=color)
         if annotate_evid:
