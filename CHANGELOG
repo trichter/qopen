@@ -1,4 +1,4 @@
-dev:
+v4.2:
   * allow to fix station site response to geometric mean of more than one station (for command line script)
   * excluded label is now optional
 v4.1:
