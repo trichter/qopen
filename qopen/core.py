@@ -1852,13 +1852,17 @@ def run(cmd='go',
             events = args.pop('events')
             filter_events = args.pop('filter_events', None)
             resolve_seedid = args.pop('resolve_seedid', False)
-            if isinstance(events, str):
-                events = [events, None]
+            read_events_kwargs = args.pop('read_events_kwargs', {})
             if (isinstance(events, (tuple, list)) and
-                    not isinstance(events[0], obspy.core.event.Event)):
+                    isinstance(events[0], str)):
                 events, format_ = events
-                kw = dict(inventory=inventory) if resolve_seedid else {}
-                events = obspy.read_events(events, format_, **kw)
+                read_events_kwargs['format'] = format_
+            if isinstance(events, str):
+                if resolve_seedid:
+                    read_events_kwargs['resolve_seedid'] = resolve_seedid
+                if 'resolve_seedid' in read_events_kwargs:
+                    read_events_kwargs['inventory'] = inventory
+                events = obspy.read_events(events, **read_events_kwargs)
                 log.info('read %d events', len(events))
             if filter_events:
                 events = events.filter(*filter_events)
