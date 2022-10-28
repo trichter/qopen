@@ -1,4 +1,5 @@
 dev:
+  * add option noise_windows_func (default: 'min', to specify function with which to determine the final noise level from individual noise levels in different noise windows
   * add read_events_kwargs option, can be used to pass options to ObsPy's read_events
 v4.2:
   * allow to fix station site response to geometric mean of more than one station (for command line script)

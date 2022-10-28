@@ -490,7 +490,8 @@ def _get_slice(energy, tw, pair, energies, bulk=False):
 
 def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
               R0=1, free_surface=4,
-              noise_windows=None, bulk_window=None, weight=None,
+              noise_windows=None, noise_windows_func='min',
+              bulk_window=None, weight=None,
               optimize=None, g0_bounds=(1e-8, 1e-3), b_bounds=(1e-5, 10),
               num_points_integration=1000, coda_normalization=None,
               smooth=None, smooth_window='flat',
@@ -600,7 +601,8 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
                 energies.remove(energy)
                 continue
         else:
-            energy.stats.noise_level = noise_level = np.min(noise_levels)
+            _nwfunc = getattr(np, noise_windows_func)
+            energy.stats.noise_level = noise_level = _nwfunc(noise_levels)
             msg = '%s: noise level at %.1e, max value %.1e'
             log.debug(msg, pair, noise_level, np.max(energy.data))
         # Optionally remove noise
@@ -1860,7 +1862,8 @@ def run(cmd='go',
             if isinstance(events, str):
                 if resolve_seedid:
                     read_events_kwargs['resolve_seedid'] = resolve_seedid
-                if 'resolve_seedid' in read_events_kwargs:
+                resolve_seedid = read_events_kwargs.pop('resolve_seedid', False)
+                if resolve_seedid:
                     read_events_kwargs['inventory'] = inventory
                 events = obspy.read_events(events, **read_events_kwargs)
                 log.info('read %d events', len(events))
