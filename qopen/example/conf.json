@@ -156,6 +156,12 @@
 # Useful if depth of events catalog is given relative to sea level.
 "correct_for_elevation": false,
 
+# Subtract the local sensor depth from the channel (if not present: station) elevation
+# If StationXML definition is honored use false.
+# If elevation is only specified on the station level use true.
+# Only relevant for setting "correct_for_elevation": true.
+"subtract_local_depth": false,
+
 # Filter options passed to obspy.core.Stream.filter for filtering the
 # different frequency bands (see obspy.core.Stream.filter).
 "filter": {"corners": 2, "zerophase": true},

@@ -75,6 +75,8 @@ DUMP_ORDER = ['M0', 'Mw', 'Mcat', 'fc', 'n', 'gamma',
               'W', 'sds', 'sds_error', 'fit_error',
               'R', 'events', 'v0', 'config']
 
+BOREHOLE_STATION_DEPTH = 10
+
 
 class QopenError(Exception):
     pass
@@ -1029,6 +1031,7 @@ def invert(events, inventory, get_waveforms,
            plot_remove_response=False, remove_response_options={},
            skip=None, use_picks=False,
            correct_for_elevation=False,
+           subtract_local_depth=False,
            njobs=None,
            seismic_moment_method=None, seismic_moment_options={},
            plot_eventresult=False, plot_eventresult_options={},
@@ -1094,9 +1097,12 @@ def invert(events, inventory, get_waveforms,
             raise SkipError('station not installed')
         args = (c['latitude'], c['longitude'], ori.latitude, ori.longitude)
         hdist = gps2dist_azimuth(*args)[0]
+        local_elevation = c['elevation']
+        if not subtract_local_depth:
+            local_elevation = local_elevation + c['local_depth']
         vdist = (ori.depth + c['elevation'] * correct_for_elevation -
                  c['local_depth'])
-        if c['local_depth'] > 0:
+        if c['local_depth'] > BOREHOLE_STATION_DEPTH:
             borehole_stations.add(sta)
         return np.sqrt(hdist ** 2 + vdist ** 2)
 
