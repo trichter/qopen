@@ -270,12 +270,12 @@ def get_picks(arrivals, station):
         seedid = pick.waveform_id.get_seed_string()
         if station == get_station(seedid):
             if phase in picks:
-                msg = '%s-onset has multiple picks'
-                if phase == 'P':
-                    msg = '%s, ' + msg + ' -> select arbitrary'
-                    log.warning(msg, station, phase)
-                else:
-                    raise SkipError(msg % phase)
+                msg = 'station %s: %s-onset has multiple picks'
+                log.warning(msg, station, phase)
+                # if phase == 'P':
+                #     log.warning(msg, station, phase)
+                # else:
+                #     raise SkipError(msg % (station, phase))
             picks[phase] = pick.time
     return picks
 
