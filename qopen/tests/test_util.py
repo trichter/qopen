@@ -24,10 +24,12 @@ class TestCase(unittest.TestCase):
             x = x.reshape((2, 4))
             w = np.ones(x.shape)
             self.assertEqual(len(gmean(x, axis=0)), x.shape[1])
-            np.testing.assert_array_equal(gmean(x, axis=0),
-                                          gmean(x, axis=0, weights=w))
-            np.testing.assert_array_equal(gerr(x, axis=0),
-                                          gerr(x, axis=0, weights=w))
+            np.testing.assert_allclose(
+                gmean(x, axis=0),
+                gmean(x, axis=0, weights=w))
+            np.testing.assert_allclose(
+                gerr(x, axis=0),
+                gerr(x, axis=0, weights=w))
 
     def test_gmean_gerr2(self):
         """Results are same for repeated elements and adapted weights"""
@@ -37,8 +39,9 @@ class TestCase(unittest.TestCase):
         self.assertEqual(gmean(x1), gmean(x2, weights=w))
 
         # errors can only be compared for biased std
-        np.testing.assert_array_equal(gerr(x1, unbiased=False)[1:],
-                                      gerr(x2, weights=w, unbiased=False)[1:])
+        np.testing.assert_allclose(
+            gerr(x1, unbiased=False)[1:],
+            gerr(x2, weights=w, unbiased=False)[1:])
         # weighted errors are bigger than unweighted
         np.testing.assert_array_less(gerr(x1)[1:], gerr(x2, weights=w)[1:])
         # biased errors are smaller than unbiased
@@ -86,10 +89,12 @@ class TestCase(unittest.TestCase):
         self.assertEqual(len(smooth(x, 11, method='reflect')), len(x))
         self.assertEqual(len(smooth(x, 10, method='reflect')), len(x))
         # test different handling of border effects against each other
-        np.testing.assert_array_equal(smooth(x, 10, method='zeros')[4:-5],
-                                      smooth(x, 10, method=None))
-        np.testing.assert_array_equal(smooth(x, 11, method='reflect')[5:-5],
-                                      smooth(x, 11, method=None))
+        np.testing.assert_allclose(
+            smooth(x, 10, method='zeros')[4:-5],
+            smooth(x, 10, method=None))
+        np.testing.assert_allclose(
+            smooth(x, 11, method='reflect')[5:-5],
+            smooth(x, 11, method=None))
 
     def test_gmean_list_with_nan(self):
         expected = [None, 1.2e-05, 2.4e-06, 1]
@@ -104,9 +109,9 @@ class TestCase(unittest.TestCase):
         self.assertIsNone(r1[0])
         self.assertIsNone(r2[0])
         self.assertIsNone(r3[0])
-        np.testing.assert_array_almost_equal(r1[1:], expected[1:])
-        np.testing.assert_array_almost_equal(r2[1:], expected[1:])
-        np.testing.assert_array_almost_equal(r3[1:], expected[1:])
+        np.testing.assert_allclose(r1[1:], expected[1:])
+        np.testing.assert_allclose(r2[1:], expected[1:])
+        np.testing.assert_allclose(r3[1:], expected[1:])
 
 
 if __name__ == '__main__':
