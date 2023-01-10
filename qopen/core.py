@@ -391,9 +391,9 @@ def collect_results(results, only=None, freqi=None):
             pass
         elif c == 'R' and 'R' in col:
             for sta in col['R']:
-                col['R'][sta] = np.array(col['R'][sta], dtype=np.float)
+                col['R'][sta] = np.array(col['R'][sta], dtype=float)
         elif c in col:
-            col[c] = np.array(col[c], dtype=np.float)
+            col[c] = np.array(col[c], dtype=float)
     return col
 #    # old implementation returns list
 #    if 'g0' not in list(results['events'].items())[0][1]:

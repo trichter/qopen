@@ -88,7 +88,7 @@ def _rescale_results(results, factors, only=None):
 def _Rmean(R):
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore')
-        Rm = [np.nanmean(np.log(np.array(x, dtype=np.float)))
+        Rm = [np.nanmean(np.log(np.array(x, dtype=float)))
               for x in R.values()]
     return np.nanmean(Rm)
 
@@ -96,7 +96,7 @@ def _Rmean(R):
 def _Rstd(R):
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore')
-        Rstd = [np.nanstd(np.log(np.array(x, dtype=np.float)))
+        Rstd = [np.nanstd(np.log(np.array(x, dtype=float)))
                 for x in R.values()]
     return np.nanmean(Rstd)
 

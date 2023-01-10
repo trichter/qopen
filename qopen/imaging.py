@@ -396,7 +396,7 @@ def plot_sds(freq, result, ax=None,
         kw['c'] = None
         kw['color'] = color
     freq = np.array(freq)
-    omM = np.array(result['sds'], dtype=np.float)
+    omM = np.array(result['sds'], dtype=float)
     if all(np.isnan(omM)):
         return
     fig = None
@@ -510,7 +510,7 @@ def plot_eventsites(result,
     for i, station in enumerate(sorted(R)):
         allR.extend(R[station])
         ax = plt.subplot(gs[i // n, i % n], sharex=share, sharey=share)
-        Rs = np.array(R[station], dtype=np.float)
+        Rs = np.array(R[station], dtype=float)
         if not np.all(np.isnan(Rs)):
             ax.loglog(freq, Rs, 'o-k')
         l = station
@@ -521,7 +521,7 @@ def plot_eventsites(result,
         ax.xaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         if share is None:
             share = ax
-    allR = np.array(allR, dtype=np.float)
+    allR = np.array(allR, dtype=float)
     allR = allR[~np.isnan(allR)]
     if np.min(allR) != np.max(allR):
         ax.set_ylim(np.min(allR), np.max(allR))
