@@ -1100,7 +1100,7 @@ def invert(events, inventory, get_waveforms,
         local_elevation = c['elevation']
         if not subtract_local_depth:
             local_elevation = local_elevation + c['local_depth']
-        vdist = (ori.depth + c['elevation'] * correct_for_elevation -
+        vdist = (ori.depth + local_elevation * correct_for_elevation -
                  c['local_depth'])
         if c['local_depth'] > BOREHOLE_STATION_DEPTH:
             borehole_stations.add(sta)
