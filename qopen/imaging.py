@@ -326,8 +326,7 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
         G_ = smooth_func(lambda t_: G_func(r, t_, v0, g0),
                          t, smooth, window=smooth_window)
         Emod = get_Emod(G_, t)
-        index = np.argwhere(Emod < 1e-30)[-1]
-        Emod[index] = 1e-30
+        Emod[Emod < 1e-30] = 1e-30
         plot(t, Emod, color=c2l)
 
         plot(tcoda[i], Ecoda[i], color=c1)
