@@ -310,6 +310,10 @@ def plot_fits(energies, g0, b, W, R, v0, info, G_func,
         evid, station = get_pair(energy)
         ax = plt.subplot(gs[i // n, i % n], sharex=share, sharey=share)
         plot = ax.semilogy
+        if np.isnan(R[station]):
+            # can happen with fixed site amplifications
+            # and reference site not avaiable
+            continue
 
         def get_Emod(G, t):
             return R[station] * W[evid] * G * np.exp(-b * t)

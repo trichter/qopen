@@ -550,6 +550,12 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
                    'for frequency band')
             log.warning(msg, pair)
             continue
+        if fix_sites and np.isnan(
+                fix_sites_params[freq_band].get(pair[1], np.nan)):
+            msg = ('%s: Reference site amplification not available '
+                   '-> skip pair for frequency band')
+            log.warning(msg, pair)
+            continue
         filter_ = copy(filter)
         if freqmax > 0.495 * sr:
             fu = {'freq': freqmin, 'type': 'highpass'}
@@ -796,7 +802,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
         for i, B in enumerate(Ecoda + [[_] for _ in Ebulk]):
             A = np.zeros((Ne, len(B)))
             evid, st = event_station_pairs[i % len(event_station_pairs)]
-            site_resp = fix_sites_params[freq_band].get(st, 1)
+            site_resp = fix_sites_params[freq_band][st]
             R_fix_sites.append(site_resp)
             B_fix_sites.append(np.ones(len(B)) * np.log(site_resp))
             idx = eventids.index(evid)
@@ -804,6 +810,7 @@ def invert_fb(freq_band, streams, filter, rho0, v0, coda_window,
             As.append(A)
         B_fix_sites = np.hstack(B_fix_sites)
         R_fix_sites = R_fix_sites[:Ns]
+        assert not np.any(np.isnan(B_fix_sites))
         del st, evid
     else:
         for i, B in enumerate(Ecoda + [[_] for _ in Ebulk]):
