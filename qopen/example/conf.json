@@ -11,11 +11,6 @@
 # Filter event catalog with Obspy method Catalog.filter
 # example: "filter_events": ["magnitude > 2.5"],
 "filter_events": null,
-# Filter event catalog with Obspy method Catalog.filter
-
-# Resolve full SEED id for event formats that do not specify the full SEED id
-# by passing the inventory to the read_events call
-"resolve_seedid": false,
 
 # Filename of inventory of stations (format supported by ObsPy)
 "inventory": "example_inventory.xml",
@@ -39,19 +34,19 @@
 # See the documentation of the clients in ObsPy for available options.
 "client_options": {"user": "name@insitution.com"},
 
-# Where to find the plugin in the form "module : func"
+# Plugin "module : func"
 # 'module' has to be importable (located in current path or PYTHON_PATH
 # environment variable).
-# 'func' has to be the function which delivers the data, e.g. for a
-# FSDN client:
+# 'func' has to be the function which returns the data.
+# Kwargs passed to func are: network, station, location, channel,
+# starttime, endtime and event
+# Example using FSDN client:
 #     # in module.py
 #     from obspy.clients.fsdn import Client
 #     client = Client()
 #     def func(**kwargs):
 #         kwargs.pop('event')  # event kwarg is not needed by client
 #         return client.get_waveforms(**kwargs)
-# Kwargs passed to func are: network, station, location, channel,
-# starttime, endtime and event
 "plugin": "module : func",
 
 # Request window of data in s relative to origin time
@@ -94,6 +89,7 @@
 
 # If true: all events are inverted together for one b and g0
 # If false: events are inverted independently for b and g0
+# You only want to set this option to true if only 1 or 2 stations are available
 "invert_events_simultaneously": false,
 
 # If previous option is false, the results are determined as a mean
@@ -138,7 +134,7 @@
 
 # Bounds for optimization. Optimal parameters near the bounds will be
 # treated as unphysical and corresponding results will be discarded
-# 'g0_bounds' bounds for (transport) mean free path
+# 'g0_bounds' bounds for (transport) scattering coefficient
 # 'b_bounds' bounds for intrinsic attenuation
 "g0_bounds": [1e-8, 1e-4],
 "b_bounds": [1e-3, 10],
@@ -201,13 +197,13 @@
 # Remove noise level from data
 "remove_noise": true,
 
-# Definition of different time windows
-# - List of time windows to determine the noise level relative to P-onset
+# Definition of three different time windows
+# - List of time windows to determine the noise level (noise_windows)
 #   (the minimum of the noise levels determined in the individual time
 #   windows is used)
-# - Time window for calculation of the direct energy.
+# - Time window for calculation of the direct energy (bulk_window)
 #   The energy is integrated in this time window
-# - Time window defining the coda
+# - Time window defining the coda (coda_window)
 # Time windows are a list of two values (start and end time).
 # The start time and end time can be a string, e.g.:
 # - 'P-10s', 'S+10s', 'OT+10s' (seconds relative to onset or origin time),
