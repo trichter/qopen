@@ -592,7 +592,7 @@ def plot_sites(result, mean=None,
                xlim=None, ylim=(1e-2, 1e2), nx=None,
                cmap='viridis_r', vmin=None, vmax=None,
                xlabel='frequency (Hz)', ylabel='site amplification',
-               show_excluded=True, sortkey=None,
+               show_excluded=True, sortkey=None, annotate=True,
                **kwargs):
     """Plot site amplification factors"""
     freq = np.array(result['freq'])
@@ -654,8 +654,9 @@ def plot_sites(result, mean=None,
         ax.set_xscale('log')
         ax.set_yscale('log')
         ax.xaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
-        ax.annotate(station, (1, 1), (-5, -5), 'axes fraction',
-                    'offset points', ha='right', va='top', size='x-small')
+        if annotate:
+            ax.annotate(station, (1, 1), (-5, -5), 'axes fraction',
+                        'offset points', ha='right', va='top', size='x-small')
         _set_gridlabels(ax, i, nx, ny, N-(max_nobs > 1),
                         xtlabel=False, ytlabel=False,
                         xlabel=xlabel, ylabel=ylabel)

@@ -1,3 +1,5 @@
+dev:
+  * add annotate option to plot_sites (default: True)
 v4.3:
   * add option noise_windows_func (default: 'min', to specify function with which to determine the final noise level from individual noise levels in different noise windows
   * add read_events_kwargs option, can be used to pass options to ObsPy's read_events
