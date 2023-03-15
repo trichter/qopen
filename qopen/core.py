@@ -1905,11 +1905,11 @@ def run(cmd='go',
     # Start main routine with remaining args
     log.info('Use Qopen command %s', cmd)
     log.debug('start qopen routine with parameters %s', json.dumps(args))
-    if align_sites and cmd == 'source':
-        msg = 'align sites not valid for command source -> set to False'
-        log.warning(msg)
-        align_sites = False
     if align_sites:
+        if cmd in ('source', 'recalc_source'):
+            msg = (f'--align-sites only works with command {cmd} if no new '
+                   'events are used')
+            log.warning(msg)
         align_sites_kw = {
             'seismic_moment_method': args.pop('seismic_moment_method', None),
             'seismic_moment_options': args.pop('seismic_moment_options', None),
@@ -1922,18 +1922,29 @@ def run(cmd='go',
     if load_all:
         args['get_waveforms'] = get_waveforms
         args['events'] = events
+    if cmd in ('fixed', 'source', 'recalc_source'):
+        result_in = _load_json_results(args, 'input')
+    if 'input_sites' in args:
+        if cmd in ('source', 'recalc_source'):
+            result_sites = _load_json_results(args, 'input_sites')
+            result_in['R'] = result_sites['R']
+            if 'events' in result_in and 'events' in result_sites:
+                for evid, evres in result_in['events'].items():
+                    if (evid in result_sites['events'] and
+                            'R' in result_sites['events'][evid]):
+                        evres['R'] = result_sites['events'][evid]
+        else:
+            msg = f'option --input-sites is ignored for command {cmd}'
+            log.warning(msg)
     if cmd in ('go', 'fixed', 'source'):
         if cmd in ('fixed', 'source'):
-            args['input'] = _load_json_results(args, 'input')
-            if 'input_sites' in args and cmd == 'source':
-                input_sites = _load_json_results(args, 'input_sites')
-                args['input']['R'] = input_sites['R']
+            args['input'] = result_in
         # main inversion
         result = invert_wrapper(noplots=align_sites, **args)
         # Output and return result
         log.debug('inversion results: %s', json.dumps(result))
     elif cmd == 'recalc_source':
-        result = _load_json_results(args, 'input')
+        result = result_in
     if align_sites:
         msg = 'align station site responses and calculate source spectra'
         log.info(msg)
@@ -2054,8 +2065,9 @@ def run_cmdline(args=None):
                '(default: product of station site responses is fixed)')
         p.add_argument('--align-sites-station', help=msg, default=SUPPRESS)
         msg = ('Value of site response for specified station or product of '
-               'station site responses (default: 1)')
-        p.add_argument('--align-sites-value', help=msg, type=float,
+               'station site responses (default: 1), may be a list with '
+               'one entry for each frequency band')
+        p.add_argument('--align-sites-value', help=msg, type=json.loads,
                        default=SUPPRESS)
     p2.add_argument('--dump-optpkl', default=SUPPRESS, help=SUPPRESS)
     for p in (p2, p3, p4):

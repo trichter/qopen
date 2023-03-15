@@ -196,7 +196,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                          seismic_moment_options=None,
                          ignore_stations=None):
     """
-    Align station site responses and correct source parameters (experimental)
+    Align station site responses (amplification) and correct source parameters
 
     Determine best factor for each event so that site response is the same
     for each station and different events.
@@ -244,8 +244,8 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
                 Arow[col] = data
             Arepr.append(Arow)
         row[0] += 1
-
     # calculate best factors for each freq band with OLS A*factor=b
+    reponse_freqs = [response] * Nf if isinstance(response, (float, int)) else response
     factors = np.ones((Ne, Nf))
     std_before = []
     # one for each freq
@@ -316,7 +316,7 @@ def align_site_responses(results, station=None, response=1., use_sparse=True,
         # pin mean site response or site response of specific station(s)
         msg = 'use geometric mean of %d stations for normalization'
         log.debug(msg, len(stations_used_norm))
-        norm_row_b = norm_row_b / len(stations_used_norm) + np.log(response)
+        norm_row_b = norm_row_b / len(stations_used_norm) + np.log(reponse_freqs[i])
         for k in norm_row_A:
             norm_row_A[k] /= len(stations_used_norm)
         construct_ols(norm_row_A.items(), norm_row_b)

@@ -418,6 +418,14 @@ class TestCase(unittest.TestCase):
                         'source_plots/fits_*.png', 1, True)
                 self.check_num_images('source_plots/event*.png', 5)
                 self.check_num_images('source_plots/*.pdf', 2)
+            run('recalc_source', conf='conf.json',
+              input='aligned_results.json',
+              prefix='aligned_rspfreq_',
+              align_sites=True,
+              align_sites_value=[1, 2, 3, 4, 4, 10],
+              **kwargs)
+
+
 
     def test_plugin_option(self):
         f = init_data('plugin', plugin='qopen.tests.test_xcore : gw_test')

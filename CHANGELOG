@@ -1,4 +1,5 @@
 dev:
+  * allow to set frequency dependent reference site amplification
   * add annotate option to plot_sites (default: True)
 v4.3:
   * add option noise_windows_func (default: 'min', to specify function with which to determine the final noise level from individual noise levels in different noise windows
