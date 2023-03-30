@@ -1,4 +1,4 @@
-dev:
+v4.4:
   * allow to set frequency dependent reference site amplification
   * add annotate option to plot_sites (default: True)
 v4.3:
