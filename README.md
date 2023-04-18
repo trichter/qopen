@@ -129,7 +129,7 @@ approximation use a user-defined Green's function.
 
 #### Use Qopen with coda normalization
 
-For comparison, Qopen can be used with coda normalization with the
+For comparison, Qopen can be configured to use coda normalization -- which is by the way not recommended -- with the
 following settings in conf.json:
 
     "coda_normalization": [180, 200],
