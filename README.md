@@ -33,8 +33,7 @@ Dependencies of Qopen are:
 - NumPy, SciPy and matplotlib (itself dependencies of ObsPy)
 - statsmodels
 
-Installation with conda - it's probably best to install ObsPy and other
-dependencies first and then let pip take care of the rest:
+One of many possibilities for installation is using conda:
 
     conda --add channels conda-forge
     conda create -n qenv matplotlib numpy scipy obspy statsmodels
@@ -61,6 +60,7 @@ can perform the inversion by simply running :
 which will calculate the results and create different plots.
 
 A more extensive tutorial is available [here](https://github.com/trichter/qopen_tutorial).
+A practical and introductory slides are availabe [here](https://github.com/trichter/qopen_practical).
 
 #### Use your own data
 
@@ -146,7 +146,8 @@ The Obspy forum can be used to contact other users and developers.
 Please post the topic in the
 [ObsPy Related Projects category](https://discourse.obspy.org/c/obspy-related-projects/qopen).
 
-Work through the extended [Qopen tutorial](https://github.com/trichter/qopen_tutorial).
+Work through the [Qopen practical](https://github.com/trichter/qopen_practical) and/or the extended [Qopen tutorial](https://github.com/trichter/qopen_tutorial).
+Check out the [slides of an introductory talk](https://raw.githubusercontent.com/trichter/qopen_practical/master/Qopen_slides.pdf).
 
 A somewhat advanced example using the Qopen package:
 [USAttenuation](https://github.com/trichter/usattenuation).
