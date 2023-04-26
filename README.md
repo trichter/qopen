@@ -184,6 +184,13 @@ Fast and robust earthquake source spectra and moment magnitudes from envelope in
 doi:[10.1785/0120210200](https://doi.org/10.1785/0120210200)
 [[pdf](https://arxiv.org/pdf/2107.11083)]
 
+High-level presentation of all aspects of Qopen and its application to induced earthquakes stress drops:
+Eulenfeld T, Hillers G, Vuorinen T A T & Wegler U (2023),
+Induced earthquake source parameters, attenuation, and site effects from waveform envelopes in the Fennoscandian Shield,
+*Journal of Geophysical Research: Solid Earth*, 128(4), e2022jb025162,
+doi: [10.1029/2022jb025162](https://doi.org/10.1029/2022jb025162)
+[[pdf](https://www.db-thueringen.de/servlets/MCRFileNodeServlet/dbt_derivate_00059942/Eulenfeld2023_earthquake_source_parameters_attenuation_site_effects.pdf)]
+
 Comparison between Qopen and MLTWA:
 van Laaten M, Eulenfeld T and Wegler U (2021),
 Comparison of Multiple Lapse Time Window Analysis and Qopen to determine intrinsic and scattering attenuation,
