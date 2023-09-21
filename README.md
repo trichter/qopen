@@ -35,7 +35,7 @@ Dependencies of Qopen are:
 
 One of many possibilities for installation is using conda:
 
-    conda --add channels conda-forge
+    conda config --add channels conda-forge
     conda create -n qenv matplotlib numpy scipy obspy statsmodels
     conda activate qenv
     pip install qopen
