@@ -88,7 +88,10 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode'
               ]
 
-autodoc_default_flags = ['members']
+autodoc_default_options = {
+    'members': True,
+    # 'show-inheritance': True,
+}
 default_role = 'py:obj'
 
 # Add any paths that contain templates here, relative to this directory.
@@ -107,7 +110,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Qopen'
-copyright = u'2016, Tom Eulenfeld'
+copyright = u'2016-2024, Tom Eulenfeld'
 author = u'Tom Eulenfeld'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -118,11 +121,6 @@ author = u'Tom Eulenfeld'
 release = qopen.__version__
 # The short X.Y version.
 version = release.split("-")[0]
-
-#
-# This is also used if you do content translation via gettext catalogs.
-# Usually you set "language" from the command line for these cases.
-language = None
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -359,5 +357,4 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
