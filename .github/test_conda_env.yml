@@ -5,3 +5,4 @@ dependencies:
   - obspy
   - statsmodels
   - coverage
+  - pip
