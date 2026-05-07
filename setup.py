@@ -29,7 +29,6 @@ DEPS = ['matplotlib>=1.3', 'numpy>=1.8', 'scipy>=0.14',
 CLASSIFIERS = [
     'Environment :: Console',
     'Intended Audience :: Science/Research',
-    'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.7',
