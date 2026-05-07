@@ -1,4 +1,4 @@
-dev:
+v4.5:
   * migrate from setup.py to pyproject.toml
   * replace pkg_resources removed in setuptools with importlib
 v4.4:
