@@ -12,17 +12,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python: [3.9, "3.10"]
+        python: ["3.12", "3.13", "3.14"]
         flags: ["-v -f -n 2", "-v -f -n 1", "-v -a -n 2"]
         include:
           - os: ubuntu-latest
-            python: 3.7
+            python: "3.14"
             flags: "-v -a -n 2"
           - os: macos-latest
-            python: 3.8
+            python: "3.14"
             flags: "-v -a -n 2"
           - os: windows-latest
-            python: 3.8
+            python: "3.14"
             flags: "-v -a -n 2"
     runs-on: ${{ matrix.os }}
     env:
