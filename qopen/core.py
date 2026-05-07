@@ -28,6 +28,7 @@ from collections import defaultdict, OrderedDict
 from copy import copy, deepcopy
 from functools import partial
 from importlib import import_module
+from importlib.resources import files
 import json
 import logging
 import logging.config
@@ -1771,7 +1772,7 @@ def run(cmd='go',
             for src in example_files:
                 dests.append(os.path.join(dest_dir, src))
         for src, dest in zip(srcs, dests):
-            src = import_module.resources.files('qopen').joinpath(f'example/{src}')
+            src = files('qopen').joinpath(f'example/{src}')
             shutil.copyfile(src, dest)
         return
     # Parse config file
