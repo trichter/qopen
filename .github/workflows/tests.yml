@@ -12,12 +12,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python: ["3.12", "3.13", "3.14"]
+        python: ["3.12", "3.13"]
         flags: ["-v -f -n 2", "-v -f -n 1", "-v -a -n 2"]
         include:
           - os: ubuntu-latest
             python: "3.14"
-            flags: "-v -a -n 2"
+            flags: "-v -f -n 1"  # problem with python 3.14, coverage 7.13.5 and -n2
           - os: macos-latest
             python: "3.14"
             flags: "-v -a -n 2"
