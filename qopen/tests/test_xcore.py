@@ -4,9 +4,9 @@ Tests for core module.
 """
 
 from glob import glob
+from importlib.metadata import entry_points
 import json
 import os
-from pkg_resources import load_entry_point
 import sys
 import unittest
 
@@ -51,7 +51,7 @@ class TestCase(unittest.TestCase):
             self.assertEqual(len(files), num, msg=msg2)
 
     def test_entry_point(self):
-        script = load_entry_point('qopen', 'console_scripts', 'qopen')
+        script = entry_points(group='console_scripts')['qopen'].load()
         with quiet():
             try:
                 script(['-h'])

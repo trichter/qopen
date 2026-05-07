@@ -4,8 +4,8 @@ Tests for site module.
 """
 
 from copy import deepcopy
+from importlib.resources import files
 import json
-from pkg_resources import resource_filename
 import unittest
 
 import numpy as np
@@ -124,7 +124,7 @@ class TestCase(unittest.TestCase):
 
     def test_align_site_responses_large_dataset_usarray(self):
         eps = 1e-5
-        fname = resource_filename('qopen', 'tests/data/usarray_dataset.json')
+        fname = files('qopen').joinpath('tests/data/usarray_dataset.json')
         with open(fname) as f:
             r = json.load(f)
         sta = 'TA.B12A'

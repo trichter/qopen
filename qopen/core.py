@@ -33,7 +33,6 @@ import logging
 import logging.config
 import multiprocessing
 import os.path
-from pkg_resources import resource_filename
 import shutil
 import sys
 import time
@@ -1772,7 +1771,7 @@ def run(cmd='go',
             for src in example_files:
                 dests.append(os.path.join(dest_dir, src))
         for src, dest in zip(srcs, dests):
-            src = resource_filename('qopen', 'example/%s' % src)
+            src = import_module.resources.files('qopen').joinpath(f'example/{src}')
             shutil.copyfile(src, dest)
         return
     # Parse config file

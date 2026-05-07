@@ -6,7 +6,7 @@ Tests for rt module.
 import matplotlib
 import numpy as np
 import unittest
-from pkg_resources import load_entry_point
+from importlib.metadata import entry_points
 import warnings
 
 from qopen.rt import G, rt3d_coda_reduced
@@ -73,7 +73,7 @@ class TestCase(unittest.TestCase):
         self.script(cmd.split())
 
     def test_script(self):
-        self.script = load_entry_point('qopen', 'console_scripts', 'qopen')
+        self.script = entry_points(group='console_scripts')['qopen'].load()
         with tempdir():
             with quiet():
                 self.cmd('rt calc 1600 500 -t 5 -r 1000')
