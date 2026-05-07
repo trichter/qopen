@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qopen"
+dynamic = ["version"]
+description = "Separation of intrinsic and scattering Q by envelope inversion"
+readme = { text = "Please look at the project site for more information.", content-type = "text/plain" }
+license = "MIT"
+authors = [
+    { name = "Tom Eulenfeld", email = "tom.eulenfeld@gmail.com" }
+]
+urls = { Homepage = "https://github.com/trichter/qopen" }
+
+requires-python = ">=3.7"
+
+dependencies = [
+    "matplotlib>=1.3",
+    "numpy>=1.8",
+    "scipy>=0.14",
+    "setuptools",
+    "obspy>=1.0",
+    "statsmodels",
+]
+
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+[project.scripts]
+qopen = "qopen.core:run_cmdline"
+qopen-runtests = "qopen.tests:run"
+
+[tool.setuptools.dynamic]
+version = { attr = "qopen.__version__" }
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.package-data]
+"qopen.example" = ["*.py", "*.json", "*.mseed", "*.xml"]
+"qopen.tests.data" = ["*.json"]
